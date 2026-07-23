@@ -52,3 +52,5 @@ playwright-report/
 build/
 dist/
 *.egg-info/
+
+backup_*/
