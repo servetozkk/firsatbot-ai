@@ -14,7 +14,7 @@ from app.web.whatsapp_routes import router as whatsapp_router
 
 
 BASE_DIR = Path(__file__).resolve().parent
-STATIC_DIR = BASE_DIR / "app" / "web" / "static"
+STATIC_DIR = BASE_DIR / "app" / "static"
 
 
 @asynccontextmanager
@@ -38,11 +38,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+
 app.mount(
     "/static",
     StaticFiles(directory=str(STATIC_DIR)),
     name="static",
 )
+
 
 app.include_router(admin_router)
 app.include_router(main_router)

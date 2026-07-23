@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -8,14 +10,18 @@ from app.database.models import ProductDB, PriceHistory
 
 router = APIRouter()
 
+
+BASE_DIR = Path(__file__).resolve().parents[2]
+TEMPLATES_DIR = BASE_DIR / "app" / "templates"
+
+
 templates = Jinja2Templates(
-    directory="app/web/templates"
+    directory=str(TEMPLATES_DIR),
 )
 
 
 @router.get("/")
 def home(request: Request):
-
     db = SessionLocal()
 
     try:
@@ -27,7 +33,7 @@ def home(request: Request):
             round(
                 sum(product.price for product in products)
                 / total_products,
-                2
+                2,
             )
             if total_products
             else 0
@@ -35,12 +41,12 @@ def home(request: Request):
 
         highest_price = max(
             (product.price for product in products),
-            default=0
+            default=0,
         )
 
         lowest_price = min(
             (product.price for product in products),
-            default=0
+            default=0,
         )
 
         return templates.TemplateResponse(
@@ -52,7 +58,7 @@ def home(request: Request):
                 "average_price": average_price,
                 "highest_price": highest_price,
                 "lowest_price": lowest_price,
-            }
+            },
         )
 
     finally:
@@ -61,7 +67,6 @@ def home(request: Request):
 
 @router.get("/history/{product_id}")
 def history(product_id: int):
-
     db = SessionLocal()
 
     try:
@@ -77,8 +82,8 @@ def history(product_id: int):
                 {
                     "price": item.price,
                     "date": item.created_at.strftime(
-                        "%d.%m.%Y %H:%M"
-                    )
+                        "%d.%m.%Y %H:%M",
+                    ),
                 }
                 for item in history_items
             ]
@@ -90,7 +95,6 @@ def history(product_id: int):
 
 @router.get("/products")
 def products():
-
     db = SessionLocal()
 
     try:

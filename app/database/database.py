@@ -1,7 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import (
-    sessionmaker,
     declarative_base,
+    sessionmaker,
 )
 
 
@@ -28,12 +28,26 @@ Base = declarative_base()
 
 
 def create_db() -> None:
+    """
+    Uygulamanın kullandığı bütün SQLAlchemy
+    tablolarını oluşturur.
+
+    create_all mevcut tabloları veya verileri silmez.
+    Sadece bulunmayan tabloları oluşturur.
+    """
+
     from app.database.models import (
-        ProductDB,
+        OfferPriceHistory,
         PriceHistory,
+        ProductDB,
+        ProductGroup,
+        ProductOffer,
+        Store,
     )
 
-    Base.metadata.create_all(bind=engine)
+    Base.metadata.create_all(
+        bind=engine,
+    )
 
     from app.database.migrations import migrate_database
 

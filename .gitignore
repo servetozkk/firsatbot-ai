@@ -54,3 +54,27 @@ dist/
 *.egg-info/
 
 backup_*/
+
+# Playwright Chrome Profile
+.playwright-hepsiburada-profile/
+
+# Runtime files
+products.json
+hb_debug.html
+page.html
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+
+# Local project notes
+dashboard_mevcut_kodlar.txt
+proje_yapisi.txt
+template_static_kullanimlari.txt

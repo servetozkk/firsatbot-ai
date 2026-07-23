@@ -376,50 +376,128 @@ def admin_dashboard(
     db = SessionLocal()
 
     try:
-        total_products = db.query(
-            ProductDB
-        ).count()
+        all_products = (
+            db.query(ProductDB)
+            .order_by(ProductDB.id.desc())
+            .all()
+        )
+
+        total_products = len(all_products)
 
         total_history = db.query(
             PriceHistory
         ).count()
 
-        latest_products = (
-            db.query(ProductDB)
-            .order_by(ProductDB.id.desc())
-            .limit(10)
-            .all()
+        latest_products = all_products[:10]
+
+        notified_products = sum(
+            1
+            for product in all_products
+            if product.last_notified_price is not None
         )
 
-        notified_products = (
-            db.query(ProductDB)
-            .filter(
-                ProductDB.last_notified_price.isnot(None)
-            )
-            .count()
-        )
+        products_with_score = [
+            product
+            for product in all_products
+            if product.ai_score is not None
+        ]
 
-        products_with_score = (
-            db.query(ProductDB)
-            .filter(
-                ProductDB.ai_score.isnot(None)
-            )
-            .all()
-        )
+        scores = [
+            float(product.ai_score or 0)
+            for product in products_with_score
+        ]
 
-        average_ai_score = 0
-
-        if products_with_score:
-            score_sum = sum(
-                float(product.ai_score or 0)
-                for product in products_with_score
-            )
-
-            average_ai_score = round(
-                score_sum
-                / len(products_with_score),
+        average_ai_score = (
+            round(
+                sum(scores) / len(scores),
                 1,
             )
+            if scores
+            else 0
+        )
+
+        highest_ai_score = (
+            round(max(scores), 1)
+            if scores
+            else 0
+        )
+
+        high_score_count = sum(
+            1
+            for score in scores
+            if score >= 80
+        )
+
+        score_distribution = {
+            "low": sum(
+                1
+                for score in scores
+                if score < 50
+            ),
+            "medium": sum(
+                1
+                for score in scores
+                if 50 <= score < 80
+            ),
+            "high": sum(
+                1
+                for score in scores
+                if score >= 80
+            ),
+        }
+
+        discount_rows: list[dict[str, Any]] = []
+
+        for product in all_products:
+            discount = calculate_discount(
+                current_price=product.price,
+                old_price=product.old_price,
+            )
+
+            if discount <= 0:
+                continue
+
+            discount_rows.append(
+                {
+                    "product": product,
+                    "discount": discount,
+                }
+            )
+
+        discount_values = [
+            row["discount"]
+            for row in discount_rows
+        ]
+
+        average_discount = (
+            round(
+                sum(discount_values)
+                / len(discount_values),
+                1,
+            )
+            if discount_values
+            else 0
+        )
+
+        best_discount = (
+            round(max(discount_values), 1)
+            if discount_values
+            else 0
+        )
+
+        top_ai_products = sorted(
+            products_with_score,
+            key=lambda product: float(
+                product.ai_score or 0
+            ),
+            reverse=True,
+        )[:5]
+
+        best_discount_products = sorted(
+            discount_rows,
+            key=lambda row: row["discount"],
+            reverse=True,
+        )[:5]
 
         return templates.TemplateResponse(
             request=request,
@@ -429,13 +507,19 @@ def admin_dashboard(
                 "total_history": total_history,
                 "notified_products": notified_products,
                 "average_ai_score": average_ai_score,
+                "highest_ai_score": highest_ai_score,
+                "high_score_count": high_score_count,
+                "average_discount": average_discount,
+                "best_discount": best_discount,
+                "score_distribution": score_distribution,
                 "latest_products": latest_products,
+                "top_ai_products": top_ai_products,
+                "best_discount_products": best_discount_products,
             },
         )
 
     finally:
         db.close()
-
 
 @router.get(
     "/products",
