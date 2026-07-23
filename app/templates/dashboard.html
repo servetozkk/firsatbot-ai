@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}
+Admin Panel - Fırsat AI
+{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-1">Admin Panel</h1>
+        <p class="text-muted mb-0">
+            Fırsat AI sistem özeti
+        </p>
+    </div>
+
+    <span class="badge text-bg-success fs-6">
+        Sistem Aktif
+    </span>
+</div>
+
+<div class="row g-3 mb-4">
+
+    <div class="col-md-6 col-xl-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+                <div class="text-muted small">
+                    Toplam ürün
+                </div>
+
+                <div class="display-6 fw-bold">
+                    {{ total_products }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+                <div class="text-muted small">
+                    Fiyat geçmişi
+                </div>
+
+                <div class="display-6 fw-bold">
+                    {{ total_history }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+                <div class="text-muted small">
+                    Bildirim gönderilen
+                </div>
+
+                <div class="display-6 fw-bold">
+                    {{ notified_products }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+                <div class="text-muted small">
+                    Ortalama AI skoru
+                </div>
+
+                <div class="display-6 fw-bold">
+                    {{ average_ai_score }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="card shadow-sm border-0">
+
+    <div class="card-header bg-white">
+        <h2 class="h5 mb-0">
+            Son eklenen ürünler
+        </h2>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+
+            <thead class="table-light">
+                <tr>
+                    <th>Ürün</th>
+                    <th>Fiyat</th>
+                    <th>AI skoru</th>
+                    <th>Satıcı</th>
+                    <th></th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+            {% for product in latest_products %}
+
+                <tr>
+                    <td>
+                        <div class="fw-semibold">
+                            {{ product.name }}
+                        </div>
+                    </td>
+
+                    <td>
+                        {{ "%.2f"|format(product.price) }} TL
+                    </td>
+
+                    <td>
+                        <span class="badge text-bg-primary">
+                            {{ product.ai_score or 0 }}
+                        </span>
+                    </td>
+
+                    <td>
+                        {{ product.seller or "Bilinmiyor" }}
+                    </td>
+
+                    <td class="text-end">
+                        <a
+                            href="{{ product.url }}"
+                            target="_blank"
+                            class="btn btn-sm btn-outline-dark"
+                        >
+                            İncele
+                        </a>
+                    </td>
+                </tr>
+
+            {% else %}
+
+                <tr>
+                    <td
+                        colspan="5"
+                        class="text-center text-muted py-4"
+                    >
+                        Henüz ürün bulunmuyor.
+                    </td>
+                </tr>
+
+            {% endfor %}
+
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}

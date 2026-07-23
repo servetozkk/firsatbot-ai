@@ -1,0 +1,54 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Sanal ortam
+.venv/
+venv/
+env/
+
+# Ortam değişkenleri ve gizli bilgiler
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+
+# İşletim sistemi
+Thumbs.db
+.DS_Store
+
+# Test ve önbellek
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Log dosyaları
+*.log
+logs/
+
+# Geçici ve yedek dosyalar
+*.tmp
+*.temp
+*.bak
+template_backups/
+
+# Playwright
+test-results/
+playwright-report/
+
+# Yerel veritabanları
+*.db
+*.sqlite
+*.sqlite3
+
+# Python paket çıktıları
+build/
+dist/
+*.egg-info/

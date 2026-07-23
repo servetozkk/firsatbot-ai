@@ -1,0 +1,577 @@
+﻿FIRSAT AI KOD RAPORU
+
+
+================================================================================
+DOSYA: app\scrapers\base.py
+================================================================================
+from abc import ABC, abstractmethod
+
+
+class BaseScraper(ABC):
+    def __init__(self, name: str):
+        self.name = name
+
+    @abstractmethod
+    def scrape(self):
+        """ÃœrÃ¼nleri toplar."""
+        pass
+        
+
+
+================================================================================
+DOSYA: app\scrapers\trendyol.py
+================================================================================
+import requests
+from selectolax.parser import HTMLParser
+
+from app.parsers.trendyol_parser import TrendyolParser
+
+
+class TrendyolScraper:
+
+    def scrape(self, url: str):
+
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/138.0 Safari/537.36"
+            )
+        }
+
+        response = requests.get(
+            url,
+            headers=headers,
+            timeout=30
+        )
+
+        print("HTTP:", response.status_code)
+
+        html = HTMLParser(response.text)
+
+        print("Sayfa uzunluÄŸu:", len(response.text))
+
+        with open("page.html", "w", encoding="utf-8") as f:
+            f.write(response.text)
+
+        print("HTML kaydedildi.")
+
+        title = html.css_first("title")
+
+        if title:
+            print("BaÅŸlÄ±k:", title.text())
+
+        if '"product"' in response.text:
+            print("Product verisi bulundu.")
+
+        if '"price"' in response.text:
+            print("Price verisi bulundu.")
+
+        if '"rating"' in response.text:
+            print("Rating verisi bulundu.")
+
+        # Parser Ã§alÄ±ÅŸtÄ±r
+        parser = TrendyolParser()
+
+        product = parser.parse(
+            response.text,
+            url
+        )
+
+        print(product)
+
+        return product
+
+
+================================================================================
+DOSYA: app\parsers\trendyol_parser.py
+================================================================================
+import json
+from selectolax.parser import HTMLParser
+
+from app.models.product import Product
+
+
+class TrendyolParser:
+
+    def parse(self, html: str, url: str):
+
+        parser = HTMLParser(html)
+
+        scripts = parser.css(
+            'script[type="application/ld+json"]'
+        )
+
+        for script in scripts:
+
+            try:
+                data = json.loads(script.text())
+
+                # EÄŸer bu JSON Ã¼rÃ¼n bilgisi deÄŸilse geÃ§
+                if "name" not in data:
+                    continue
+
+                offers = data.get("offers", {})
+                rating = data.get("aggregateRating", {})
+
+                product = Product(
+                    name=data.get("name", "Bilinmeyen Ã¼rÃ¼n"),
+
+                    price=float(
+                        offers.get("price", 0)
+                    ),
+
+                    old_price=None,
+
+                    rating=float(
+                        rating.get("ratingValue", 0)
+                    ),
+
+                    review_count=int(
+                        rating.get("reviewCount", 0)
+                    ),
+
+                    seller="Trendyol",
+
+                    url=url,
+
+                    image=(data.get("image", {})
+    .get("contentUrl", [None])[0]
+    if isinstance(data.get("image"), dict)
+    else data.get("image")
+)
+                )
+
+                return product
+
+            except Exception as e:
+                print("JSON okuma hatasÄ±:", e)
+
+        return None
+
+
+================================================================================
+DOSYA: app\services\product_service.py
+================================================================================
+from app.notifier.telegram import send_message
+from app.database.database import SessionLocal
+from app.database.models import ProductDB, PriceHistory
+from app.models.product import Product
+from app.services.deal_service import is_deal, calculate_discount
+from app.ai.scorer import calculate_score
+
+
+def save_product(product: Product):
+
+    db = SessionLocal()
+
+    try:
+
+        existing = (
+            db.query(ProductDB)
+            .filter(ProductDB.url == product.url)
+            .first()
+        )
+
+        if existing:
+
+            old_price = existing.price
+            new_price = product.price
+
+            score = calculate_score(product, old_price)
+
+            print("Eski fiyat:", old_price)
+            print("Yeni fiyat:", new_price)
+            print("Deal mi?:", is_deal(old_price, new_price))
+            print(f"ğŸ¤– AI SCORE: {score}/100")
+
+            if is_deal(old_price, new_price):
+
+                if existing.last_notified_price == new_price:
+
+                    print(
+                        "Bu fiyat iÃ§in zaten bildirim gÃ¶nderildi."
+                    )
+
+                else:
+
+                    discount = calculate_discount(
+                        old_price,
+                        new_price
+                    )
+
+                    message = f"""
+ğŸ”¥ FIRSAT BULUNDU!
+
+ğŸ“¦ {product.name}
+
+ğŸ’° Eski: {old_price:.2f} TL
+âš¡ Yeni: {new_price:.2f} TL
+
+ğŸ“‰ %{discount} indirim
+
+ğŸ¤– AI Skoru: {score}/100
+
+â­ {product.rating} ({product.review_count} yorum)
+
+ğŸ›’ {product.seller}
+
+ğŸ”— {product.url}
+"""
+
+                    send_message(message)
+
+                    existing.last_notified_price = new_price
+
+            print("ÃœrÃ¼n gÃ¼ncelleniyor...")
+
+            existing.name = product.name
+            existing.price = new_price
+            existing.old_price = old_price
+            existing.rating = product.rating
+            existing.review_count = product.review_count
+            existing.seller = product.seller
+            existing.url = product.url
+            existing.image = str(product.image)
+            existing.ai_score = score
+
+            if old_price != new_price:
+
+                history = PriceHistory(
+                    product_id=existing.id,
+                    price=new_price
+                )
+
+                db.add(history)
+
+        else:
+
+            print("Yeni Ã¼rÃ¼n ekleniyor...")
+
+            score = calculate_score(
+                product,
+                product.price
+            )
+
+            print(f"ğŸ¤– AI SCORE: {score}/100")
+
+            new_product = ProductDB(
+                name=product.name,
+                price=product.price,
+                old_price=product.old_price,
+                rating=product.rating,
+                review_count=product.review_count,
+                seller=product.seller,
+                url=product.url,
+                image=str(product.image),
+                ai_score=score,
+                last_notified_price=None
+            )
+
+            db.add(new_product)
+
+            db.flush()
+
+            history = PriceHistory(
+                product_id=new_product.id,
+                price=new_product.price
+            )
+
+            db.add(history)
+
+        db.commit()
+
+        print("VeritabanÄ± gÃ¼ncellendi.")
+
+    except Exception as e:
+
+        db.rollback()
+
+        print("KayÄ±t hatasÄ±:", e)
+
+    finally:
+
+        db.close()
+
+
+================================================================================
+DOSYA: app\services\deal_service.py
+================================================================================
+def calculate_discount(old_price, new_price):
+
+    if not old_price or old_price <= new_price:
+        return 0
+
+
+    discount = (
+        (old_price - new_price)
+        / old_price
+    ) * 100
+
+
+    return round(discount, 2)
+
+
+
+def is_deal(old_price, new_price):
+
+    discount = calculate_discount(
+        old_price,
+        new_price
+    )
+
+
+    if discount >= 15:
+        return True
+
+
+    return False
+
+
+================================================================================
+DOSYA: app\database\database.py
+================================================================================
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
+
+
+DATABASE_URL = "sqlite:///data/products.db"
+
+
+engine = create_engine(
+    DATABASE_URL,
+    echo=False
+)
+
+
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine
+)
+
+
+Base = declarative_base()
+
+
+def create_db():
+    from app.database.models import ProductDB, PriceHistory
+
+    Base.metadata.create_all(bind=engine)
+
+
+================================================================================
+DOSYA: app\database\models.py
+================================================================================
+from datetime import datetime
+from typing import Optional
+
+from sqlmodel import SQLModel, Field
+
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    Float,
+    DateTime,
+    ForeignKey,
+)
+
+from app.database.database import Base
+
+
+# -------------------------
+# SQLModel (Scraper Modeli)
+# -------------------------
+
+class Product(SQLModel, table=True):
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+
+    name: str
+
+    price: float
+
+    old_price: Optional[float] = None
+
+    rating: Optional[float] = None
+
+    review_count: Optional[int] = None
+
+    seller: str
+
+    url: str
+
+    image: str
+
+
+# -------------------------
+# SQLAlchemy Product Tablosu
+# -------------------------
+
+class ProductDB(Base):
+
+    __tablename__ = "products"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    name = Column(
+        String
+    )
+
+    price = Column(
+        Float
+    )
+
+    old_price = Column(
+        Float,
+        nullable=True
+    )
+
+    rating = Column(
+        Float,
+        nullable=True
+    )
+
+    review_count = Column(
+        Integer,
+        nullable=True
+    )
+
+    seller = Column(
+        String
+    )
+
+    url = Column(
+        String,
+        unique=True
+    )
+
+    image = Column(
+        String,
+        nullable=True
+    )
+
+    ai_score = Column(
+        Integer,
+        default=0
+    )
+
+    last_notified_price = Column(
+        Float,
+        nullable=True
+    )
+
+
+# -------------------------
+# Fiyat GeÃ§miÅŸi
+# -------------------------
+
+class PriceHistory(Base):
+
+    __tablename__ = "price_history"
+
+    id = Column(
+        Integer,
+        primary_key=True,
+        index=True
+    )
+
+    product_id = Column(
+        Integer,
+        ForeignKey("products.id")
+    )
+
+    price = Column(
+        Float
+    )
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow
+    )
+
+
+================================================================================
+DOSYA: app\models\product.py
+================================================================================
+from dataclasses import dataclass
+
+
+@dataclass
+class Product:
+
+    name: str
+    price: float
+    old_price: float | None
+    rating: float | None
+    review_count: int | None
+    seller: str
+    url: str
+    image: str | None
+
+
+================================================================================
+DOSYA: app\ai\scorer.py
+================================================================================
+def calculate_score(product, old_price=None):
+
+    score = 50
+
+    # Ä°ndirim oranÄ±
+    if old_price:
+
+        discount = ((old_price - product.price) / old_price) * 100
+
+        if discount >= 50:
+            score += 35
+
+        elif discount >= 30:
+            score += 25
+
+        elif discount >= 20:
+            score += 15
+
+        elif discount >= 10:
+            score += 8
+
+    # Puan
+
+    if product.rating:
+
+        if product.rating >= 4.8:
+            score += 10
+
+        elif product.rating >= 4.5:
+            score += 7
+
+        elif product.rating >= 4:
+            score += 5
+
+    # Yorum
+
+    if product.review_count:
+
+        if product.review_count >= 5000:
+            score += 10
+
+        elif product.review_count >= 1000:
+            score += 8
+
+        elif product.review_count >= 500:
+            score += 5
+
+        elif product.review_count >= 100:
+            score += 3
+
+    return min(score, 100)
+
+
+================================================================================
+DOSYA: app\main.py
+================================================================================
+DOSYA BULUNAMADI

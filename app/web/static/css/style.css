@@ -1,0 +1,526 @@
+﻿
+/* =========================
+   GENEL SAYFA
+========================= */
+
+body {
+    min-height: 100vh;
+    background: #f8fafc;
+    color: #1e293b;
+}
+
+.page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+
+/* =========================
+   ANA DASHBOARD ÜRÜN KARTLARI
+========================= */
+
+.product-card .card {
+    border: none;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.product-card .card:hover {
+    transform: translateY(-5px);
+    box-shadow:
+        0 1rem 2rem
+        rgba(0, 0, 0, 0.12) !important;
+}
+
+.product-image {
+    width: 100%;
+    height: 220px;
+    object-fit: contain;
+    padding: 20px;
+    background-color: #ffffff;
+}
+
+.product-title {
+    min-height: 72px;
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+}
+
+.score-badge {
+    font-size: 0.95rem;
+    padding: 8px 12px;
+}
+
+
+/* =========================
+   İSTATİSTİK KARTLARI
+========================= */
+
+.stats-grid {
+    width: 100%;
+    display: grid;
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow:
+        0 4px 14px
+        rgba(15, 23, 42, 0.06);
+}
+
+.stat-icon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    font-size: 26px;
+    background: #f1f5f9;
+}
+
+.stat-label {
+    display: block;
+    margin: 0 0 5px;
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.stat-value {
+    display: block;
+    margin: 0;
+    color: #0f172a;
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+
+/* =========================
+   ÜRÜN ARAMA
+========================= */
+
+.product-search-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow:
+        0 4px 14px
+        rgba(15, 23, 42, 0.04);
+}
+
+.product-search-icon {
+    flex-shrink: 0;
+    font-size: 20px;
+}
+
+.product-search-box .form-control {
+    min-width: 0;
+}
+
+
+/* =========================
+   TAKİP LİSTESİ
+========================= */
+
+.product-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.product-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.product-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    background: #ffffff;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+}
+
+.product-item:hover {
+    transform: translateY(-2px);
+    border-color: #bfdbfe;
+    box-shadow:
+        0 10px 28px
+        rgba(15, 23, 42, 0.08);
+}
+
+.product-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.product-name {
+    margin-bottom: 6px;
+    color: #0f172a;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.product-url {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    color: #2563eb;
+    font-size: 13px;
+    text-decoration: none;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.product-url:hover {
+    text-decoration: underline;
+}
+
+
+/* =========================
+   ÜRÜN DETAYLARI
+========================= */
+
+.product-details {
+    display: grid;
+    grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.product-details > div {
+    min-width: 0;
+    padding: 11px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+    color: #334155;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.product-details strong {
+    color: #0f172a;
+}
+
+
+/* =========================
+   ÜRÜN İŞLEMLERİ
+========================= */
+
+.product-actions {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-width: 330px;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 68px;
+    padding: 7px 11px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.status-active {
+    color: #166534;
+    background: #dcfce7;
+}
+
+.status-passive {
+    color: #475569;
+    background: #e2e8f0;
+}
+
+
+/* =========================
+   BOŞ DURUM
+========================= */
+
+.empty-state {
+    padding: 48px 20px;
+    text-align: center;
+}
+
+.empty-icon {
+    margin-bottom: 12px;
+    font-size: 42px;
+}
+
+
+/* =========================
+   GRAFİK
+========================= */
+
+.chart-container {
+    position: relative;
+    min-height: 420px;
+}
+
+#historyMessage {
+    display: none;
+}
+
+
+/* =========================
+   KARANLIK MOD
+========================= */
+
+body.dark-mode {
+    color: #e2e8f0 !important;
+    background: #0f172a !important;
+}
+
+body.dark-mode main {
+    color: #e2e8f0;
+}
+
+body.dark-mode .navbar {
+    background: #020617 !important;
+}
+
+body.dark-mode .card {
+    color: #e2e8f0 !important;
+    background: #1e293b !important;
+}
+
+body.dark-mode .stat-card {
+    border-color: #334155;
+    background: #1e293b;
+}
+
+body.dark-mode .stat-icon {
+    background: #0f172a;
+}
+
+body.dark-mode .stat-label {
+    color: #94a3b8;
+}
+
+body.dark-mode .stat-value {
+    color: #f8fafc;
+}
+
+body.dark-mode .product-search-box {
+    border-color: #334155;
+    background: #1e293b;
+}
+
+body.dark-mode .product-item {
+    color: #e2e8f0;
+    border-color: #334155;
+    background: #162033;
+}
+
+body.dark-mode .product-item:hover {
+    border-color: #475569;
+    box-shadow:
+        0 10px 28px
+        rgba(0, 0, 0, 0.35);
+}
+
+body.dark-mode .product-name {
+    color: #f8fafc;
+}
+
+body.dark-mode .product-url {
+    color: #93c5fd;
+}
+
+body.dark-mode .product-details > div {
+    color: #cbd5e1;
+    border-color: #334155;
+    background: #0f172a;
+}
+
+body.dark-mode .product-details strong {
+    color: #f8fafc;
+}
+
+body.dark-mode .text-secondary {
+    color: #94a3b8 !important;
+}
+
+body.dark-mode .form-label,
+body.dark-mode .form-check-label {
+    color: #cbd5e1 !important;
+}
+
+body.dark-mode .form-control {
+    color: #f8fafc !important;
+    border-color: #475569 !important;
+    background: #0f172a !important;
+}
+
+body.dark-mode .form-control::placeholder {
+    color: #64748b !important;
+}
+
+body.dark-mode .form-control:focus {
+    color: #f8fafc !important;
+    border-color: #3b82f6 !important;
+    background: #0f172a !important;
+    box-shadow:
+        0 0 0 0.25rem
+        rgba(59, 130, 246, 0.2);
+}
+
+body.dark-mode .status-active {
+    color: #bbf7d0;
+    background: #14532d;
+}
+
+body.dark-mode .status-passive {
+    color: #cbd5e1;
+    background: #334155;
+}
+
+body.dark-mode .empty-state {
+    color: #e2e8f0;
+}
+
+body.dark-mode .alert-success {
+    color: #bbf7d0;
+    border-color: #166534;
+    background: #14532d;
+}
+
+body.dark-mode .alert-danger {
+    color: #fecaca;
+    border-color: #991b1b;
+    background: #7f1d1d;
+}
+
+body.dark-mode .alert-warning {
+    color: #fde68a;
+    border-color: #a16207;
+    background: #713f12;
+}
+
+
+/* =========================
+   TABLET
+========================= */
+
+@media (max-width: 992px) {
+    .stats-grid {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .product-item {
+        flex-direction: column;
+    }
+
+    .product-actions {
+        width: 100%;
+        max-width: none;
+        justify-content: flex-start;
+    }
+
+    .product-details {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+}
+
+
+/* =========================
+   MOBİL
+========================= */
+
+@media (max-width: 576px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .page-header {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .page-header > button {
+        width: 100%;
+    }
+
+    .product-search-box {
+        flex-wrap: wrap;
+    }
+
+    .product-search-box .form-control {
+        flex: 1;
+        width: calc(100% - 40px);
+    }
+
+    .product-search-box button {
+        width: 100%;
+    }
+
+    .product-item {
+        padding: 16px;
+    }
+
+    .product-details {
+        grid-template-columns: 1fr;
+    }
+
+    .product-actions {
+        display: grid;
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .product-actions .status-badge {
+        grid-column: 1 / -1;
+        width: 100%;
+    }
+
+    .product-actions button {
+        width: 100%;
+    }
+
+    .product-actions button:last-child {
+        grid-column: 1 / -1;
+    }
+}
