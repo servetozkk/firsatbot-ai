@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+
+    <title>{{ page_title }} | Fırsat AI</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', path='css/style.css') }}"
+    >
+
+    <style>
+        :root {
+            --bg: #f5f7fb;
+            --surface: #ffffff;
+            --ink: #111827;
+            --muted: #64748b;
+            --line: #e2e8f0;
+            --primary: #2667ff;
+            --primary-dark: #174fcf;
+            --success: #0f9f61;
+            --danger: #e5414f;
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            background: var(--bg);
+            color: var(--ink);
+            font-family:
+                Inter,
+                ui-sans-serif,
+                system-ui,
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+        }
+
+        a {
+            color: inherit;
+        }
+
+        .shell {
+            width: min(1420px, calc(100% - 32px));
+            margin: 0 auto;
+        }
+
+        .site-header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            border-bottom: 1px solid var(--line);
+            background: rgba(255, 255, 255, .95);
+            backdrop-filter: blur(14px);
+        }
+
+        .header-inner {
+            display: grid;
+            grid-template-columns: auto minmax(260px, 1fr) auto;
+            align-items: center;
+            gap: 20px;
+            min-height: 74px;
+        }
+
+        .brand {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.08rem;
+            font-weight: 950;
+            text-decoration: none;
+        }
+
+        .brand-mark {
+            display: inline-flex;
+            width: 41px;
+            height: 41px;
+            align-items: center;
+            justify-content: center;
+            border-radius: 13px;
+            background: linear-gradient(145deg, #3b82f6, #1d4ed8);
+            color: #fff;
+            box-shadow: 0 8px 18px rgba(37, 99, 235, .22);
+        }
+
+        .header-search {
+            position: relative;
+        }
+
+        .header-search input {
+            width: 100%;
+            height: 46px;
+            padding: 0 104px 0 16px;
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: #f8fafc;
+            outline: none;
+        }
+
+        .header-search input:focus {
+            border-color: #9bb7ff;
+            background: #fff;
+            box-shadow: 0 0 0 4px rgba(38, 103, 255, .09);
+        }
+
+        .header-search button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            height: 36px;
+            padding: 0 16px;
+            border: 0;
+            border-radius: 10px;
+            background: var(--primary);
+            color: #fff;
+            font-size: .74rem;
+            font-weight: 900;
+        }
+
+        .nav {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .nav a {
+            display: inline-flex;
+            min-height: 39px;
+            align-items: center;
+            padding: 0 12px;
+            border: 1px solid var(--line);
+            border-radius: 11px;
+            background: #fff;
+            font-size: .72rem;
+            font-weight: 850;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .nav a.active {
+            border-color: var(--primary);
+            background: #edf3ff;
+            color: var(--primary-dark);
+        }
+
+        .page-hero {
+            position: relative;
+            overflow: hidden;
+            margin: 26px 0 22px;
+            padding: 34px;
+            border-radius: 24px;
+            background:
+                radial-gradient(
+                    circle at 88% 12%,
+                    rgba(96, 165, 250, .42),
+                    transparent 25%
+                ),
+                linear-gradient(125deg, #102657, #174db4);
+            color: #fff;
+        }
+
+        .page-hero::after {
+            content: "";
+            position: absolute;
+            right: -45px;
+            bottom: -95px;
+            width: 260px;
+            height: 260px;
+            border: 52px solid rgba(255, 255, 255, .07);
+            border-radius: 50%;
+        }
+
+        .page-kicker {
+            position: relative;
+            z-index: 2;
+            margin-bottom: 7px;
+            color: #bfdbfe;
+            font-size: .7rem;
+            font-weight: 900;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+        }
+
+        .page-hero h1 {
+            position: relative;
+            z-index: 2;
+            margin: 0 0 10px;
+            font-size: clamp(2rem, 4vw, 3.45rem);
+            font-weight: 950;
+            letter-spacing: -.045em;
+        }
+
+        .page-hero p {
+            position: relative;
+            z-index: 2;
+            max-width: 760px;
+            margin: 0;
+            color: rgba(255, 255, 255, .79);
+            line-height: 1.65;
+        }
+
+        .content-layout {
+            display: grid;
+            grid-template-columns: 270px minmax(0, 1fr);
+            align-items: start;
+            gap: 20px;
+            padding-bottom: 52px;
+        }
+
+        .filter-card {
+            position: sticky;
+            top: 94px;
+            overflow: hidden;
+            border: 1px solid var(--line);
+            border-radius: 19px;
+            background: var(--surface);
+        }
+
+        .filter-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 17px 18px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .filter-header strong {
+            font-size: .9rem;
+        }
+
+        .clear-link {
+            color: var(--primary);
+            font-size: .67rem;
+            font-weight: 850;
+            text-decoration: none;
+        }
+
+        .filter-body {
+            display: grid;
+            gap: 17px;
+            padding: 18px;
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 7px;
+            color: #334155;
+            font-size: .68rem;
+            font-weight: 900;
+        }
+
+        .filter-control {
+            width: 100%;
+            height: 42px;
+            padding: 0 11px;
+            border: 1px solid var(--line);
+            border-radius: 11px;
+            background: #fff;
+            color: #1e293b;
+            font-size: .75rem;
+            outline: none;
+        }
+
+        .filter-control:focus {
+            border-color: #9bb7ff;
+            box-shadow: 0 0 0 3px rgba(38, 103, 255, .08);
+        }
+
+        .price-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .apply-button {
+            display: inline-flex;
+            width: 100%;
+            min-height: 43px;
+            align-items: center;
+            justify-content: center;
+            border: 0;
+            border-radius: 11px;
+            background: var(--primary);
+            color: #fff;
+            font-size: .74rem;
+            font-weight: 900;
+        }
+
+        .results-panel {
+            min-width: 0;
+        }
+
+        .results-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            min-height: 58px;
+            margin-bottom: 14px;
+            padding: 10px 14px;
+            border: 1px solid var(--line);
+            border-radius: 15px;
+            background: #fff;
+        }
+
+        .result-count {
+            color: var(--muted);
+            font-size: .75rem;
+        }
+
+        .result-count strong {
+            color: #1e293b;
+        }
+
+        .mobile-filter-toggle {
+            display: none;
+        }
+
+        .sort-form {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sort-form label {
+            color: var(--muted);
+            font-size: .68rem;
+            font-weight: 800;
+        }
+
+        .sort-select {
+            height: 38px;
+            padding: 0 31px 0 10px;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: #fff;
+            font-size: .7rem;
+            font-weight: 750;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .product-card {
+            position: relative;
+            display: flex;
+            min-width: 0;
+            flex-direction: column;
+            overflow: hidden;
+            border: 1px solid var(--line);
+            border-radius: 19px;
+            background: #fff;
+            transition:
+                transform .18s ease,
+                border-color .18s ease,
+                box-shadow .18s ease;
+        }
+
+        .product-card:hover {
+            transform: translateY(-4px);
+            border-color: #b5c7ff;
+            box-shadow: 0 17px 34px rgba(15, 23, 42, .09);
+        }
+
+        .image-area {
+            position: relative;
+            display: flex;
+            height: 215px;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: linear-gradient(180deg, #fbfdff, #f7f9fc);
+        }
+
+        .product-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            padding: 21px;
+            transition: transform .2s ease;
+        }
+
+        .product-card:hover .product-image {
+            transform: scale(1.035);
+        }
+
+        .placeholder {
+            color: #cbd5e1;
+            font-size: 3rem;
+        }
+
+        .discount-badge,
+        .score-badge {
+            position: absolute;
+            top: 12px;
+            z-index: 3;
+            padding: 7px 9px;
+            border-radius: 9px;
+            color: #fff;
+            font-size: .67rem;
+            font-weight: 900;
+        }
+
+        .discount-badge {
+            left: 12px;
+            background: var(--danger);
+        }
+
+        .score-badge {
+            right: 12px;
+            background: var(--success);
+        }
+
+        .product-body {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+            padding: 16px;
+        }
+
+        .category {
+            margin-bottom: 7px;
+            color: var(--primary);
+            font-size: .62rem;
+            font-weight: 900;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+        }
+
+        .name {
+            display: -webkit-box;
+            min-height: 43px;
+            overflow: hidden;
+            margin-bottom: 9px;
+            color: #172033;
+            font-size: .87rem;
+            font-weight: 850;
+            line-height: 1.43;
+            text-decoration: none;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+        }
+
+        .meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 7px;
+            min-height: 24px;
+            margin-bottom: 10px;
+            color: var(--muted);
+            font-size: .65rem;
+        }
+
+        .rating {
+            color: #a96800;
+            font-weight: 850;
+        }
+
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            min-height: 24px;
+            margin-bottom: 11px;
+        }
+
+        .tag {
+            display: inline-flex;
+            min-height: 22px;
+            align-items: center;
+            padding: 0 7px;
+            border-radius: 999px;
+            background: #f1f5f9;
+            color: #475569;
+            font-size: .59rem;
+            font-weight: 850;
+        }
+
+        .tag.success {
+            background: #e9f8f1;
+            color: #087948;
+        }
+
+        .tag.warning {
+            background: #fff5dc;
+            color: #9a6000;
+        }
+
+        .old-price {
+            min-height: 18px;
+            color: #94a3b8;
+            font-size: .7rem;
+            text-decoration: line-through;
+        }
+
+        .price-row {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: 8px;
+            margin-top: auto;
+        }
+
+        .price {
+            font-size: 1.22rem;
+            font-weight: 950;
+            letter-spacing: -.035em;
+        }
+
+        .saving {
+            color: var(--success);
+            font-size: .63rem;
+            font-weight: 850;
+        }
+
+        .actions {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            margin-top: 14px;
+        }
+
+        .compare-button {
+            display: inline-flex;
+            min-height: 40px;
+            align-items: center;
+            justify-content: center;
+            padding: 0 12px;
+            border-radius: 11px;
+            background: var(--primary);
+            color: #fff;
+            font-size: .7rem;
+            font-weight: 900;
+            text-decoration: none;
+        }
+
+        .compare-button:hover {
+            background: var(--primary-dark);
+            color: #fff;
+        }
+
+        .external-button {
+            display: inline-flex;
+            width: 40px;
+            height: 40px;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--line);
+            border-radius: 11px;
+            background: #fff;
+            text-decoration: none;
+        }
+
+        .empty {
+            grid-column: 1 / -1;
+            padding: 54px 24px;
+            border: 1px dashed #cbd5e1;
+            border-radius: 19px;
+            background: rgba(255, 255, 255, .7);
+            color: var(--muted);
+            text-align: center;
+        }
+
+        .empty strong {
+            display: block;
+            margin-bottom: 7px;
+            color: #334155;
+        }
+
+        .pagination-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 24px;
+        }
+
+        .page-link {
+            display: inline-flex;
+            min-width: 39px;
+            height: 39px;
+            align-items: center;
+            justify-content: center;
+            padding: 0 11px;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            background: #fff;
+            color: #334155;
+            font-size: .7rem;
+            font-weight: 850;
+            text-decoration: none;
+        }
+
+        .page-link.active {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .page-link.disabled {
+            pointer-events: none;
+            opacity: .45;
+        }
+
+        @media (max-width: 1180px) {
+            .header-inner {
+                grid-template-columns: auto 1fr;
+                padding: 11px 0;
+            }
+
+            .header-search {
+                grid-column: 1 / -1;
+                grid-row: 2;
+            }
+
+            .nav a:not(.active) {
+                display: none;
+            }
+
+            .product-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 820px) {
+            .content-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-card {
+                position: static;
+            }
+
+            .filter-card.mobile-collapsed .filter-body {
+                display: none;
+            }
+
+            .mobile-filter-toggle {
+                display: inline-flex;
+                min-height: 38px;
+                align-items: center;
+                padding: 0 12px;
+                border: 1px solid var(--line);
+                border-radius: 10px;
+                background: #fff;
+                color: #334155;
+                font-size: .7rem;
+                font-weight: 850;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .shell {
+                width: min(100% - 20px, 1420px);
+            }
+
+            .page-hero {
+                padding: 27px 20px;
+                border-radius: 20px;
+            }
+
+            .product-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .results-toolbar {
+                align-items: flex-start;
+                flex-direction: column;
+            }
+
+            .sort-form {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .sort-select {
+                flex: 1;
+            }
+
+            .pagination-wrap {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<header class="site-header">
+    <div class="shell header-inner">
+        <a href="/" class="brand">
+            <span class="brand-mark">⚡</span>
+            <span>Fırsat AI</span>
+        </a>
+
+        <form
+            action="{{ request.url.path }}"
+            method="get"
+            class="header-search"
+        >
+            <input
+                type="search"
+                name="q"
+                value="{{ search_text }}"
+                placeholder="Bu sayfadaki ürünlerde ara..."
+            >
+
+            {% if selected_category %}
+                <input
+                    type="hidden"
+                    name="category"
+                    value="{{ selected_category }}"
+                >
+            {% endif %}
+
+            {% if selected_sort %}
+                <input
+                    type="hidden"
+                    name="sort"
+                    value="{{ selected_sort }}"
+                >
+            {% endif %}
+
+            <button type="submit">Ürün ara</button>
+        </form>
+
+        <nav class="nav">
+            <a
+                href="/firsatlar"
+                class="{% if active_nav == 'deals' %}active{% endif %}"
+            >
+                Fırsatlar
+            </a>
+            <a
+                href="/fiyati-dusenler"
+                class="{% if active_nav == 'price-drops' %}active{% endif %}"
+            >
+                Fiyatı Düşenler
+            </a>
+            <a
+                href="/ai-tavsiyeleri"
+                class="{% if active_nav == 'ai' %}active{% endif %}"
+            >
+                AI Tavsiyeleri
+            </a>
+            <a href="/kategoriler">Kategoriler</a>
+        </nav>
+    </div>
+</header>
+
+<main class="shell">
+    <section class="page-hero">
+        <div class="page-kicker">{{ page_kicker }}</div>
+        <h1>{{ page_title }}</h1>
+        <p>{{ page_description }}</p>
+    </section>
+
+    <div class="content-layout">
+        <aside
+            id="filterCard"
+            class="filter-card mobile-collapsed"
+        >
+            <div class="filter-header">
+                <strong>Filtrele</strong>
+
+                {% if filters_active %}
+                    <a
+                        href="{{ request.url.path }}"
+                        class="clear-link"
+                    >
+                        Filtreleri temizle
+                    </a>
+                {% endif %}
+            </div>
+
+            <form
+                action="{{ request.url.path }}"
+                method="get"
+                class="filter-body"
+            >
+                <div class="filter-group">
+                    <label for="filter-search">Ürün ara</label>
+                    <input
+                        id="filter-search"
+                        type="search"
+                        name="q"
+                        value="{{ search_text }}"
+                        class="filter-control"
+                        placeholder="Marka veya model"
+                    >
+                </div>
+
+                <div class="filter-group">
+                    <label for="filter-category">Kategori</label>
+                    <select
+                        id="filter-category"
+                        name="category"
+                        class="filter-control"
+                    >
+                        <option value="">Tüm kategoriler</option>
+
+                        {% for category in categories %}
+                            <option
+                                value="{{ category }}"
+                                {% if selected_category == category %}
+                                    selected
+                                {% endif %}
+                            >
+                                {{ category }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>Fiyat aralığı</label>
+
+                    <div class="price-row">
+                        <input
+                            type="text"
+                            inputmode="decimal"
+                            name="min_price"
+                            value="{{ minimum_price_value }}"
+                            class="filter-control"
+                            placeholder="En az"
+                        >
+
+                        <input
+                            type="text"
+                            inputmode="decimal"
+                            name="max_price"
+                            value="{{ maximum_price_value }}"
+                            class="filter-control"
+                            placeholder="En çok"
+                        >
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <label for="filter-score">
+                        Minimum Fırsat Skoru
+                    </label>
+
+                    <select
+                        id="filter-score"
+                        name="min_score"
+                        class="filter-control"
+                    >
+                        <option value="">Tüm skorlar</option>
+                        <option
+                            value="50"
+                            {% if minimum_score_value == "50" %}selected{% endif %}
+                        >
+                            50 ve üzeri
+                        </option>
+                        <option
+                            value="60"
+                            {% if minimum_score_value == "60" %}selected{% endif %}
+                        >
+                            60 ve üzeri
+                        </option>
+                        <option
+                            value="70"
+                            {% if minimum_score_value == "70" %}selected{% endif %}
+                        >
+                            70 ve üzeri
+                        </option>
+                        <option
+                            value="80"
+                            {% if minimum_score_value == "80" %}selected{% endif %}
+                        >
+                            80 ve üzeri
+                        </option>
+                        <option
+                            value="90"
+                            {% if minimum_score_value == "90" %}selected{% endif %}
+                        >
+                            90 ve üzeri
+                        </option>
+                    </select>
+                </div>
+
+                <input
+                    type="hidden"
+                    name="sort"
+                    value="{{ selected_sort }}"
+                >
+
+                <button type="submit" class="apply-button">
+                    Sonuçları göster
+                </button>
+            </form>
+        </aside>
+
+        <section class="results-panel">
+            <div class="results-toolbar">
+                <div>
+                    <button
+                        type="button"
+                        class="mobile-filter-toggle"
+                        onclick="toggleFilters()"
+                    >
+                        Filtreleri aç / kapat
+                    </button>
+
+                    <span class="result-count">
+                        <strong>{{ total_results }}</strong>
+                        ürün bulundu
+                        {% if total_pages > 1 %}
+                            · Sayfa {{ current_page }}/{{ total_pages }}
+                        {% endif %}
+                    </span>
+                </div>
+
+                <form
+                    action="{{ request.url.path }}"
+                    method="get"
+                    class="sort-form"
+                >
+                    {% if search_text %}
+                        <input type="hidden" name="q" value="{{ search_text }}">
+                    {% endif %}
+
+                    {% if selected_category %}
+                        <input
+                            type="hidden"
+                            name="category"
+                            value="{{ selected_category }}"
+                        >
+                    {% endif %}
+
+                    {% if minimum_price_value %}
+                        <input
+                            type="hidden"
+                            name="min_price"
+                            value="{{ minimum_price_value }}"
+                        >
+                    {% endif %}
+
+                    {% if maximum_price_value %}
+                        <input
+                            type="hidden"
+                            name="max_price"
+                            value="{{ maximum_price_value }}"
+                        >
+                    {% endif %}
+
+                    {% if minimum_score_value %}
+                        <input
+                            type="hidden"
+                            name="min_score"
+                            value="{{ minimum_score_value }}"
+                        >
+                    {% endif %}
+
+                    <label for="sort-select">Sırala</label>
+
+                    <select
+                        id="sort-select"
+                        name="sort"
+                        class="sort-select"
+                        onchange="this.form.submit()"
+                    >
+                        <option
+                            value="recommended"
+                            {% if selected_sort == "recommended" %}selected{% endif %}
+                        >
+                            Önerilen
+                        </option>
+                        <option
+                            value="discount"
+                            {% if selected_sort == "discount" %}selected{% endif %}
+                        >
+                            En yüksek indirim
+                        </option>
+                        <option
+                            value="score"
+                            {% if selected_sort == "score" %}selected{% endif %}
+                        >
+                            En yüksek skor
+                        </option>
+                        <option
+                            value="price_asc"
+                            {% if selected_sort == "price_asc" %}selected{% endif %}
+                        >
+                            Fiyat: Artan
+                        </option>
+                        <option
+                            value="price_desc"
+                            {% if selected_sort == "price_desc" %}selected{% endif %}
+                        >
+                            Fiyat: Azalan
+                        </option>
+                        <option
+                            value="rating"
+                            {% if selected_sort == "rating" %}selected{% endif %}
+                        >
+                            En yüksek puan
+                        </option>
+                    </select>
+                </form>
+            </div>
+
+            <div class="product-grid">
+                {% for product in products %}
+                    <article class="product-card">
+                        <div class="image-area">
+                            {% if product["discount_percent"] %}
+                                <span class="discount-badge">
+                                    %{{ product["discount_percent"] }} indirim
+                                </span>
+                            {% endif %}
+
+                            {% if product["ai_score"] %}
+                                <span class="score-badge">
+                                    {{ product["ai_score"] }}/100
+                                </span>
+                            {% endif %}
+
+                            {% if product["image"] %}
+                                <img
+                                    src="{{ product['image'] }}"
+                                    alt="{{ product['name'] }}"
+                                    class="product-image"
+                                    loading="lazy"
+                                    referrerpolicy="no-referrer"
+                                >
+                            {% else %}
+                                <div class="placeholder">📦</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="product-body">
+                            <div class="category">
+                                {{ product["category"] }}
+                            </div>
+
+                            <a
+                                href="{{ product['detail_url'] }}"
+                                class="name"
+                            >
+                                {{ product["name"] }}
+                            </a>
+
+                            <div class="meta">
+                                <span>{{ product["seller"] }}</span>
+
+                                {% if product["rating"] %}
+                                    <span class="rating">
+                                        ★ {{ "%.1f"|format(product["rating"]) }}
+                                        {% if product["review_count"] %}
+                                            ({{ product["review_count"] }})
+                                        {% endif %}
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            <div class="tags">
+                                {% if product["discount_percent"] >= 20 %}
+                                    <span class="tag success">
+                                        Güçlü indirim
+                                    </span>
+                                {% elif product["discount_percent"] %}
+                                    <span class="tag warning">
+                                        Fiyat düştü
+                                    </span>
+                                {% endif %}
+
+                                {% if product["ai_score"] >= 80 %}
+                                    <span class="tag success">
+                                        AI öneriyor
+                                    </span>
+                                {% endif %}
+
+                                {% if product["stock_status"] %}
+                                    <span class="tag">
+                                        {{ product["stock_status"] }}
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            <div class="price-row">
+                                <div>
+                                    <div class="old-price">
+                                        {% if product["old_price"] > product["price"] %}
+                                            {{ "{:,.2f}".format(product["old_price"]).replace(",", "X").replace(".", ",").replace("X", ".") }} TL
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="price">
+                                        {{ "{:,.2f}".format(product["price"]).replace(",", "X").replace(".", ",").replace("X", ".") }} TL
+                                    </div>
+                                </div>
+
+                                {% if product["saving_amount"] %}
+                                    <div class="saving">
+                                        {{ "{:,.0f}".format(product["saving_amount"]).replace(",", ".") }} TL avantaj
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="actions">
+                                <a
+                                    href="{{ product['detail_url'] }}"
+                                    class="compare-button"
+                                >
+                                    Fiyatları karşılaştır
+                                </a>
+
+                                {% if product["store_url"] %}
+                                    <a
+                                        href="{{ product['store_url'] }}"
+                                        class="external-button"
+                                        target="_blank"
+                                        rel="noopener noreferrer nofollow"
+                                        title="Mağazada aç"
+                                    >
+                                        ↗
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </article>
+                {% else %}
+                    <div class="empty">
+                        <strong>Filtrelere uygun ürün bulunamadı.</strong>
+                        Fiyat aralığını veya diğer filtreleri değiştirerek
+                        tekrar deneyebilirsin.
+                    </div>
+                {% endfor %}
+            </div>
+
+            {% if total_pages > 1 %}
+                <nav
+                    class="pagination-wrap"
+                    aria-label="Ürün sayfaları"
+                >
+                    <a
+                        href="{{ previous_page_url or '#' }}"
+                        class="page-link {% if not previous_page_url %}disabled{% endif %}"
+                    >
+                        ← Önceki
+                    </a>
+
+                    {% for page_number in page_numbers %}
+                        <a
+                            href="{{ page_url(page_number) }}"
+                            class="page-link {% if page_number == current_page %}active{% endif %}"
+                        >
+                            {{ page_number }}
+                        </a>
+                    {% endfor %}
+
+                    <a
+                        href="{{ next_page_url or '#' }}"
+                        class="page-link {% if not next_page_url %}disabled{% endif %}"
+                    >
+                        Sonraki →
+                    </a>
+                </nav>
+            {% endif %}
+        </section>
+    </div>
+</main>
+
+<script>
+    function toggleFilters() {
+        const filterCard = document.getElementById("filterCard");
+
+        if (filterCard) {
+            filterCard.classList.toggle("mobile-collapsed");
+        }
+    }
+</script>
+</body>
+</html>

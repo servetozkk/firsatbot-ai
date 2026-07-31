@@ -1,0 +1,116 @@
+{% extends "public_base.html" %}
+
+{% block title %}{{ page_title }} | Fırsat AI{% endblock %}
+
+{% block extra_head %}
+<style>
+.search-shell{max-width:1440px;margin:0 auto}.search-hero{padding:26px;border-radius:24px;background:linear-gradient(135deg,#111827,#1d4ed8);color:#fff;box-shadow:0 18px 48px rgba(15,23,42,.16)}.search-hero h1{font-weight:950;letter-spacing:-.045em}.search-main-form{display:flex;gap:10px;margin-top:18px}.search-main-form input{flex:1;min-height:54px;border:0;border-radius:14px;padding:0 18px;font-weight:700}.search-main-form button{border:0;border-radius:14px;padding:0 24px;background:#facc15;font-weight:950}.search-layout{display:grid;grid-template-columns:280px minmax(0,1fr);gap:22px;margin-top:22px}.filter-panel{position:sticky;top:90px;align-self:start;padding:20px;border:1px solid #e2e8f0;border-radius:20px;background:#fff}.filter-title{font-size:.78rem;font-weight:950;text-transform:uppercase;letter-spacing:.08em;color:#64748b}.filter-group{padding:16px 0;border-bottom:1px solid #edf2f7}.filter-group:last-child{border-bottom:0}.filter-group label.heading{display:block;margin-bottom:10px;font-size:.9rem;font-weight:900}.filter-check{display:flex;align-items:center;gap:8px;margin:7px 0;font-size:.84rem}.filter-check span{margin-left:auto;color:#94a3b8}.price-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.filter-panel input[type=number],.filter-panel select{width:100%;min-height:40px;border:1px solid #dbe3ef;border-radius:10px;padding:0 10px}.filter-actions{display:grid;gap:8px;margin-top:16px}.filter-actions button,.filter-actions a{min-height:42px;border-radius:11px;text-align:center;display:flex;align-items:center;justify-content:center;font-weight:900;text-decoration:none}.filter-actions button{border:0;background:#2563eb;color:#fff}.filter-actions a{border:1px solid #dbe3ef;color:#475569}.results-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.results-toolbar strong{font-size:1.05rem}.sort-form select{min-height:42px;border:1px solid #dbe3ef;border-radius:11px;padding:0 12px;background:#fff;font-weight:800}.product-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.product-card{display:flex;flex-direction:column;overflow:hidden;border:1px solid #e2e8f0;border-radius:18px;background:#fff;box-shadow:0 8px 22px rgba(15,23,42,.05);transition:.18s}.product-card:hover{transform:translateY(-3px);box-shadow:0 16px 34px rgba(15,23,42,.1)}.product-image{height:190px;display:flex;align-items:center;justify-content:center;padding:18px;background:#f8fafc}.product-image img{max-width:100%;max-height:100%;object-fit:contain}.product-placeholder{font-size:3rem}.product-copy{display:flex;flex-direction:column;flex:1;padding:16px}.product-meta{font-size:.72rem;font-weight:850;color:#64748b}.product-name{margin:7px 0 14px;color:#0f172a;font-size:.94rem;font-weight:900;line-height:1.35;text-decoration:none}.price{font-size:1.35rem;font-weight:950;color:#0f172a}.offer-info{margin-top:4px;font-size:.76rem;color:#64748b}.card-action{margin-top:14px;display:block;padding:10px 12px;border-radius:11px;background:#eff6ff;color:#1d4ed8;font-weight:900;text-align:center;text-decoration:none}.empty-state{padding:54px 24px;border:1px dashed #cbd5e1;border-radius:20px;background:#fff;text-align:center}.pagination{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;margin-top:26px}.pagination a,.pagination span{min-width:40px;height:40px;display:flex;align-items:center;justify-content:center;border:1px solid #dbe3ef;border-radius:10px;background:#fff;color:#334155;font-weight:850;text-decoration:none}.pagination .active{border-color:#2563eb;background:#2563eb;color:#fff}.active-summary{margin-top:10px;font-size:.8rem;color:#dbeafe}@media(max-width:1100px){.product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:760px){.search-main-form{flex-direction:column}.search-main-form button{min-height:50px}.search-layout{grid-template-columns:1fr}.filter-panel{position:static}.product-grid{grid-template-columns:1fr}.results-toolbar{align-items:flex-start;flex-direction:column}.sort-form,.sort-form select{width:100%}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="search-shell">
+<section class="search-hero">
+    <div class="small fw-bold text-uppercase opacity-75">Gelişmiş ürün arama</div>
+    <h1 class="mt-2 mb-0">Ürünü bul, tüm mağaza fiyatlarını karşılaştır</h1>
+    <form class="search-main-form" action="/arama" method="get">
+        <input type="search" name="q" value="{{ query }}" placeholder="Örn. iPhone 17 Pro 256 GB" autocomplete="off">
+        <button type="submit">Ara</button>
+    </form>
+    <div class="active-summary">{{ total_results }} ürün grubu bulundu{% if query %} · “{{ query }}” araması{% endif %}</div>
+</section>
+
+<div class="search-layout">
+<aside class="filter-panel">
+    <form action="/arama" method="get" id="filterForm">
+        <input type="hidden" name="q" value="{{ query }}">
+        <input type="hidden" name="sort" value="{{ selected_sort }}" id="filterSort">
+        <div class="filter-title">Filtreler</div>
+        <div class="filter-group">
+            <label class="heading">Fiyat aralığı</label>
+            <div class="price-row">
+                <input type="number" name="min_price" min="0" step="1" value="{{ min_price_value }}" placeholder="En az ₺">
+                <input type="number" name="max_price" min="0" step="1" value="{{ max_price_value }}" placeholder="En çok ₺">
+            </div>
+        </div>
+        {% if brand_facets %}
+        <div class="filter-group">
+            <label class="heading">Marka</label>
+            {% for item in brand_facets[:12] %}
+            <label class="filter-check"><input type="checkbox" name="brand" value="{{ item.value }}" {% if item.value in selected_brands %}checked{% endif %}> {{ item.value }} <span>{{ item.count }}</span></label>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% if category_facets %}
+        <div class="filter-group">
+            <label class="heading">Kategori</label>
+            {% for item in category_facets[:12] %}
+            <label class="filter-check"><input type="checkbox" name="category" value="{{ item.value }}" {% if item.value in selected_categories %}checked{% endif %}> {{ item.value }} <span>{{ item.count }}</span></label>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% if storage_facets %}
+        <div class="filter-group">
+            <label class="heading">Depolama</label>
+            {% for item in storage_facets %}
+            <label class="filter-check"><input type="checkbox" name="storage" value="{{ item.value }}" {% if item.value in selected_storage %}checked{% endif %}> {{ item.label }} <span>{{ item.count }}</span></label>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% if ram_facets %}
+        <div class="filter-group">
+            <label class="heading">RAM</label>
+            {% for item in ram_facets %}
+            <label class="filter-check"><input type="checkbox" name="ram" value="{{ item.value }}" {% if item.value in selected_ram %}checked{% endif %}> {{ item.label }} <span>{{ item.count }}</span></label>
+            {% endfor %}
+        </div>
+        {% endif %}
+        <div class="filter-actions"><button type="submit">Filtreleri uygula</button><a href="/arama{% if query %}?q={{ query|urlencode }}{% endif %}">Temizle</a></div>
+    </form>
+</aside>
+
+<section>
+    <div class="results-toolbar">
+        <strong>{{ total_results }} sonuç</strong>
+        <form class="sort-form" action="/arama" method="get" id="sortForm">
+            {% for key, values in preserved_params.items() %}{% if key != 'sort' %}{% for value in values %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}{% endif %}{% endfor %}
+            <select name="sort" onchange="this.form.submit()">
+                <option value="relevance" {% if selected_sort == 'relevance' %}selected{% endif %}>En alakalı</option>
+                <option value="price_asc" {% if selected_sort == 'price_asc' %}selected{% endif %}>En düşük fiyat</option>
+                <option value="price_desc" {% if selected_sort == 'price_desc' %}selected{% endif %}>En yüksek fiyat</option>
+                <option value="stores" {% if selected_sort == 'stores' %}selected{% endif %}>En çok mağaza</option>
+                <option value="newest" {% if selected_sort == 'newest' %}selected{% endif %}>En yeni</option>
+            </select>
+        </form>
+    </div>
+
+    {% if products %}
+    <div class="product-grid">
+        {% for product in products %}
+        <article class="product-card">
+            <a class="product-image" href="{{ product.url }}">{% if product.image %}<img src="{{ product.image }}" alt="{{ product.name }}" loading="lazy">{% else %}<span class="product-placeholder">🛍️</span>{% endif %}</a>
+            <div class="product-copy">
+                <div class="product-meta">{{ product.brand or 'Marka belirtilmedi' }} · {{ product.category or 'Diğer' }}</div>
+                <a class="product-name" href="{{ product.url }}">{{ product.name }}</a>
+                <div class="price">{{ product.price|try_format_currency }}</div>
+                <div class="offer-info">{{ product.offer_count }} mağaza{% if product.best_store %} · En ucuz: {{ product.best_store }}{% endif %}</div>
+                <a class="card-action" href="{{ product.url }}">Fiyatları karşılaştır</a>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state"><div class="fs-1">🔎</div><h3 class="mt-3">Eşleşen ürün bulunamadı</h3><p class="text-secondary mb-0">Arama kelimelerini veya filtreleri değiştirerek yeniden deneyin.</p></div>
+    {% endif %}
+
+    {% if total_pages > 1 %}
+    <nav class="pagination" aria-label="Sayfalama">
+        {% if previous_url %}<a href="{{ previous_url }}">‹</a>{% endif %}
+        {% for page_item in page_items %}{% if page_item == '…' %}<span>…</span>{% elif page_item == current_page %}<span class="active">{{ page_item }}</span>{% else %}<a href="{{ page_urls[page_item] }}">{{ page_item }}</a>{% endif %}{% endfor %}
+        {% if next_url %}<a href="{{ next_url }}">›</a>{% endif %}
+    </nav>
+    {% endif %}
+</section>
+</div>
+</div>
+{% endblock %}

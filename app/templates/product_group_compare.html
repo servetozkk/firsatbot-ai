@@ -1,0 +1,467 @@
+{% extends "base.html" %}
+{% block title %}Ürün Karşılaştırma - Fırsat AI{% endblock %}
+
+{% block extra_head %}
+<style>
+.compare-page{--shadow:0 14px 34px rgba(15,23,42,.09)}
+.compare-hero{padding:1.8rem;border-radius:22px;color:#fff;background:linear-gradient(135deg,#111827,#3730a3)}
+.compare-card{border:0;border-radius:18px;box-shadow:var(--shadow);overflow:hidden}
+.product-head{position:relative;min-height:210px;padding:1.25rem;border:1px solid #e2e8f0;border-radius:16px;background:#fff}
+.product-head.overall-winner{border:2px solid #22c55e;background:linear-gradient(180deg,#f0fdf4,#fff 55%)}
+.winner-ribbon{position:absolute;right:0;top:0;padding:.35rem .7rem;border-radius:0 14px 0 12px;background:#16a34a;color:#fff;font-size:.7rem;font-weight:900}
+.product-image{width:105px;height:105px;object-fit:contain}
+.product-placeholder{width:105px;height:105px;display:grid;place-items:center;flex:0 0 auto;border-radius:14px;background:#f1f5f9;color:#64748b;font-size:.75rem}
+.price-value{font-size:1.35rem;font-weight:900;color:#0f172a}.price-best{color:#15803d}
+.score-box{height:100%;padding:1rem;border:1px solid #e2e8f0;border-radius:14px;background:#fff;text-align:center;box-shadow:0 8px 20px rgba(15,23,42,.05)}
+.score-number{font-size:1.6rem;font-weight:900}
+.result-banner{padding:1.2rem 1.35rem;border:1px solid #bbf7d0;border-radius:16px;background:linear-gradient(135deg,#f0fdf4,#dcfce7)}
+.result-banner.draw{border-color:#cbd5e1;background:#f8fafc}
+.advantage-bar{height:8px;overflow:hidden;border-radius:99px;background:#e2e8f0}.advantage-fill{height:100%;border-radius:inherit;background:#22c55e}
+.comparison-table th,.comparison-table td{padding:.9rem 1rem;vertical-align:middle}
+.comparison-table th{background:#f8fafc;color:#475569;font-size:.78rem;text-transform:uppercase}
+.feature-label{width:34%;color:#475569;font-weight:750}.feature-cell{width:33%;text-align:center;font-weight:800}
+.winner-cell{background:#ecfdf5!important;color:#166534}.loser-cell{background:#fff1f2!important;color:#9f1239}.equal-cell{background:#f8fafc!important;color:#475569}
+.different-row .feature-label{color:#7c3aed}
+.section-title{display:flex;justify-content:space-between;margin:0;padding:.8rem 1rem;background:#eef2ff;color:#3730a3;font-size:.82rem;font-weight:900;text-transform:uppercase}
+
+.compare-toolbar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:.75rem;
+    align-items:center;
+    padding:1rem;
+    border-bottom:1px solid #e2e8f0;
+    background:#fff
+}
+.compare-toolbar .form-control{max-width:320px}
+.toolbar-check{
+    display:flex;
+    align-items:center;
+    gap:.45rem;
+    padding:.45rem .7rem;
+    border:1px solid #e2e8f0;
+    border-radius:10px;
+    background:#f8fafc;
+    font-size:.85rem;
+    font-weight:700
+}
+.section-header-row{cursor:pointer}
+.section-header-row:hover .section-title{background:#e0e7ff}
+.section-toggle-icon{display:inline-block;min-width:1rem;font-size:.9rem}
+.comparison-row.is-hidden{display:none}
+.section-empty{display:none}
+.compare-toast{
+    position:fixed;
+    right:1.25rem;
+    bottom:1.25rem;
+    z-index:1080;
+    display:none;
+    padding:.8rem 1rem;
+    border-radius:12px;
+    background:#0f172a;
+    color:#fff;
+    box-shadow:0 14px 34px rgba(15,23,42,.22);
+    font-weight:700
+}
+@media(max-width:767.98px){.comparison-table{min-width:760px}.compare-hero{padding:1.25rem}.product-head{min-height:auto}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="compare-page">
+<a href="/karsilastir" class="btn btn-sm btn-outline-secondary mb-3">← Ürün gruplarına dön</a>
+
+<section class="compare-hero mb-4">
+<h1 class="h3 fw-bold mb-2">Ürün Karşılaştırma</h1>
+<div class="text-white-50">İki ürünü fiyat ve teknik özellikleriyle yan yana incele.</div>
+</section>
+
+<section class="card compare-card mb-4"><div class="card-body p-3 p-lg-4">
+<form method="get" action="/karsilastir/compare" class="row g-3 align-items-end">
+<div class="col-md-5"><label class="form-label fw-bold">Birinci ürün</label>
+<select name="left" class="form-select" required><option value="">Ürün seç</option>
+{% for item in candidate_groups %}<option value="{{ item.group_key }}" {% if item.group_key == left_key %}selected{% endif %}>{{ item.canonical_name }}{% if item.category %} — {{ item.category }}{% endif %}</option>{% endfor %}
+</select></div>
+<div class="col-md-5"><label class="form-label fw-bold">İkinci ürün</label>
+<select name="right" class="form-select" required><option value="">Ürün seç</option>
+{% for item in candidate_groups %}<option value="{{ item.group_key }}" {% if item.group_key == right_key %}selected{% endif %}>{{ item.canonical_name }}{% if item.category %} — {{ item.category }}{% endif %}</option>{% endfor %}
+</select></div>
+<div class="col-md-2 d-grid"><button class="btn btn-primary">Karşılaştır</button></div>
+</form></div></section>
+
+{% if left_group and right_group %}
+{% if general_winner %}
+<section class="result-banner {% if general_winner == 'draw' %}draw{% endif %} mb-4">
+{% if general_winner == "draw" %}
+<div class="fw-bold fs-5">Teknik karşılaştırma berabere</div>
+<div class="text-muted">Her iki ürün de {{ left_win_count }} özellikte avantajlı.</div>
+{% else %}
+<div class="small text-success fw-bold">GENEL TEKNİK KAZANAN</div>
+<div class="fw-bold fs-5">{{ general_winner_name }}</div>
+<div class="text-muted">{{ comparable_feature_count }} karşılaştırılabilir özellik içinde önde.</div>
+{% endif %}
+</section>
+{% endif %}
+
+<section class="card compare-card mb-4"><div class="card-body p-3 p-lg-4"><div class="row g-3">
+{% for product, summary, side, wins, percent in [(left_group,left_summary,'left',left_win_count,left_advantage_percent),(right_group,right_summary,'right',right_win_count,right_advantage_percent)] %}
+<div class="col-md-6"><div class="product-head h-100 {% if general_winner == side %}overall-winner{% endif %}">
+{% if general_winner == side %}<div class="winner-ribbon">GENEL KAZANAN</div>{% endif %}
+<div class="d-flex gap-3">
+{% if product.image %}<img src="{{ product.image }}" class="product-image" alt="{{ product.canonical_name }}">{% else %}<div class="product-placeholder">Görsel yok</div>{% endif %}
+<div class="flex-grow-1">
+<div class="small text-muted">{{ product.category or "Kategori yok" }}</div>
+<h2 class="h5 fw-bold my-2">{{ product.canonical_name }}</h2>
+<div class="small text-muted mb-3">{{ product.brand or "" }} {{ product.model or "" }}</div>
+<div class="price-value {% if price_winner == side %}price-best{% endif %}">
+{% if summary and summary.best_price is not none %}{{ "{:,.2f}".format(summary.best_price).replace(",", "X").replace(".", ",").replace("X", ".") }} TL{% else %}Fiyat yok{% endif %}
+{% if price_winner == side %}<span class="badge text-bg-success">Daha ucuz</span>{% endif %}
+</div>
+<div class="small text-muted mb-3">{{ summary.best_store if summary and summary.best_store else "Mağaza yok" }}</div>
+<div class="d-flex justify-content-between small"><span>Teknik avantaj</span><strong>{{ wins }}</strong></div>
+<div class="advantage-bar mb-3"><div class="advantage-fill" style="width:{{ percent }}%"></div></div>
+<a href="/karsilastir/{{ product.group_key }}" class="btn btn-sm btn-outline-dark">Ürün detayını aç</a>
+</div></div></div></div>
+{% endfor %}
+</div></div></section>
+
+<section class="row g-3 mb-4">
+{% for label,value,color in [("Toplam özellik",total_feature_count,""),("Farklı özellik",different_feature_count,"text-primary"),("Aynı özellik",equal_feature_count,"text-secondary"),("Birinci ürün avantajı",left_win_count,"text-success"),("İkinci ürün avantajı",right_win_count,"text-success")] %}
+<div class="col-6 col-lg"><div class="score-box"><div class="small text-muted">{{ label }}</div><div class="score-number {{ color }}">{{ value }}</div></div></div>
+{% endfor %}
+</section>
+
+<section class="card compare-card">
+<div class="card-body p-0">
+{% if comparison_sections %}
+<div class="compare-toolbar">
+    <input
+        id="featureSearch"
+        type="search"
+        class="form-control form-control-sm"
+        placeholder="Özellik ara: RAM, SSD, ağırlık..."
+        autocomplete="off"
+    >
+
+    <label class="toolbar-check">
+        <input id="onlyDifferences" type="checkbox" class="form-check-input m-0">
+        Yalnızca farklılar
+    </label>
+
+    <label class="toolbar-check">
+        <input id="onlyWinners" type="checkbox" class="form-check-input m-0">
+        Yalnızca avantaj bulunanlar
+    </label>
+
+    <button id="toggleSections" type="button" class="btn btn-sm btn-outline-secondary">
+        Bölümleri kapat
+    </button>
+
+    <button id="copyCompareLink" type="button" class="btn btn-sm btn-outline-primary ms-lg-auto">
+        Karşılaştırma bağlantısını kopyala
+    </button>
+
+    <span id="visibleFeatureCount" class="small text-muted">
+        {{ total_feature_count }} özellik gösteriliyor
+    </span>
+</div>
+
+<div class="table-responsive">
+<table class="table comparison-table mb-0">
+<thead>
+<tr>
+    <th>Özellik</th>
+    <th class="text-center">{{ left_group.canonical_name }}</th>
+    <th class="text-center">{{ right_group.canonical_name }}</th>
+</tr>
+</thead>
+<tbody>
+{% for section in comparison_sections %}
+{% set section_index = loop.index %}
+<tr
+    class="section-header-row"
+    data-section="{{ section_index }}"
+    role="button"
+    tabindex="0"
+    aria-expanded="true"
+>
+    <td colspan="3" class="p-0">
+        <h3 class="section-title">
+            <span>
+                <span class="section-toggle-icon">▼</span>
+                {{ section.name }}
+            </span>
+            <span class="badge text-bg-light">{{ section.different_count }} fark</span>
+        </h3>
+    </td>
+</tr>
+
+{% for row in section.rows %}
+<tr
+    class="comparison-row {% if row.is_different %}different-row{% endif %}"
+    data-section="{{ section_index }}"
+    data-different="{{ '1' if row.is_different else '0' }}"
+    data-winner="{{ row.winner or '' }}"
+    data-search="{{ (row.name ~ ' ' ~ (row.left_value or '') ~ ' ' ~ (row.right_value or ''))|lower }}"
+>
+    <td class="feature-label">{{ row.name }}</td>
+
+    <td class="feature-cell {% if row.winner=='left' %}winner-cell{% elif row.loser=='left' %}loser-cell{% elif row.is_equal %}equal-cell{% endif %}">
+        {{ row.left_value or "—" }}
+        {% if row.winner=='left' %}
+            <span class="badge text-bg-success">Daha iyi</span>
+        {% endif %}
+    </td>
+
+    <td class="feature-cell {% if row.winner=='right' %}winner-cell{% elif row.loser=='right' %}loser-cell{% elif row.is_equal %}equal-cell{% endif %}">
+        {{ row.right_value or "—" }}
+        {% if row.winner=='right' %}
+            <span class="badge text-bg-success">Daha iyi</span>
+        {% endif %}
+    </td>
+</tr>
+{% endfor %}
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% else %}
+<div class="p-5 text-center text-muted">
+    Karşılaştırılabilir teknik özellik bulunamadı.
+</div>
+{% endif %}
+</div>
+</section>
+
+<div id="compareToast" class="compare-toast" role="status"></div>
+
+{% elif left_key or right_key %}<div class="alert alert-warning">Karşılaştırma için iki geçerli ürün seçmelisin.</div>
+{% else %}<div class="alert alert-light border">Yukarıdan iki ürün seçerek karşılaştırmayı başlat.</div>{% endif %}
+</div>
+{% endblock %}
+
+
+{% block extra_scripts %}
+{{ super() }}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const searchInput = document.getElementById("featureSearch");
+    const onlyDifferences = document.getElementById("onlyDifferences");
+    const onlyWinners = document.getElementById("onlyWinners");
+    const toggleSectionsButton = document.getElementById("toggleSections");
+    const copyLinkButton = document.getElementById("copyCompareLink");
+    const visibleFeatureCount = document.getElementById("visibleFeatureCount");
+    const toast = document.getElementById("compareToast");
+
+    const rows = Array.from(document.querySelectorAll(".comparison-row"));
+    const sectionHeaders = Array.from(
+        document.querySelectorAll(".section-header-row")
+    );
+
+    const collapsedSections = new Set();
+
+    function normalized(value) {
+        return (value || "")
+            .toLocaleLowerCase("tr-TR")
+            .replace(/ı/g, "i");
+    }
+
+    function updateRows() {
+        const query = normalized(searchInput ? searchInput.value.trim() : "");
+        const differencesOnly = Boolean(
+            onlyDifferences && onlyDifferences.checked
+        );
+        const winnersOnly = Boolean(
+            onlyWinners && onlyWinners.checked
+        );
+
+        let visibleCount = 0;
+        const visibleBySection = {};
+
+        rows.forEach(function (row) {
+            const sectionId = row.dataset.section;
+            const matchesSearch = !query
+                || normalized(row.dataset.search).includes(query);
+
+            const matchesDifference = !differencesOnly
+                || row.dataset.different === "1";
+
+            const matchesWinner = !winnersOnly
+                || Boolean(row.dataset.winner);
+
+            const sectionIsOpen = !collapsedSections.has(sectionId);
+
+            const visible = (
+                matchesSearch
+                && matchesDifference
+                && matchesWinner
+                && sectionIsOpen
+            );
+
+            row.classList.toggle("is-hidden", !visible);
+
+            if (visible) {
+                visibleCount += 1;
+                visibleBySection[sectionId] = true;
+            }
+        });
+
+        sectionHeaders.forEach(function (header) {
+            const sectionId = header.dataset.section;
+
+            const hasFilterMatch = rows.some(function (row) {
+                return (
+                    row.dataset.section === sectionId
+                    && !row.classList.contains("is-hidden")
+                );
+            });
+
+            const isCollapsed = collapsedSections.has(sectionId);
+            const hasAnyPotentialMatch = rows.some(function (row) {
+                if (row.dataset.section !== sectionId) {
+                    return false;
+                }
+
+                const matchesSearch = !query
+                    || normalized(row.dataset.search).includes(query);
+
+                const matchesDifference = !differencesOnly
+                    || row.dataset.different === "1";
+
+                const matchesWinner = !winnersOnly
+                    || Boolean(row.dataset.winner);
+
+                return (
+                    matchesSearch
+                    && matchesDifference
+                    && matchesWinner
+                );
+            });
+
+            header.style.display = hasAnyPotentialMatch ? "" : "none";
+            header.setAttribute(
+                "aria-expanded",
+                isCollapsed ? "false" : "true"
+            );
+
+            const icon = header.querySelector(".section-toggle-icon");
+            if (icon) {
+                icon.textContent = isCollapsed ? "▶" : "▼";
+            }
+        });
+
+        if (visibleFeatureCount) {
+            visibleFeatureCount.textContent =
+                visibleCount + " özellik gösteriliyor";
+        }
+    }
+
+    function toggleSection(header) {
+        const sectionId = header.dataset.section;
+
+        if (collapsedSections.has(sectionId)) {
+            collapsedSections.delete(sectionId);
+        } else {
+            collapsedSections.add(sectionId);
+        }
+
+        updateRows();
+        updateToggleButton();
+    }
+
+    function updateToggleButton() {
+        if (!toggleSectionsButton) {
+            return;
+        }
+
+        const allCollapsed = (
+            sectionHeaders.length > 0
+            && collapsedSections.size === sectionHeaders.length
+        );
+
+        toggleSectionsButton.textContent = allCollapsed
+            ? "Bölümleri aç"
+            : "Bölümleri kapat";
+    }
+
+    function showToast(message) {
+        if (!toast) {
+            return;
+        }
+
+        toast.textContent = message;
+        toast.style.display = "block";
+
+        window.clearTimeout(showToast.timer);
+        showToast.timer = window.setTimeout(function () {
+            toast.style.display = "none";
+        }, 2200);
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener("input", updateRows);
+    }
+
+    if (onlyDifferences) {
+        onlyDifferences.addEventListener("change", updateRows);
+    }
+
+    if (onlyWinners) {
+        onlyWinners.addEventListener("change", updateRows);
+    }
+
+    sectionHeaders.forEach(function (header) {
+        header.addEventListener("click", function () {
+            toggleSection(header);
+        });
+
+        header.addEventListener("keydown", function (event) {
+            if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                toggleSection(header);
+            }
+        });
+    });
+
+    if (toggleSectionsButton) {
+        toggleSectionsButton.addEventListener("click", function () {
+            const allCollapsed = (
+                sectionHeaders.length > 0
+                && collapsedSections.size === sectionHeaders.length
+            );
+
+            collapsedSections.clear();
+
+            if (!allCollapsed) {
+                sectionHeaders.forEach(function (header) {
+                    collapsedSections.add(header.dataset.section);
+                });
+            }
+
+            updateRows();
+            updateToggleButton();
+        });
+    }
+
+    if (copyLinkButton) {
+        copyLinkButton.addEventListener("click", async function () {
+            try {
+                await navigator.clipboard.writeText(window.location.href);
+                showToast("Karşılaştırma bağlantısı kopyalandı.");
+            } catch (error) {
+                const temporaryInput = document.createElement("input");
+                temporaryInput.value = window.location.href;
+                document.body.appendChild(temporaryInput);
+                temporaryInput.select();
+                document.execCommand("copy");
+                temporaryInput.remove();
+                showToast("Karşılaştırma bağlantısı kopyalandı.");
+            }
+        });
+    }
+
+    updateRows();
+    updateToggleButton();
+});
+</script>
+{% endblock %}

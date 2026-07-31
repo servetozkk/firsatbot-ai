@@ -1,0 +1,1976 @@
+{% extends "base.html" %}
+
+{% block title %}
+{{ comparison.product_name }} - Fiyat Karşılaştırma
+{% endblock %}
+
+{% block extra_head %}
+<style>
+    .comparison-page {
+        --page-shadow:
+            0 14px 34px rgba(15, 23, 42, 0.09);
+        --page-radius: 20px;
+    }
+
+    .comparison-hero {
+        position: relative;
+        overflow: hidden;
+        padding: 2rem;
+        border-radius: 24px;
+        color: #ffffff;
+        background:
+            radial-gradient(
+                circle at top right,
+                rgba(255, 255, 255, 0.17),
+                transparent 34%
+            ),
+            linear-gradient(
+                135deg,
+                #111827 0%,
+                #1e293b 55%,
+                #4338ca 100%
+            );
+    }
+
+    .comparison-hero::after {
+        position: absolute;
+        right: -80px;
+        bottom: -120px;
+        width: 270px;
+        height: 270px;
+        content: "";
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.07);
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    .hero-product-image {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 180px;
+        height: 180px;
+        padding: 15px;
+        border-radius: 20px;
+        background: #ffffff;
+    }
+
+    .hero-product-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .hero-placeholder {
+        color: #64748b;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-align: center;
+    }
+
+    .hero-category {
+        display: inline-flex;
+        padding: 7px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+        font-size: 0.75rem;
+        font-weight: 750;
+    }
+
+    .stat-card {
+        height: 100%;
+        padding: 20px;
+        border: 0;
+        border-radius: var(--page-radius);
+        background: #ffffff;
+        box-shadow: var(--page-shadow);
+    }
+
+    .stat-label {
+        margin-bottom: 6px;
+        color: #64748b;
+        font-size: 0.75rem;
+        font-weight: 750;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .stat-value {
+        color: #0f172a;
+        font-size: 1.45rem;
+        font-weight: 850;
+    }
+
+    .stat-note {
+        margin-top: 5px;
+        color: #94a3b8;
+        font-size: 0.75rem;
+    }
+
+    .best-stat {
+        background:
+            linear-gradient(
+                135deg,
+                #ecfdf5,
+                #f0fdf4
+            );
+    }
+
+    .best-stat .stat-label {
+        color: #15803d;
+    }
+
+    .best-stat .stat-value {
+        color: #14532d;
+    }
+
+    .saving-stat {
+        background:
+            linear-gradient(
+                135deg,
+                #eef2ff,
+                #f5f3ff
+            );
+    }
+
+    .saving-stat .stat-label {
+        color: #4f46e5;
+    }
+
+    .saving-stat .stat-value {
+        color: #3730a3;
+    }
+
+    .section-card {
+        border: 0;
+        border-radius: var(--page-radius);
+        background: #ffffff;
+        box-shadow: var(--page-shadow);
+    }
+
+    .offer-row {
+        position: relative;
+        padding: 22px;
+        border: 1px solid #e2e8f0;
+        border-radius: 17px;
+        background: #ffffff;
+        transition:
+            transform 0.2s ease,
+            border-color 0.2s ease,
+            box-shadow 0.2s ease;
+    }
+
+    .offer-row:hover {
+        transform: translateY(-2px);
+        border-color: #c7d2fe;
+        box-shadow:
+            0 12px 26px rgba(15, 23, 42, 0.08);
+    }
+
+    .offer-row.best-offer {
+        border: 2px solid #22c55e;
+        background:
+            linear-gradient(
+                135deg,
+                #f0fdf4,
+                #ffffff
+            );
+    }
+
+    .best-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: #16a34a;
+        color: #ffffff;
+        font-size: 0.7rem;
+        font-weight: 800;
+    }
+
+    .store-logo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 56px;
+        height: 56px;
+        border-radius: 15px;
+        background: #f1f5f9;
+        color: #334155;
+        font-size: 0.75rem;
+        font-weight: 850;
+        text-transform: uppercase;
+    }
+
+    .store-name {
+        color: #0f172a;
+        font-size: 1rem;
+        font-weight: 850;
+    }
+
+    .seller-name {
+        color: #64748b;
+        font-size: 0.78rem;
+    }
+
+    .availability-badge {
+        display: inline-flex;
+        padding: 5px 9px;
+        border-radius: 999px;
+        background: #dcfce7;
+        color: #166534;
+        font-size: 0.68rem;
+        font-weight: 750;
+    }
+
+    .offer-price {
+        color: #0f172a;
+        font-size: 1.55rem;
+        font-weight: 900;
+        white-space: nowrap;
+    }
+
+    .shipping-price {
+        color: #64748b;
+        font-size: 0.74rem;
+    }
+
+    .unavailable-row {
+        opacity: 0.72;
+        background: #f8fafc;
+    }
+
+    .chart-container {
+        position: relative;
+        width: 100%;
+        min-height: 390px;
+    }
+
+    .store-history-card {
+        height: 100%;
+        padding: 18px;
+        border: 1px solid #e2e8f0;
+        border-radius: 15px;
+        background: #f8fafc;
+    }
+
+    .history-store-name {
+        color: #0f172a;
+        font-size: 0.95rem;
+        font-weight: 800;
+    }
+
+    .history-metric-label {
+        color: #64748b;
+        font-size: 0.7rem;
+    }
+
+    .history-metric-value {
+        color: #0f172a;
+        font-size: 0.88rem;
+        font-weight: 750;
+    }
+
+    .identity-code {
+        overflow-wrap: anywhere;
+        color: #64748b;
+        font-family: monospace;
+        font-size: 0.72rem;
+    }
+
+    .technical-features-card {
+        overflow: hidden;
+    }
+
+    .feature-section-title {
+        margin-bottom: 0;
+        color: #334155;
+        font-size: 0.8rem;
+        font-weight: 850;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .feature-table {
+        margin-bottom: 0;
+    }
+
+    .feature-table > :not(caption) > * > * {
+        padding: 0.85rem 1rem;
+        border-color: #e2e8f0;
+    }
+
+    .feature-name {
+        width: 48%;
+        color: #64748b;
+        font-size: 0.84rem;
+        font-weight: 650;
+    }
+
+    .feature-value {
+        color: #0f172a;
+        font-size: 0.9rem;
+        font-weight: 800;
+        text-align: right;
+    }
+
+    .feature-section-block + .feature-section-block {
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .empty-panel {
+        padding: 45px 20px;
+        border: 1px dashed #cbd5e1;
+        border-radius: 16px;
+        color: #64748b;
+        text-align: center;
+    }
+
+    @media (max-width: 767.98px) {
+        .comparison-hero {
+            padding: 1.4rem;
+        }
+
+        .hero-product-image {
+            width: 130px;
+            height: 130px;
+        }
+
+        .chart-container {
+            min-height: 310px;
+        }
+
+        .offer-price {
+            font-size: 1.3rem;
+        }
+    }
+
+    .ai-analysis-card {
+        position: relative;
+        overflow: hidden;
+        border: 0;
+        border-radius: 22px;
+        background:
+            radial-gradient(
+                circle at top right,
+                rgba(99, 102, 241, 0.12),
+                transparent 32%
+            ),
+            linear-gradient(
+                135deg,
+                #ffffff,
+                #f8fafc
+            );
+        box-shadow:
+            0 16px 38px rgba(15, 23, 42, 0.10);
+    }
+
+    .ai-analysis-header {
+        padding: 24px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .ai-title-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 7px 12px;
+        border-radius: 999px;
+        background: #eef2ff;
+        color: #4338ca;
+        font-size: 0.76rem;
+        font-weight: 800;
+    }
+
+    .ai-score-circle {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 126px;
+        height: 126px;
+        border: 10px solid #e2e8f0;
+        border-radius: 50%;
+        background: #ffffff;
+        box-shadow:
+            inset 0 0 0 4px #f8fafc,
+            0 12px 28px rgba(15, 23, 42, 0.10);
+    }
+
+    .ai-score-circle.score-success {
+        border-color: #22c55e;
+    }
+
+    .ai-score-circle.score-primary {
+        border-color: #6366f1;
+    }
+
+    .ai-score-circle.score-warning {
+        border-color: #f59e0b;
+    }
+
+    .ai-score-circle.score-secondary {
+        border-color: #94a3b8;
+    }
+
+    .ai-score-circle.score-danger {
+        border-color: #ef4444;
+    }
+
+    .ai-score-number {
+        color: #0f172a;
+        font-size: 2.15rem;
+        font-weight: 900;
+        line-height: 1;
+    }
+
+    .ai-score-total {
+        margin-top: 4px;
+        color: #64748b;
+        font-size: 0.72rem;
+        font-weight: 750;
+    }
+
+    .ai-status-title {
+        color: #0f172a;
+        font-size: 1.45rem;
+        font-weight: 900;
+    }
+
+    .ai-recommendation {
+        color: #475569;
+        font-size: 0.92rem;
+    }
+
+    .ai-metric-card {
+        height: 100%;
+        padding: 17px;
+        border: 1px solid #e2e8f0;
+        border-radius: 15px;
+        background: #ffffff;
+    }
+
+    .ai-metric-label {
+        margin-bottom: 5px;
+        color: #64748b;
+        font-size: 0.7rem;
+        font-weight: 750;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .ai-metric-value {
+        color: #0f172a;
+        font-size: 1rem;
+        font-weight: 850;
+    }
+
+    .ai-reason-item {
+        height: 100%;
+        padding: 17px;
+        border: 1px solid #e2e8f0;
+        border-left-width: 5px;
+        border-radius: 14px;
+        background: #ffffff;
+    }
+
+    .ai-reason-item.reason-success {
+        border-left-color: #22c55e;
+    }
+
+    .ai-reason-item.reason-primary {
+        border-left-color: #6366f1;
+    }
+
+    .ai-reason-item.reason-info {
+        border-left-color: #0ea5e9;
+    }
+
+    .ai-reason-item.reason-warning {
+        border-left-color: #f59e0b;
+    }
+
+    .ai-reason-item.reason-danger {
+        border-left-color: #ef4444;
+    }
+
+    .ai-reason-item.reason-secondary {
+        border-left-color: #94a3b8;
+    }
+
+    .ai-reason-title {
+        margin-bottom: 5px;
+        color: #0f172a;
+        font-size: 0.9rem;
+        font-weight: 850;
+    }
+
+    .ai-reason-description {
+        margin: 0;
+        color: #64748b;
+        font-size: 0.79rem;
+        line-height: 1.55;
+    }
+
+    .fake-discount-safe {
+        color: #15803d;
+    }
+
+    .fake-discount-risk {
+        color: #b91c1c;
+    }
+
+    @media (max-width: 767.98px) {
+        .ai-score-circle {
+            width: 108px;
+            height: 108px;
+            border-width: 8px;
+        }
+
+        .ai-score-number {
+            font-size: 1.8rem;
+        }
+
+        .ai-analysis-header {
+            padding: 19px;
+        }
+    }
+
+
+    .compact-deal-score {
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+        border-radius: 18px;
+        background: #fff;
+        box-shadow: 0 10px 26px rgba(15, 23, 42, .05);
+    }
+
+    .compact-deal-score-main {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        align-items: center;
+        gap: 18px;
+        padding: 18px 20px;
+    }
+
+    .compact-score-circle {
+        width: 76px;
+        height: 76px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 7px solid #dcfce7;
+        border-radius: 50%;
+        background: #f0fdf4;
+        color: #166534;
+    }
+
+    .compact-score-number {
+        font-size: 1.65rem;
+        font-weight: 900;
+        line-height: 1;
+    }
+
+    .compact-score-total {
+        margin-top: 9px;
+        font-size: .7rem;
+        font-weight: 800;
+    }
+
+    .compact-score-copy { min-width: 0; }
+
+    .compact-score-highlights {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+    }
+
+    .compact-highlight {
+        display: inline-flex;
+        padding: 5px 8px;
+        border-radius: 999px;
+        font-size: .72rem;
+        font-weight: 750;
+    }
+
+    .compact-highlight.positive {
+        background: #f0fdf4;
+        color: #166534;
+    }
+
+    .compact-highlight.negative {
+        background: #fef2f2;
+        color: #991b1b;
+    }
+
+    .compact-score-meta {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(92px, 1fr));
+        gap: 10px;
+    }
+
+    .compact-meta-item {
+        padding: 10px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #f8fafc;
+        text-align: center;
+    }
+
+    .compact-meta-item span {
+        display: block;
+        color: #64748b;
+        font-size: .68rem;
+        font-weight: 700;
+    }
+
+    .compact-meta-item strong {
+        color: #0f172a;
+        font-size: 1rem;
+    }
+
+    .compact-score-actions {
+        display: flex;
+        justify-content: flex-end;
+        padding: 0 20px 14px;
+    }
+
+    .compact-score-detail-body {
+        padding: 18px 20px 20px;
+        border-top: 1px solid #e2e8f0;
+        background: #f8fafc;
+    }
+
+    .deal-score-details {
+        padding: 16px;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        background: #fff;
+    }
+
+    .deal-score-component {
+        padding: 12px 0;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .deal-score-component:first-child { padding-top: 0; }
+    .deal-score-component:last-child {
+        padding-bottom: 0;
+        border-bottom: 0;
+    }
+
+    .deal-score-component-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 5px;
+    }
+
+    .deal-score-points {
+        white-space: nowrap;
+        font-size: .8rem;
+        font-weight: 900;
+    }
+
+    .deal-score-points.positive { color: #15803d; }
+    .deal-score-points.negative { color: #b91c1c; }
+    .deal-score-points.neutral { color: #64748b; }
+
+    .deal-confidence-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px;
+        border: 1px solid #e2e8f0;
+        border-radius: 13px;
+        background: #fff;
+    }
+
+    .deal-confidence-number {
+        font-size: 1.15rem;
+    }
+
+    .deal-factor {
+        display: flex;
+        gap: 9px;
+        padding: 11px 12px;
+        margin-bottom: 8px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #fff;
+    }
+
+    .deal-factor.positive { border-left: 4px solid #22c55e; }
+    .deal-factor.negative { border-left: 4px solid #ef4444; }
+
+    @media (max-width: 767.98px) {
+        .compact-deal-score-main {
+            grid-template-columns: auto minmax(0, 1fr);
+            gap: 13px;
+            padding: 16px;
+        }
+
+        .compact-score-circle {
+            width: 64px;
+            height: 64px;
+            border-width: 6px;
+        }
+
+        .compact-score-number { font-size: 1.35rem; }
+
+        .compact-score-meta {
+            grid-column: 1 / -1;
+            width: 100%;
+        }
+
+        .compact-score-actions {
+            padding: 0 16px 14px;
+        }
+
+        .compact-score-actions .btn { width: 100%; }
+
+        .compact-score-detail-body { padding: 16px; }
+    }
+
+
+    .alternative-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+    }
+
+    .alternative-card {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        padding: 15px;
+        border: 1px solid #e2e8f0;
+        border-radius: 15px;
+        background: #fff;
+        transition: transform .18s ease, box-shadow .18s ease;
+    }
+
+    .alternative-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 25px rgba(15, 23, 42, .08);
+    }
+
+    .alternative-image-wrap {
+        height: 105px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 12px;
+        overflow: hidden;
+        border-radius: 11px;
+        background: #f8fafc;
+    }
+
+    .alternative-image {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .alternative-image-placeholder {
+        color: #94a3b8;
+        font-size: .74rem;
+        font-weight: 750;
+    }
+
+    .alternative-name {
+        display: -webkit-box;
+        min-height: 42px;
+        overflow: hidden;
+        color: #0f172a;
+        font-size: .84rem;
+        font-weight: 800;
+        line-height: 1.45;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+    }
+
+    .alternative-badges {
+        min-height: 25px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin: 9px 0;
+    }
+
+    .alternative-price {
+        color: #0f172a;
+        font-size: 1.05rem;
+        font-weight: 900;
+    }
+
+    .alternative-difference {
+        min-height: 18px;
+        margin-top: 2px;
+        color: #64748b;
+        font-size: .7rem;
+        font-weight: 650;
+    }
+
+    .alternative-difference.cheaper { color: #15803d; }
+    .alternative-difference.expensive { color: #b45309; }
+
+    .alternative-score-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding-top: 11px;
+        margin-top: auto;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .alternative-score {
+        font-size: .75rem;
+        font-weight: 850;
+    }
+
+    @media (max-width: 991.98px) {
+        .alternative-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .alternative-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .alternative-card {
+            display: grid;
+            grid-template-columns: 88px minmax(0, 1fr);
+            column-gap: 13px;
+        }
+
+        .alternative-image-wrap {
+            grid-row: 1 / span 5;
+            height: 88px;
+            margin-bottom: 0;
+        }
+    }
+
+
+    .history-insight-panel {
+        margin-bottom: 18px;
+        padding: 16px;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        background: #f8fafc;
+    }
+
+    .history-insight-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 13px;
+    }
+
+    .history-insight-item {
+        min-width: 0;
+        padding: 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #fff;
+    }
+
+    .history-insight-icon {
+        display: inline-flex;
+        width: 25px;
+        height: 25px;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 8px;
+        border-radius: 8px;
+        background: #f1f5f9;
+        font-size: .78rem;
+        font-weight: 900;
+    }
+
+    .history-insight-label {
+        overflow: hidden;
+        color: #64748b;
+        font-size: .68rem;
+        font-weight: 700;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .history-insight-value {
+        margin-top: 3px;
+        color: #0f172a;
+        font-size: .78rem;
+        font-weight: 850;
+        line-height: 1.4;
+    }
+
+    .history-verdict {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 12px 14px;
+        border-radius: 12px;
+    }
+
+    .history-verdict-copy {
+        min-width: 0;
+    }
+
+    .history-verdict-title {
+        margin-bottom: 2px;
+        font-size: .82rem;
+        font-weight: 900;
+    }
+
+    .history-verdict-text {
+        font-size: .76rem;
+        line-height: 1.45;
+    }
+
+    @media (max-width: 991.98px) {
+        .history-insight-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .history-insight-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .history-verdict {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+    }
+
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="comparison-page">
+
+    <div class="mb-3">
+        <a
+            href="/karsilastir"
+            class="btn btn-sm btn-outline-secondary"
+        >
+            ← Ürün gruplarına dön
+        </a>
+    </div>
+
+    <section class="comparison-hero mb-4">
+        <div class="hero-content">
+
+            <div class="row g-4 align-items-center">
+
+                <div class="col-auto">
+                    <div class="hero-product-image">
+
+                        {% if group.image %}
+                            <img
+                                src="{{ group.image }}"
+                                alt="{{ comparison.product_name }}"
+                                onerror="
+                                    this.style.display='none';
+                                    this.nextElementSibling.style.display='block';
+                                "
+                            >
+
+                            <div
+                                class="hero-placeholder"
+                                style="display: none;"
+                            >
+                                Ürün görseli yüklenemedi
+                            </div>
+                        {% else %}
+                            <div class="hero-placeholder">
+                                Ürün görseli bulunmuyor
+                            </div>
+                        {% endif %}
+
+                    </div>
+                </div>
+
+                <div class="col">
+
+                    {% if comparison.category %}
+                        <div class="mb-3">
+                            <span class="hero-category">
+                                {{ comparison.category }}
+                            </span>
+                        </div>
+                    {% endif %}
+
+                    <h1 class="h2 fw-bold mb-3">
+                        {{ comparison.product_name }}
+                    </h1>
+
+                    <div
+                        class="d-flex flex-wrap
+                               gap-3
+                               text-white-50"
+                    >
+                        {% if comparison.brand %}
+                            <span>
+                                Marka:
+                                <strong class="text-white">
+                                    {{ comparison.brand }}
+                                </strong>
+                            </span>
+                        {% endif %}
+
+                        {% if comparison.model %}
+                            <span>
+                                Model:
+                                <strong class="text-white">
+                                    {{ comparison.model }}
+                                </strong>
+                            </span>
+                        {% endif %}
+
+                        <span>
+                            Mağaza:
+                            <strong class="text-white">
+                                {{ comparison.offer_count }}
+                            </strong>
+                        </span>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </section>
+
+
+            <section class="compact-deal-score mb-4">
+                <div class="compact-deal-score-main">
+                    <div class="compact-score-circle">
+                        <span class="compact-score-number">{{ deal_score.score }}</span>
+                        <span class="compact-score-total">/100</span>
+                    </div>
+
+                    <div class="compact-score-copy">
+                        <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
+                            <h2 class="h5 fw-bold mb-0">Fırsat Skoru</h2>
+                            <span class="badge text-bg-{{ deal_score.status_type }}">
+                                {{ deal_score.label }}
+                            </span>
+                        </div>
+
+                        <div class="small text-muted">
+                            {{ deal_score.recommendation }}
+                        </div>
+
+                        <div class="compact-score-highlights mt-2">
+                            {% for component in deal_score.positive_components[:3] %}
+                                <span class="compact-highlight positive">
+                                    ✓ {{ component.label }}
+                                </span>
+                            {% endfor %}
+
+                            {% if deal_score.negative_components %}
+                                <span class="compact-highlight negative">
+                                    ! {{ deal_score.negative_components[0].label }}
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="compact-score-meta">
+                        <div class="compact-meta-item">
+                            <span>Veri güveni</span>
+                            <strong>%{{ deal_score.confidence }}</strong>
+                        </div>
+                        <div class="compact-meta-item">
+                            <span>Aktif mağaza</span>
+                            <strong>{{ deal_score.offer_count }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="compact-score-actions">
+                    <button
+                        class="btn btn-sm btn-outline-secondary"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#dealScoreDetails"
+                        aria-expanded="false"
+                        aria-controls="dealScoreDetails"
+                    >
+                        Skor detaylarını göster
+                    </button>
+                </div>
+
+                <div class="collapse" id="dealScoreDetails">
+                    <div class="compact-score-detail-body">
+                        <div class="row g-4">
+                            <div class="col-lg-7">
+                                <div class="deal-score-details">
+                                    {% for component in deal_score.components %}
+                                        <div class="deal-score-component">
+                                            <div class="deal-score-component-head">
+                                                <strong>{{ component.label }}</strong>
+                                                <span class="
+                                                    deal-score-points
+                                                    {% if component.points > 0 %}
+                                                        positive
+                                                    {% elif component.points < 0 %}
+                                                        negative
+                                                    {% else %}
+                                                        neutral
+                                                    {% endif %}
+                                                ">
+                                                    {% if component.points > 0 %}+{% endif %}
+                                                    {{ component.points }} puan
+                                                </span>
+                                            </div>
+                                            <div class="small text-muted">
+                                                {{ component.description }}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <div class="col-lg-5">
+                                <div class="deal-confidence-card mb-3">
+                                    <div>
+                                        <div class="small text-muted">Analiz güveni</div>
+                                        <strong>{{ deal_score.confidence_label }}</strong>
+                                    </div>
+                                    <strong class="deal-confidence-number">
+                                        %{{ deal_score.confidence }}
+                                    </strong>
+                                </div>
+
+                                {% if deal_score.positive_components %}
+                                    <h3 class="h6 fw-bold mb-2">Puanı yükseltenler</h3>
+                                    {% for component in deal_score.positive_components[:3] %}
+                                        <div class="deal-factor positive">
+                                            <span>✓</span>
+                                            <div>
+                                                <div class="small fw-bold">
+                                                    {{ component.label }} (+{{ component.points }})
+                                                </div>
+                                                <div class="small text-muted">
+                                                    {{ component.description }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+
+                                {% if deal_score.negative_components %}
+                                    <h3 class="h6 fw-bold mt-3 mb-2">
+                                        Dikkat edilmesi gerekenler
+                                    </h3>
+                                    {% for component in deal_score.negative_components[:3] %}
+                                        <div class="deal-factor negative">
+                                            <span>!</span>
+                                            <div>
+                                                <div class="small fw-bold">
+                                                    {{ component.label }} ({{ component.points }})
+                                                </div>
+                                                <div class="small text-muted">
+                                                    {{ component.description }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+    <section class="section-card mb-4">
+        <div class="card-body p-3 p-lg-4">
+
+            <div
+                class="d-flex flex-wrap
+                       justify-content-between
+                       align-items-center
+                       gap-2
+                       mb-4"
+            >
+                <div>
+                    <h2 class="h5 fw-bold mb-1">
+                        Çoklu mağaza fiyat geçmişi
+                    </h2>
+
+                    <div class="small text-muted">
+                        Her mağazanın fiyat değişimi ayrı çizgiyle gösterilir.
+                    </div>
+                </div>
+
+                <span class="badge text-bg-light border">
+                    {{ history_data.price_record_count }}
+                    fiyat kaydı
+                </span>
+            </div>
+
+            <div class="history-insight-panel">
+                <div class="history-insight-grid">
+                    {% for item in price_history_insight.cards %}
+                        <div class="history-insight-item">
+                            <span class="history-insight-icon text-{{ item.type }}">
+                                {{ item.icon }}
+                            </span>
+                            <div class="history-insight-label">
+                                {{ item.label }}
+                            </div>
+                            <div class="history-insight-value">
+                                {{ item.value }}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="history-verdict alert-{{ price_history_insight.verdict_type }}">
+                    <div class="history-verdict-copy">
+                        <div class="history-verdict-title">
+                            {{ price_history_insight.action }}
+                        </div>
+                        <div class="history-verdict-text">
+                            {{ price_history_insight.verdict }}
+                        </div>
+                    </div>
+
+                    <span class="badge text-bg-{{ price_history_insight.verdict_type }}">
+                        Akıllı fiyat yorumu
+                    </span>
+                </div>
+            </div>
+
+            {% if chart_datasets %}
+
+                <div class="chart-container">
+                    <canvas id="multiStorePriceChart"></canvas>
+                </div>
+
+            {% else %}
+
+                <div class="empty-panel">
+                    Grafik oluşturmak için henüz yeterli
+                    fiyat geçmişi bulunmuyor.
+                </div>
+
+            {% endif %}
+
+        </div>
+    </section>
+
+    <section class="section-card mb-4">
+        <div class="card-body p-3 p-lg-4">
+
+            <h2 class="h5 fw-bold mb-4">
+                Mağaza fiyat istatistikleri
+            </h2>
+
+            {% if history_data.stores %}
+
+                <div class="row g-3">
+
+                    {% for store in history_data.stores %}
+
+                        <div class="col-md-6 col-xl-4">
+                            <article class="store-history-card">
+
+                                <div class="history-store-name mb-3">
+                                    {{ store.store }}
+                                </div>
+
+                                <div class="row g-3">
+
+                                    <div class="col-6">
+                                        <div class="history-metric-label">
+                                            Güncel fiyat
+                                        </div>
+
+                                        <div class="history-metric-value">
+                                            {{
+                                                "{:,.2f}".format(
+                                                    store.current_price
+                                                )
+                                                .replace(",", "X")
+                                                .replace(".", ",")
+                                                .replace("X", ".")
+                                            }}
+                                            TL
+                                        </div>
+                                    </div>
+
+                                    <div class="col-6">
+                                        <div class="history-metric-label">
+                                            Fiyat kaydı
+                                        </div>
+
+                                        <div class="history-metric-value">
+                                            {{ store.history_count }}
+                                        </div>
+                                    </div>
+
+                                    <div class="col-6">
+                                        <div class="history-metric-label">
+                                            En düşük
+                                        </div>
+
+                                        <div class="history-metric-value">
+                                            {% if store.lowest_price is not none %}
+                                                {{
+                                                    "{:,.2f}".format(
+                                                        store.lowest_price
+                                                    )
+                                                    .replace(",", "X")
+                                                    .replace(".", ",")
+                                                    .replace("X", ".")
+                                                }}
+                                                TL
+                                            {% else %}
+                                                Veri yok
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <div class="col-6">
+                                        <div class="history-metric-label">
+                                            En yüksek
+                                        </div>
+
+                                        <div class="history-metric-value">
+                                            {% if store.highest_price is not none %}
+                                                {{
+                                                    "{:,.2f}".format(
+                                                        store.highest_price
+                                                    )
+                                                    .replace(",", "X")
+                                                    .replace(".", ",")
+                                                    .replace("X", ".")
+                                                }}
+                                                TL
+                                            {% else %}
+                                                Veri yok
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                            </article>
+                        </div>
+
+                    {% endfor %}
+
+                </div>
+
+            {% else %}
+
+                <div class="empty-panel">
+                    Mağaza fiyat istatistiği bulunmuyor.
+                </div>
+
+            {% endif %}
+
+        </div>
+    </section>
+
+    <section class="section-card technical-features-card mb-4">
+        <div class="card-body p-0">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 p-3 p-lg-4 border-bottom">
+                <div>
+                    <h2 class="h5 fw-bold mb-1">Teknik Özellikler</h2>
+                    <div class="small text-muted">
+                        Ürün grubuna tanımlanmış doğrulanmış özellikler
+                    </div>
+                </div>
+                <span class="badge text-bg-light border">
+                    {{ feature_count }} özellik
+                </span>
+            </div>
+
+            {% if feature_sections %}
+                {% for section in feature_sections %}
+                    <div class="feature-section-block">
+                        <div class="px-3 px-lg-4 pt-3 pb-2 bg-light">
+                            <h3 class="feature-section-title">
+                                {{ section.name }}
+                            </h3>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table feature-table align-middle">
+                                <tbody>
+                                    {% for feature in section.features %}
+                                        <tr>
+                                            <td class="feature-name">
+                                                {{ feature.name }}
+                                            </td>
+                                            <td class="feature-value">
+                                                {{ feature.value }}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-panel m-3 m-lg-4">
+                    Bu ürün grubu için henüz teknik özellik değeri girilmemiş.
+                </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <section class="ai-analysis-card mb-4">
+
+        <div class="ai-analysis-header">
+
+            <div class="row g-4 align-items-center">
+
+                <div class="col-auto">
+
+                    <div
+                        class="
+                            ai-score-circle
+                            score-{{ ai_analysis.status.type }}
+                        "
+                    >
+                        <div class="ai-score-number">
+                            {{ ai_analysis.score }}
+                        </div>
+
+                        <div class="ai-score-total">
+                            100 üzerinden
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="col">
+
+                    <div class="mb-3">
+                        <span class="ai-title-badge">
+                            🤖 AI Fırsat Analizi
+                        </span>
+                    </div>
+
+                    <div class="ai-status-title mb-2">
+                        {{ ai_analysis.status.label }}
+                    </div>
+
+                    <div class="ai-recommendation mb-3">
+                        {{ ai_analysis.recommendation }}
+                    </div>
+
+                    <span
+                        class="
+                            badge
+                            text-bg-{{ ai_analysis.status.type }}
+                        "
+                    >
+                        Fırsat puanı:
+                        {{ ai_analysis.score }} / 100
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="card-body p-3 p-lg-4">
+
+            <div class="row g-3 mb-4">
+
+                <div class="col-sm-6 col-xl-3">
+                    <div class="ai-metric-card">
+
+                        <div class="ai-metric-label">
+                            Fiyat trendi
+                        </div>
+
+                        <div class="ai-metric-value">
+
+                            {% if ai_analysis.trend.code == "falling" %}
+                                📉 Fiyat düşüyor
+
+                            {% elif ai_analysis.trend.code == "rising" %}
+                                📈 Fiyat yükseliyor
+
+                            {% elif ai_analysis.trend.code == "stable" %}
+                                ➖ Fiyat stabil
+
+                            {% else %}
+                                Veri yetersiz
+                            {% endif %}
+
+                        </div>
+
+                        {% if ai_analysis.trend.code != "insufficient" %}
+                            <div class="small text-muted mt-1">
+                                Değişim:
+                                %{{ ai_analysis.trend.change_percent }}
+                            </div>
+                        {% endif %}
+
+                    </div>
+                </div>
+
+                <div class="col-sm-6 col-xl-3">
+                    <div class="ai-metric-card">
+
+                        <div class="ai-metric-label">
+                            Geçmiş ortalama
+                        </div>
+
+                        <div class="ai-metric-value">
+
+                            {% if ai_analysis.average_price is not none %}
+
+                                {{
+                                    "{:,.2f}".format(
+                                        ai_analysis.average_price
+                                    )
+                                    .replace(",", "X")
+                                    .replace(".", ",")
+                                    .replace("X", ".")
+                                }}
+                                TL
+
+                            {% else %}
+                                Veri yok
+                            {% endif %}
+
+                        </div>
+
+                        {% if ai_analysis.difference_from_average != 0 %}
+                            <div class="small text-muted mt-1">
+
+                                {% if ai_analysis.difference_from_average > 0 %}
+                                    Güncel fiyat
+                                    %{{ ai_analysis.difference_from_average }}
+                                    daha düşük
+                                {% else %}
+                                    Güncel fiyat
+                                    %{{ -ai_analysis.difference_from_average }}
+                                    daha yüksek
+                                {% endif %}
+
+                            </div>
+                        {% endif %}
+
+                    </div>
+                </div>
+
+                <div class="col-sm-6 col-xl-3">
+                    <div class="ai-metric-card">
+
+                        <div class="ai-metric-label">
+                            İndirim kontrolü
+                        </div>
+
+                        <div
+                            class="
+                                ai-metric-value
+                                {% if ai_analysis.fake_discount.detected %}
+                                    fake-discount-risk
+                                {% else %}
+                                    fake-discount-safe
+                                {% endif %}
+                            "
+                        >
+                            {% if ai_analysis.fake_discount.detected %}
+                                ⚠️ Risk görüldü
+                            {% else %}
+                                ✓ Belirgin risk yok
+                            {% endif %}
+                        </div>
+
+                        <div class="small text-muted mt-1">
+                            {{ ai_analysis.fake_discount.label }}
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="col-sm-6 col-xl-3">
+                    <div class="ai-metric-card">
+
+                        <div class="ai-metric-label">
+                            Analiz edilen kayıt
+                        </div>
+
+                        <div class="ai-metric-value">
+                            {{ ai_analysis.history_price_count }}
+                            fiyat
+                        </div>
+
+                        <div class="small text-muted mt-1">
+                            Geçmiş ve güncel fiyatlar
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+
+
+                        <div>
+                    <h2 class="h5 fw-bold mb-1">
+                        Analizin nedenleri
+                    </h2>
+
+                    <div class="small text-muted">
+                        Puanı etkileyen fiyat ve mağaza verileri
+                    </div>
+                </div>
+
+                <span class="badge text-bg-light border">
+                    {{ ai_analysis.reasons|length }}
+                    analiz maddesi
+                </span>
+            </div>
+
+            <div class="row g-3">
+
+                {% for reason in ai_analysis.reasons %}
+
+                    <div class="col-md-6">
+
+                        <article
+                            class="
+                                ai-reason-item
+                                reason-{{ reason.type }}
+                            "
+                        >
+
+                            <div class="ai-reason-title">
+
+                                {% if reason.type == "success" %}
+                                    ✓
+
+                                {% elif reason.type == "warning" %}
+                                    ⚠️
+
+                                {% elif reason.type == "danger" %}
+                                    ⛔
+
+                                {% elif reason.type == "info" %}
+                                    ℹ
+
+                                {% elif reason.type == "primary" %}
+                                    ◆
+
+                                {% else %}
+                                    •
+                                {% endif %}
+
+                                {{ reason.title }}
+
+                            </div>
+
+                            <p class="ai-reason-description">
+                                {{ reason.description }}
+                            </p>
+
+                        </article>
+
+                    </div>
+
+                {% endfor %}
+
+            </div>
+
+            <div
+                class="
+                    alert
+                    {% if ai_analysis.fake_discount.detected %}
+                        alert-danger
+                    {% else %}
+                        alert-light
+                    {% endif %}
+                    border
+                    mt-4
+                    mb-0
+                "
+            >
+                <div class="fw-bold mb-1">
+                    İndirim değerlendirmesi
+                </div>
+
+                <div class="small">
+                    {{ ai_analysis.fake_discount.description }}
+                </div>
+            </div>
+
+        </div>
+
+    </section>
+
+        <section class="section-card mb-4">
+            <div class="card-body p-3 p-lg-4">
+
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+                    <div>
+                        <h2 class="h5 fw-bold mb-1">
+                            En iyi alternatifler
+                        </h2>
+                        <div class="small text-muted">
+                            Aynı kategoride fiyatı ve fırsat skoru öne çıkan ürünler.
+                        </div>
+                    </div>
+
+                    <span class="badge text-bg-light border">
+                        {{ alternatives|length }} öneri
+                    </span>
+                </div>
+
+                <div class="alternative-grid">
+                    {% for alternative in alternatives %}
+                        <article class="alternative-card">
+
+                            <div class="alternative-image-wrap">
+                                {% if alternative.image %}
+                                    <img
+                                        src="{{ alternative.image }}"
+                                        alt="{{ alternative.name }}"
+                                        class="alternative-image"
+                                        loading="lazy"
+                                    >
+                                {% else %}
+                                    <span class="alternative-image-placeholder">
+                                        Görsel yok
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            <div class="alternative-name" title="{{ alternative.name }}">
+                                {{ alternative.name }}
+                            </div>
+
+                            <div class="alternative-badges">
+                                {% for badge in alternative.badges %}
+                                    <span class="badge text-bg-{{ badge.type }}">
+                                        {{ badge.label }}
+                                    </span>
+                                {% endfor %}
+                            </div>
+
+                            <div class="alternative-price">
+                                {{
+                                    "{:,.2f}".format(alternative.best_price)
+                                    .replace(",", "X")
+                                    .replace(".", ",")
+                                    .replace("X", ".")
+                                }}
+                                TL
+                            </div>
+
+                            <div
+                                class="alternative-difference
+                                {% if alternative.price_difference < 0 %}
+                                    cheaper
+                                {% elif alternative.price_difference > 0 %}
+                                    expensive
+                                {% endif %}"
+                            >
+                                {% if alternative.price_difference < 0 %}
+                                    Bu üründen
+                                    %{{ -alternative.price_difference_percent }}
+                                    daha ucuz
+                                {% elif alternative.price_difference > 0 %}
+                                    Bu üründen
+                                    %{{ alternative.price_difference_percent }}
+                                    daha pahalı
+                                {% else %}
+                                    Aynı fiyat seviyesinde
+                                {% endif %}
+                            </div>
+
+                            <div class="alternative-score-row">
+                                <span class="alternative-score text-{{ alternative.deal_score_type }}">
+                                    Fırsat {{ alternative.deal_score }}/100
+                                </span>
+
+                                <a
+                                    href="/karsilastir/{{ alternative.identity_key }}"
+                                    class="btn btn-sm btn-outline-dark"
+                                >
+                                    İncele
+                                </a>
+                            </div>
+
+                        </article>
+                    {% endfor %}
+                </div>
+
+            </div>
+        </section>
+
+
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    document.addEventListener(
+        "DOMContentLoaded",
+        function () {
+            const canvas = document.getElementById(
+                "multiStorePriceChart"
+            );
+
+            if (!canvas) {
+                return;
+            }
+
+            const chartLabels = {{ chart_labels | tojson }};
+            const rawDatasets = {{ chart_datasets | tojson }};
+
+            const palette = [
+                "#4f46e5",
+                "#16a34a",
+                "#ea580c",
+                "#0284c7",
+                "#be123c",
+                "#7c3aed",
+                "#0891b2",
+                "#ca8a04"
+            ];
+
+            const datasets = rawDatasets.map(
+                function (dataset, index) {
+                    const color = palette[
+                        index % palette.length
+                    ];
+
+                    return {
+                        label: dataset.label,
+                        data: dataset.data,
+                        borderColor: color,
+                        backgroundColor: color,
+                        pointBackgroundColor: color,
+                        pointBorderColor: "#ffffff",
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        borderWidth: 3,
+                        tension: 0.3,
+                        spanGaps: true,
+                        fill: false
+                    };
+                }
+            );
+
+            new Chart(
+                canvas,
+                {
+                    type: "line",
+
+                    data: {
+                        labels: chartLabels,
+                        datasets: datasets
+                    },
+
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: "index",
+                            intersect: false
+                        },
+                        plugins: {
+                            legend: {
+                                position: "bottom",
+                                labels: {
+                                    usePointStyle: true,
+                                    padding: 18
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        const value =
+                                            context.parsed.y;
+
+                                        if (
+                                            value === null
+                                            || value === undefined
+                                        ) {
+                                            return (
+                                                context.dataset.label
+                                                + ": Veri yok"
+                                            );
+                                        }
+
+                                        return (
+                                            context.dataset.label
+                                            + ": "
+                                            + new Intl.NumberFormat(
+                                                "tr-TR",
+                                                {
+                                                    style: "currency",
+                                                    currency: "TRY"
+                                                }
+                                            ).format(value)
+                                        );
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    maxRotation: 45,
+                                    minRotation: 0
+                                }
+                            },
+                            y: {
+                                beginAtZero: false,
+                                ticks: {
+                                    callback: function (value) {
+                                        return new Intl.NumberFormat(
+                                            "tr-TR",
+                                            {
+                                                style: "currency",
+                                                currency: "TRY",
+                                                maximumFractionDigits: 0
+                                            }
+                                        ).format(value);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            );
+        }
+    );
+</script>
+
+{% endblock %}

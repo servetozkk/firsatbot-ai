@@ -1,0 +1,20 @@
+﻿
+Path                                                                                                            LineNumber Line                                                    
+----                                                                                                            ---------- ----                                                    
+C:\Users\Tekno\Desktop\firsatbot-ai-EN-GUNCEL\firsatbot-ai-EN-GUNCEL\app\parsers\base_parser.py                        475         dict listesi hâline getirir.                    
+C:\Users\Tekno\Desktop\firsatbot-ai-EN-GUNCEL\firsatbot-ai-EN-GUNCEL\app\routes\scrape.py                               31         "Ãƒ",                                           
+C:\Users\Tekno\Desktop\firsatbot-ai-EN-GUNCEL\firsatbot-ai-EN-GUNCEL\app\routes\scrape.py                               32         "Ã„",                                           
+C:\Users\Tekno\Desktop\firsatbot-ai-EN-GUNCEL\firsatbot-ai-EN-GUNCEL\app\routes\scrape.py                               33         "Ã…",                                           
+C:\Users\Tekno\Desktop\firsatbot-ai-EN-GUNCEL\firsatbot-ai-EN-GUNCEL\app\routes\scrape.py                               34         "Ã‚",                                           
+C:\Users\Tekno\Desktop\firsatbot-ai-EN-GUNCEL\firsatbot-ai-EN-GUNCEL\app\routes\scrape.py                               35         "Ã¢â‚¬",                                        
+C:\Users\Tekno\Desktop\firsatbot-ai-EN-GUNCEL\firsatbot-ai-EN-GUNCEL\app\routes\scrape.py                               37         "Ã¢â‚¬Å“",                                      
+C:\Users\Tekno\Desktop\firsatbot-ai-EN-GUNCEL\firsatbot-ai-EN-GUNCEL\app\scrapers\hepsiburada.py                      1107             "Ãƒ", "Ã„", "Ã…", "Ã‚", "Ã¢â‚¬", "’", "Ã¢...
+C:\Users\Tekno\Desktop\firsatbot-ai-EN-GUNCEL\firsatbot-ai-EN-GUNCEL\app\scrapers\registry.py                           33     Mağaza tanımlı olduğu hâlde scraper henüz           
+C:\Users\Tekno\Desktop\firsatbot-ai-EN-GUNCEL\firsatbot-ai-EN-GUNCEL\app\services\scraper_registry.py                   32     Mağaza tanımlı olduğu hâlde scraper henüz           
+C:\Users\Tekno\Desktop\firsatbot-ai-EN-GUNCEL\firsatbot-ai-EN-GUNCEL\app\templates\index.html                         1015                     ✨ Yapay zekâ destekli fırsat motoru 
+C:\Users\Tekno\Desktop\firsatbot-ai-EN-GUNCEL\firsatbot-ai-EN-GUNCEL\app\templates\product_group_detail_v4.html        968                             Kargo dâhil en iyi fiyat    
+C:\Users\Tekno\Desktop\firsatbot-ai-EN-GUNCEL\firsatbot-ai-EN-GUNCEL\app\templates\product_group_detail_v4.html       1388                         <div class="card-kicker">Yapa...
+C:\Users\Tekno\Desktop\firsatbot-ai-EN-GUNCEL\firsatbot-ai-EN-GUNCEL\app\templates\product_group_detail_v4.html       1427                                     â– Stabil          
+C:\Users\Tekno\Desktop\firsatbot-ai-EN-GUNCEL\firsatbot-ai-EN-GUNCEL\app\web\routes.py                                 780             page_kicker="Yapay zekâ seçimi",            
+
+

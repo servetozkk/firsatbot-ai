@@ -1,0 +1,1172 @@
+{% extends "base.html" %}
+
+{% block title %}
+Dashboard - Fırsat AI
+{% endblock %}
+
+{% block extra_head %}
+<style>
+    .dashboard-header {
+        position: relative;
+        overflow: hidden;
+        padding: 2rem;
+        border-radius: 1.25rem;
+        color: #ffffff;
+        background:
+            radial-gradient(
+                circle at top right,
+                rgba(255, 255, 255, 0.22),
+                transparent 32%
+            ),
+            linear-gradient(
+                135deg,
+                #111827 0%,
+                #1f2937 52%,
+                #374151 100%
+            );
+    }
+
+    .dashboard-header::after {
+        position: absolute;
+        right: -70px;
+        bottom: -90px;
+        width: 230px;
+        height: 230px;
+        content: "";
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.07);
+    }
+
+    .dashboard-header-content {
+        position: relative;
+        z-index: 1;
+    }
+
+    .system-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.55rem 0.9rem;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+        font-size: 0.88rem;
+        font-weight: 600;
+        backdrop-filter: blur(8px);
+    }
+
+    .system-status-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #4ade80;
+        box-shadow: 0 0 0 5px rgba(74, 222, 128, 0.15);
+    }
+
+    .summary-card {
+        position: relative;
+        overflow: hidden;
+        height: 100%;
+        border: 0;
+        border-radius: 1rem;
+        box-shadow: 0 0.35rem 1.2rem rgba(17, 24, 39, 0.07);
+        transition:
+            transform 0.2s ease,
+            box-shadow 0.2s ease;
+    }
+
+    .summary-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 0.7rem 1.6rem rgba(17, 24, 39, 0.11);
+    }
+
+    .summary-card::after {
+        position: absolute;
+        right: -24px;
+        bottom: -32px;
+        width: 100px;
+        height: 100px;
+        content: "";
+        border-radius: 50%;
+        background: var(--card-decoration);
+    }
+
+    .summary-card .card-body {
+        position: relative;
+        z-index: 1;
+        padding: 1.4rem;
+    }
+
+    .summary-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 48px;
+        height: 48px;
+        margin-bottom: 1rem;
+        border-radius: 0.9rem;
+        background: var(--icon-background);
+        color: var(--icon-color);
+        font-size: 1.35rem;
+        font-weight: 700;
+    }
+
+    .summary-label {
+        margin-bottom: 0.35rem;
+        color: #6b7280;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .summary-value {
+        margin-bottom: 0;
+        color: #111827;
+        font-size: 2rem;
+        font-weight: 750;
+        line-height: 1.1;
+    }
+
+    .summary-description {
+        margin-top: 0.55rem;
+        margin-bottom: 0;
+        color: #9ca3af;
+        font-size: 0.78rem;
+    }
+
+    .summary-products {
+        --icon-background: #e0e7ff;
+        --icon-color: #4338ca;
+        --card-decoration: rgba(67, 56, 202, 0.07);
+    }
+
+    .summary-history {
+        --icon-background: #dbeafe;
+        --icon-color: #1d4ed8;
+        --card-decoration: rgba(29, 78, 216, 0.07);
+    }
+
+    .summary-notifications {
+        --icon-background: #dcfce7;
+        --icon-color: #15803d;
+        --card-decoration: rgba(21, 128, 61, 0.07);
+    }
+
+    .summary-ai {
+        --icon-background: #fef3c7;
+        --icon-color: #b45309;
+        --card-decoration: rgba(180, 83, 9, 0.07);
+    }
+
+    .summary-top-score {
+        --icon-background: #ede9fe;
+        --icon-color: #6d28d9;
+        --card-decoration: rgba(109, 40, 217, 0.07);
+    }
+
+    .summary-high-count {
+        --icon-background: #ccfbf1;
+        --icon-color: #0f766e;
+        --card-decoration: rgba(15, 118, 110, 0.07);
+    }
+
+    .summary-average-discount {
+        --icon-background: #ffedd5;
+        --icon-color: #c2410c;
+        --card-decoration: rgba(194, 65, 12, 0.07);
+    }
+
+    .summary-best-discount {
+        --icon-background: #ffe4e6;
+        --icon-color: #be123c;
+        --card-decoration: rgba(190, 18, 60, 0.07);
+    }
+
+    .ranking-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .ranking-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.85rem;
+        border: 1px solid #eef0f3;
+        border-radius: 0.85rem;
+    }
+
+    .ranking-name {
+        display: -webkit-box;
+        overflow: hidden;
+        color: #111827;
+        font-size: 0.86rem;
+        font-weight: 650;
+        line-height: 1.35;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+    }
+
+    .ranking-value {
+        flex: 0 0 auto;
+        white-space: nowrap;
+        font-weight: 750;
+    }
+
+    .distribution-wrapper {
+        position: relative;
+        width: 100%;
+        height: 300px;
+    }
+
+    .dashboard-panel {
+        overflow: hidden;
+        border: 0;
+        border-radius: 1rem;
+        box-shadow: 0 0.35rem 1.2rem rgba(17, 24, 39, 0.07);
+    }
+
+    .dashboard-panel .card-header {
+        padding: 1.15rem 1.25rem;
+        border-bottom: 1px solid #eef0f3;
+        background: #ffffff;
+    }
+
+    .panel-title {
+        margin-bottom: 0.2rem;
+        color: #111827;
+        font-size: 1rem;
+        font-weight: 700;
+    }
+
+    .panel-subtitle {
+        margin-bottom: 0;
+        color: #9ca3af;
+        font-size: 0.8rem;
+    }
+
+    .chart-wrapper {
+        position: relative;
+        width: 100%;
+        min-height: 330px;
+    }
+
+    .product-name-cell {
+        min-width: 260px;
+        max-width: 440px;
+    }
+
+    .product-name {
+        display: -webkit-box;
+        overflow: hidden;
+        color: #111827;
+        font-weight: 650;
+        line-height: 1.35;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+    }
+
+    .product-secondary {
+        margin-top: 0.25rem;
+        color: #9ca3af;
+        font-size: 0.78rem;
+    }
+
+    .price-value {
+        white-space: nowrap;
+        color: #111827;
+        font-weight: 700;
+    }
+
+    .ai-score-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 54px;
+        padding: 0.4rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 700;
+    }
+
+    .ai-score-high {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .ai-score-medium {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .ai-score-low {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .ai-score-empty {
+        background: #f3f4f6;
+        color: #6b7280;
+    }
+
+    .quick-action {
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        padding: 1rem;
+        border: 1px solid #eef0f3;
+        border-radius: 0.9rem;
+        color: inherit;
+        text-decoration: none;
+        transition:
+            border-color 0.2s ease,
+            background-color 0.2s ease,
+            transform 0.2s ease;
+    }
+
+    .quick-action:hover {
+        border-color: #d1d5db;
+        background: #f9fafb;
+        color: inherit;
+        transform: translateX(3px);
+    }
+
+    .quick-action-icon {
+        display: inline-flex;
+        flex: 0 0 auto;
+        align-items: center;
+        justify-content: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 0.8rem;
+        background: #f3f4f6;
+        color: #111827;
+        font-size: 1.15rem;
+        font-weight: 700;
+    }
+
+    .quick-action-title {
+        color: #111827;
+        font-size: 0.9rem;
+        font-weight: 700;
+    }
+
+    .quick-action-description {
+        color: #9ca3af;
+        font-size: 0.76rem;
+    }
+
+    .empty-state {
+        padding: 3.5rem 1rem;
+        text-align: center;
+    }
+
+    .empty-state-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 64px;
+        height: 64px;
+        margin-bottom: 1rem;
+        border-radius: 50%;
+        background: #f3f4f6;
+        color: #6b7280;
+        font-size: 1.5rem;
+    }
+
+    @media (max-width: 767.98px) {
+        .dashboard-header {
+            padding: 1.5rem;
+        }
+
+        .dashboard-header h1 {
+            font-size: 1.65rem;
+        }
+
+        .summary-value {
+            font-size: 1.7rem;
+        }
+
+        .chart-wrapper {
+            min-height: 280px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<section class="dashboard-header mb-4">
+    <div class="dashboard-header-content">
+        <div
+            class="d-flex flex-wrap
+                   justify-content-between
+                   align-items-center
+                   gap-3"
+        >
+            <div>
+                <div class="small text-white-50 mb-2">
+                    Yönetim merkezi
+                </div>
+
+                <h1 class="h2 fw-bold mb-2">
+                    Fırsat AI Dashboard
+                </h1>
+
+                <p class="mb-0 text-white-50">
+                    Ürünleri, fiyat hareketlerini ve AI fırsat
+                    değerlendirmelerini tek ekrandan takip edin.
+                </p>
+            </div>
+
+            <div class="system-status">
+                <span class="system-status-dot"></span>
+                Sistem aktif
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="row g-3 mb-4">
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card summary-card summary-products">
+            <div class="card-body">
+                <div class="summary-icon">
+                    Ü
+                </div>
+
+                <div class="summary-label">
+                    Toplam ürün
+                </div>
+
+                <p class="summary-value">
+                    {{ total_products }}
+                </p>
+
+                <p class="summary-description">
+                    Veritabanında kayıtlı ürün sayısı
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card summary-card summary-history">
+            <div class="card-body">
+                <div class="summary-icon">
+                    ₺
+                </div>
+
+                <div class="summary-label">
+                    Fiyat geçmişi
+                </div>
+
+                <p class="summary-value">
+                    {{ total_history }}
+                </p>
+
+                <p class="summary-description">
+                    Kaydedilmiş toplam fiyat ölçümü
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card summary-card summary-notifications">
+            <div class="card-body">
+                <div class="summary-icon">
+                    ✓
+                </div>
+
+                <div class="summary-label">
+                    Bildirim gönderilen
+                </div>
+
+                <p class="summary-value">
+                    {{ notified_products }}
+                </p>
+
+                <p class="summary-description">
+                    Fırsat bildirimi gönderilmiş ürünler
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card summary-card summary-ai">
+            <div class="card-body">
+                <div class="summary-icon">
+                    AI
+                </div>
+
+                <div class="summary-label">
+                    Ortalama AI skoru
+                </div>
+
+                <p class="summary-value">
+                    {{ average_ai_score }}
+                    <span class="fs-6 text-muted">/100</span>
+                </p>
+
+                <p class="summary-description">
+                    Puanlanan ürünlerin ortalaması
+                </p>
+            </div>
+        </div>
+    </div>
+
+</section>
+
+<section class="row g-3 mb-4">
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card summary-card summary-top-score">
+            <div class="card-body">
+                <div class="summary-icon">★</div>
+
+                <div class="summary-label">
+                    En yüksek AI skoru
+                </div>
+
+                <p class="summary-value">
+                    {{ highest_ai_score }}
+                    <span class="fs-6 text-muted">/100</span>
+                </p>
+
+                <p class="summary-description">
+                    Sistemdeki en yüksek fırsat puanı
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card summary-card summary-high-count">
+            <div class="card-body">
+                <div class="summary-icon">80+</div>
+
+                <div class="summary-label">
+                    Güçlü fırsatlar
+                </div>
+
+                <p class="summary-value">
+                    {{ high_score_count }}
+                </p>
+
+                <p class="summary-description">
+                    AI skoru 80 ve üzerindeki ürünler
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card summary-card summary-average-discount">
+            <div class="card-body">
+                <div class="summary-icon">%</div>
+
+                <div class="summary-label">
+                    Ortalama indirim
+                </div>
+
+                <p class="summary-value">
+                    %{{ average_discount }}
+                </p>
+
+                <p class="summary-description">
+                    İndirimli ürünlerin ortalama oranı
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-sm-6 col-xl-3">
+        <div class="card summary-card summary-best-discount">
+            <div class="card-body">
+                <div class="summary-icon">↓</div>
+
+                <div class="summary-label">
+                    En büyük indirim
+                </div>
+
+                <p class="summary-value">
+                    %{{ best_discount }}
+                </p>
+
+                <p class="summary-description">
+                    Sistemde bulunan en yüksek indirim
+                </p>
+            </div>
+        </div>
+    </div>
+
+</section>
+
+<section class="row g-4 mb-4">
+
+    <div class="col-xl-8">
+        <div class="card dashboard-panel h-100">
+            <div
+                class="card-header
+                       d-flex
+                       flex-wrap
+                       justify-content-between
+                       align-items-center
+                       gap-2"
+            >
+                <div>
+                    <h2 class="panel-title">
+                        Son ürünlerin AI skorları
+                    </h2>
+
+                    <p class="panel-subtitle">
+                        En son eklenen ürünlerin fırsat puanı karşılaştırması
+                    </p>
+                </div>
+
+                <a
+                    href="/admin/products"
+                    class="btn btn-sm btn-outline-dark"
+                >
+                    Tüm ürünler
+                </a>
+            </div>
+
+            <div class="card-body">
+                {% if latest_products %}
+                    <div class="chart-wrapper">
+                        <canvas id="aiScoreChart"></canvas>
+                    </div>
+                {% else %}
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            AI
+                        </div>
+
+                        <h3 class="h6">
+                            Grafik için ürün bulunamadı
+                        </h3>
+
+                        <p class="text-muted small mb-0">
+                            Ürünler eklendiğinde AI skorları burada
+                            gösterilecek.
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="card dashboard-panel h-100">
+            <div class="card-header">
+                <h2 class="panel-title">
+                    Hızlı işlemler
+                </h2>
+
+                <p class="panel-subtitle">
+                    Sık kullanılan yönetim bağlantıları
+                </p>
+            </div>
+
+            <div class="card-body d-flex flex-column gap-3">
+
+                <a
+                    href="/admin/products"
+                    class="quick-action"
+                >
+                    <span class="quick-action-icon">
+                        Ü
+                    </span>
+
+                    <span>
+                        <span class="quick-action-title d-block">
+                            Ürünleri görüntüle
+                        </span>
+
+                        <span class="quick-action-description d-block">
+                            Arama, filtreleme ve ürün detayları
+                        </span>
+                    </span>
+                </a>
+
+                <a
+                    href="/admin/products?minimum_score=80"
+                    class="quick-action"
+                >
+                    <span class="quick-action-icon">
+                        AI
+                    </span>
+
+                    <span>
+                        <span class="quick-action-title d-block">
+                            Yüksek fırsat puanları
+                        </span>
+
+                        <span class="quick-action-description d-block">
+                            AI skoru 80 ve üzerindeki ürünler
+                        </span>
+                    </span>
+                </a>
+
+                <a
+                    href="/admin/products?notified=yes"
+                    class="quick-action"
+                >
+                    <span class="quick-action-icon">
+                        ✓
+                    </span>
+
+                    <span>
+                        <span class="quick-action-title d-block">
+                            Bildirim gönderilenler
+                        </span>
+
+                        <span class="quick-action-description d-block">
+                            Daha önce fırsat olarak paylaşılan ürünler
+                        </span>
+                    </span>
+                </a>
+
+                <a
+                    href="/docs"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="quick-action"
+                >
+                    <span class="quick-action-icon">
+                        API
+                    </span>
+
+                    <span>
+                        <span class="quick-action-title d-block">
+                            API dokümantasyonu
+                        </span>
+
+                        <span class="quick-action-description d-block">
+                            FastAPI endpointlerini görüntüle
+                        </span>
+                    </span>
+                </a>
+
+            </div>
+        </div>
+    </div>
+
+</section>
+
+<section class="row g-4 mb-4">
+
+    <div class="col-xl-4">
+        <div class="card dashboard-panel h-100">
+            <div class="card-header">
+                <h2 class="panel-title">
+                    AI skor dağılımı
+                </h2>
+
+                <p class="panel-subtitle">
+                    Düşük, orta ve yüksek puanlı ürünler
+                </p>
+            </div>
+
+            <div class="card-body">
+                <div class="distribution-wrapper">
+                    <canvas id="scoreDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="card dashboard-panel h-100">
+            <div class="card-header">
+                <h2 class="panel-title">
+                    En iyi AI fırsatları
+                </h2>
+
+                <p class="panel-subtitle">
+                    AI puanına göre ilk 5 ürün
+                </p>
+            </div>
+
+            <div class="card-body">
+                {% if top_ai_products %}
+                    <div class="ranking-list">
+                        {% for product in top_ai_products %}
+                            <a
+                                href="/admin/products/{{ product.id }}"
+                                class="ranking-item text-decoration-none"
+                            >
+                                <span class="ranking-name">
+                                    {{ product.name }}
+                                </span>
+
+                                <span class="ranking-value text-success">
+                                    {{ (product.ai_score or 0)|round|int }}/100
+                                </span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted small mb-0">
+                        Puanlanmış ürün bulunmuyor.
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-4">
+        <div class="card dashboard-panel h-100">
+            <div class="card-header">
+                <h2 class="panel-title">
+                    En büyük indirimler
+                </h2>
+
+                <p class="panel-subtitle">
+                    İndirim oranına göre ilk 5 ürün
+                </p>
+            </div>
+
+            <div class="card-body">
+                {% if best_discount_products %}
+                    <div class="ranking-list">
+                        {% for item in best_discount_products %}
+                            <a
+                                href="/admin/products/{{ item.product.id }}"
+                                class="ranking-item text-decoration-none"
+                            >
+                                <span class="ranking-name">
+                                    {{ item.product.name }}
+                                </span>
+
+                                <span class="ranking-value text-danger">
+                                    %{{ item.discount }}
+                                </span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted small mb-0">
+                        İndirimli ürün bulunmuyor.
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</section>
+
+<section class="card dashboard-panel">
+    <div
+        class="card-header
+               d-flex
+               flex-wrap
+               justify-content-between
+               align-items-center
+               gap-2"
+    >
+        <div>
+            <h2 class="panel-title">
+                Son eklenen ürünler
+            </h2>
+
+            <p class="panel-subtitle">
+                Veritabanına en son kaydedilen 10 ürün
+            </p>
+        </div>
+
+        <a
+            href="/admin/products"
+            class="btn btn-sm btn-dark"
+        >
+            Ürün yönetimine git
+        </a>
+    </div>
+
+    {% if latest_products %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">
+                            Ürün
+                        </th>
+
+                        <th>
+                            Fiyat
+                        </th>
+
+                        <th>
+                            AI skoru
+                        </th>
+
+                        <th>
+                            Satıcı
+                        </th>
+
+                        <th>
+                            Bildirim
+                        </th>
+
+                        <th class="text-end pe-4">
+                            İşlem
+                        </th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for product in latest_products %}
+                        <tr>
+                            <td class="ps-4 product-name-cell">
+                                <div class="product-name">
+                                    {{ product.name }}
+                                </div>
+
+                                <div class="product-secondary">
+                                    Ürün #{{ product.id }}
+
+                                    {% if product.brand %}
+                                        · {{ product.brand }}
+                                    {% endif %}
+                                </div>
+                            </td>
+
+                            <td>
+                                <span class="price-value">
+                                    {{ "%.2f"|format(product.price or 0) }} TL
+                                </span>
+                            </td>
+
+                            <td>
+                                {% set score = product.ai_score or 0 %}
+
+                                {% if product.ai_score is none %}
+                                    <span
+                                        class="ai-score-badge
+                                               ai-score-empty"
+                                    >
+                                        Yok
+                                    </span>
+
+                                {% elif score >= 80 %}
+                                    <span
+                                        class="ai-score-badge
+                                               ai-score-high"
+                                    >
+                                        {{ score|round|int }}
+                                    </span>
+
+                                {% elif score >= 50 %}
+                                    <span
+                                        class="ai-score-badge
+                                               ai-score-medium"
+                                    >
+                                        {{ score|round|int }}
+                                    </span>
+
+                                {% else %}
+                                    <span
+                                        class="ai-score-badge
+                                               ai-score-low"
+                                    >
+                                        {{ score|round|int }}
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <td>
+                                {{ product.seller or "-" }}
+                            </td>
+
+                            <td>
+                                {% if product.last_notified_price is not none %}
+                                    <span class="badge text-bg-success">
+                                        Gönderildi
+                                    </span>
+                                {% else %}
+                                    <span class="badge text-bg-light">
+                                        Bekliyor
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <td class="text-end pe-4">
+                                <a
+                                    href="/admin/products/{{ product.id }}"
+                                    class="btn btn-sm btn-outline-dark"
+                                >
+                                    Detay
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                Ü
+            </div>
+
+            <h3 class="h6">
+                Henüz ürün bulunmuyor
+            </h3>
+
+            <p class="text-muted small mb-0">
+                İlk ürün kaydedildiğinde burada gösterilecek.
+            </p>
+        </div>
+    {% endif %}
+</section>
+
+{% endblock %}
+
+{% block extra_scripts %}
+
+{% if latest_products %}
+<script
+    src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"
+></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const chartElement = document.getElementById("aiScoreChart");
+
+        if (!chartElement || typeof Chart === "undefined") {
+            return;
+        }
+
+        const productLabels = [
+            {% for product in latest_products %}
+                {{ product.name|truncate(32, true)|tojson }}
+                {% if not loop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        const productScores = [
+            {% for product in latest_products %}
+                {{ (product.ai_score or 0)|float }}
+                {% if not loop.last %},{% endif %}
+            {% endfor %}
+        ];
+
+        new Chart(chartElement, {
+            type: "bar",
+
+            data: {
+                labels: productLabels,
+
+                datasets: [
+                    {
+                        label: "AI fırsat skoru",
+                        data: productScores,
+                        borderWidth: 1,
+                        borderRadius: 7,
+                        maxBarThickness: 48
+                    }
+                ]
+            },
+
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+
+                interaction: {
+                    intersect: false,
+                    mode: "index"
+                },
+
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+
+                        ticks: {
+                            stepSize: 20
+                        },
+
+                        grid: {
+                            color: "rgba(17, 24, 39, 0.07)"
+                        }
+                    },
+
+                    x: {
+                        grid: {
+                            display: false
+                        },
+
+                        ticks: {
+                            maxRotation: 35,
+                            minRotation: 0,
+                            autoSkip: false
+                        }
+                    }
+                },
+
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                return "AI skoru: " + context.raw + "/100";
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        const distributionElement = document.getElementById(
+            "scoreDistributionChart"
+        );
+
+        if (distributionElement) {
+            new Chart(distributionElement, {
+                type: "doughnut",
+
+                data: {
+                    labels: [
+                        "Düşük (0-49)",
+                        "Orta (50-79)",
+                        "Yüksek (80-100)"
+                    ],
+
+                    datasets: [
+                        {
+                            data: [
+                                {{ score_distribution.low }},
+                                {{ score_distribution.medium }},
+                                {{ score_distribution.high }}
+                            ],
+                            borderWidth: 2
+                        }
+                    ]
+                },
+
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: "65%",
+
+                    plugins: {
+                        legend: {
+                            position: "bottom"
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,1209 @@
+{% extends "public_base.html" %}
+
+{% block title %}
+Ürün Grupları - Fırsat AI
+{% endblock %}
+
+{% block extra_head %}
+<style>
+    .group-page {
+        --panel-radius: 18px;
+        --panel-shadow:
+            0 12px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    .group-hero {
+        position: relative;
+        overflow: hidden;
+        padding: 2rem;
+        border-radius: 22px;
+        color: #ffffff;
+        background:
+            radial-gradient(
+                circle at top right,
+                rgba(255, 255, 255, 0.18),
+                transparent 34%
+            ),
+            linear-gradient(
+                135deg,
+                #111827 0%,
+                #1e293b 55%,
+                #4338ca 100%
+            );
+    }
+
+    .group-hero::after {
+        position: absolute;
+        right: -70px;
+        bottom: -100px;
+        width: 240px;
+        height: 240px;
+        content: "";
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.07);
+    }
+
+    .group-hero-content {
+        position: relative;
+        z-index: 2;
+    }
+
+    .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 14px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+        font-size: 0.84rem;
+        font-weight: 700;
+        backdrop-filter: blur(8px);
+    }
+
+    .summary-card {
+        height: 100%;
+        padding: 20px;
+        border: 0;
+        border-radius: var(--panel-radius);
+        background: #ffffff;
+        box-shadow: var(--panel-shadow);
+    }
+
+    .summary-label {
+        margin-bottom: 6px;
+        color: #64748b;
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .summary-value {
+        color: #0f172a;
+        font-size: 1.6rem;
+        font-weight: 800;
+        line-height: 1.1;
+    }
+
+    .summary-note {
+        margin-top: 6px;
+        color: #94a3b8;
+        font-size: 0.76rem;
+    }
+
+    .search-panel {
+        border: 0;
+        border-radius: var(--panel-radius);
+        box-shadow: var(--panel-shadow);
+    }
+
+    .filter-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .active-filter-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: #eef2ff;
+        color: #4338ca;
+        font-size: 0.75rem;
+        font-weight: 800;
+    }
+
+    .spec-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        min-height: 30px;
+        margin-bottom: 14px;
+    }
+
+    .spec-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 9px;
+        border-radius: 9px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        color: #475569;
+        font-size: 0.72rem;
+        font-weight: 750;
+    }
+
+    .search-panel .form-control,
+    .search-panel .form-select {
+        min-height: 46px;
+        border-color: #e2e8f0;
+        border-radius: 12px;
+    }
+
+    .search-panel .form-control:focus,
+    .search-panel .form-select:focus {
+        border-color: #6366f1;
+        box-shadow:
+            0 0 0 0.22rem rgba(99, 102, 241, 0.13);
+    }
+
+    .group-card {
+        height: 100%;
+        overflow: hidden;
+        border: 0;
+        border-radius: var(--panel-radius);
+        background: #ffffff;
+        box-shadow: var(--panel-shadow);
+        transition:
+            transform 0.2s ease,
+            box-shadow 0.2s ease;
+    }
+
+    .group-card:hover {
+        transform: translateY(-4px);
+        box-shadow:
+            0 18px 38px rgba(15, 23, 42, 0.13);
+    }
+
+    .group-image-box {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 210px;
+        padding: 18px;
+        border-bottom: 1px solid #eef2f7;
+        background: #ffffff;
+    }
+
+    .group-image {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .group-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 92px;
+        height: 92px;
+        border-radius: 24px;
+        background: #f1f5f9;
+        color: #64748b;
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-align: center;
+    }
+
+    .group-title {
+        display: -webkit-box;
+        min-height: 52px;
+        overflow: hidden;
+        color: #0f172a;
+        font-size: 1rem;
+        font-weight: 800;
+        line-height: 1.45;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+    }
+
+    .group-meta {
+        color: #64748b;
+        font-size: 0.78rem;
+    }
+
+    .best-price-box {
+        padding: 16px;
+        border-radius: 14px;
+        background:
+            linear-gradient(
+                135deg,
+                #ecfdf5 0%,
+                #f0fdf4 100%
+            );
+    }
+
+    .best-price-label {
+        color: #166534;
+        font-size: 0.76rem;
+        font-weight: 700;
+    }
+
+    .best-price-value {
+        margin-top: 3px;
+        color: #14532d;
+        font-size: 1.65rem;
+        font-weight: 850;
+    }
+
+    .best-store {
+        margin-top: 3px;
+        color: #15803d;
+        font-size: 0.8rem;
+        font-weight: 650;
+    }
+
+    .metric-grid {
+        display: grid;
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .metric-box {
+        min-width: 0;
+        padding: 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #f8fafc;
+    }
+
+    .metric-label {
+        margin-bottom: 4px;
+        color: #64748b;
+        font-size: 0.7rem;
+        font-weight: 700;
+    }
+
+    .metric-value {
+        overflow: hidden;
+        color: #0f172a;
+        font-size: 0.9rem;
+        font-weight: 750;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .saving-box {
+        padding: 14px;
+        border-radius: 14px;
+        background: #eef2ff;
+    }
+
+    .saving-title {
+        color: #4338ca;
+        font-size: 0.76rem;
+        font-weight: 700;
+    }
+
+    .saving-value {
+        margin-top: 2px;
+        color: #3730a3;
+        font-size: 1.15rem;
+        font-weight: 850;
+    }
+
+    .card-score-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 7px 10px;
+        border: 1px solid #bbf7d0;
+        border-radius: 999px;
+        background: #f0fdf4;
+        color: #166534;
+        font-size: 0.72rem;
+        font-weight: 850;
+        white-space: nowrap;
+    }
+
+    .card-score-badge.score-primary {
+        border-color: #c7d2fe;
+        background: #eef2ff;
+        color: #3730a3;
+    }
+
+    .card-score-badge.score-warning {
+        border-color: #fde68a;
+        background: #fffbeb;
+        color: #92400e;
+    }
+
+    .card-score-badge.score-secondary {
+        border-color: #e2e8f0;
+        background: #f8fafc;
+        color: #475569;
+    }
+
+    .card-score-badge.score-danger {
+        border-color: #fecaca;
+        background: #fef2f2;
+        color: #991b1b;
+    }
+
+    .card-score-number {
+        font-size: 0.92rem;
+        font-weight: 900;
+    }
+
+    .card-score-summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 11px 12px;
+        margin-bottom: 13px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #ffffff;
+    }
+
+    .card-score-copy {
+        min-width: 0;
+    }
+
+    .card-score-label {
+        overflow: hidden;
+        color: #0f172a;
+        font-size: 0.76rem;
+        font-weight: 800;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .card-score-confidence {
+        color: #64748b;
+        font-size: 0.68rem;
+        font-weight: 650;
+    }
+
+    .offer-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: #f1f5f9;
+        color: #475569;
+        font-size: 0.72rem;
+        font-weight: 750;
+    }
+
+    .multi-store-badge {
+        background: #ede9fe;
+        color: #6d28d9;
+    }
+
+    .identity-box {
+        overflow: hidden;
+        color: #94a3b8;
+        font-family: monospace;
+        font-size: 0.68rem;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .empty-state {
+        padding: 70px 20px;
+        border-radius: var(--panel-radius);
+        background: #ffffff;
+        box-shadow: var(--panel-shadow);
+        text-align: center;
+    }
+
+    .empty-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 76px;
+        height: 76px;
+        margin-bottom: 18px;
+        border-radius: 50%;
+        background: #f1f5f9;
+        color: #64748b;
+        font-size: 1.25rem;
+        font-weight: 850;
+    }
+
+    .pagination .page-link {
+        min-width: 42px;
+        border-color: #e2e8f0;
+        color: #334155;
+        text-align: center;
+    }
+
+    .pagination .page-item.active .page-link {
+        border-color: #111827;
+        background: #111827;
+        color: #ffffff;
+    }
+
+    @media (max-width: 767.98px) {
+        .group-hero {
+            padding: 1.5rem;
+        }
+
+        .group-image-box {
+            height: 180px;
+        }
+
+        .metric-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="group-page">
+
+    <section class="group-hero mb-4">
+        <div class="group-hero-content">
+            <div
+                class="d-flex flex-wrap
+                       justify-content-between
+                       align-items-center
+                       gap-3"
+            >
+                <div>
+                    <div class="small text-white-50 mb-2">
+                        Çoklu mağaza sistemi
+                    </div>
+
+                    <h1 class="h2 fw-bold mb-2">
+                        Ürün Grupları
+                    </h1>
+
+                    <p class="text-white-50 mb-0">
+                        Aynı ürünün farklı mağaza tekliflerini
+                        tek merkezden karşılaştırın.
+                    </p>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2">
+                    <span class="hero-badge">
+                        {{ total_groups }} ürün grubu
+                    </span>
+
+                    <a
+                        href="/"
+                        class="btn btn-light"
+                    >
+                        Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="row g-3 mb-4">
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="summary-card">
+                <div class="summary-label">
+                    Toplam ürün grubu
+                </div>
+
+                <div class="summary-value">
+                    {{ total_groups }}
+                </div>
+
+                <div class="summary-note">
+                    Merkezi ürün kimliği
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="summary-card">
+                <div class="summary-label">
+                    Görünen teklifler
+                </div>
+
+                <div class="summary-value">
+                    {{ total_available_offers }}
+                </div>
+
+                <div class="summary-note">
+                    Bu sayfadaki aktif teklifler
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="summary-card">
+                <div class="summary-label">
+                    Çoklu mağaza
+                </div>
+
+                <div class="summary-value">
+                    {{ groups_with_multiple_stores }}
+                </div>
+
+                <div class="summary-note">
+                    En az iki aktif teklifi olan
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3">
+            <div class="summary-card">
+                <div class="summary-label">
+                    Toplam tasarruf
+                </div>
+
+                <div class="summary-value">
+                    {{
+                        "{:,.2f}".format(
+                            total_saving_amount
+                        )
+                        .replace(",", "X")
+                        .replace(".", ",")
+                        .replace("X", ".")
+                    }}
+                    TL
+                </div>
+
+                <div class="summary-note">
+                    Sayfadaki en ucuz–en pahalı farkı
+                </div>
+            </div>
+        </div>
+
+    </section>
+
+    <section class="card search-panel mb-4">
+        <div class="card-body p-3 p-lg-4">
+
+            <div class="filter-title">
+                <div>
+                    <h2 class="h5 fw-bold mb-1">
+                        Gelişmiş ürün filtreleri
+                    </h2>
+                    <div class="small text-muted">
+                        Fiyat ve teknik özelliklere göre ürünleri daralt.
+                    </div>
+                </div>
+
+                {% if active_filter_count %}
+                    <span class="active-filter-badge">
+                        {{ active_filter_count }} aktif filtre
+                    </span>
+                {% endif %}
+            </div>
+
+            <form
+                method="get"
+                action="/karsilastir"
+                class="row g-3 align-items-end"
+            >
+                <div class="col-lg-6">
+                    <label for="search" class="form-label small fw-semibold">
+                        Ürün, marka, model veya kategori ara
+                    </label>
+
+                    <input
+                        type="search"
+                        id="search"
+                        name="search"
+                        value="{{ search }}"
+                        class="form-control"
+                        placeholder="Örnek: RTX 4060, AlphaBook, Laptop"
+                        autocomplete="off"
+                    >
+                </div>
+
+                <div class="col-sm-6 col-lg-3">
+                    <label for="brand" class="form-label small fw-semibold">
+                        Marka
+                    </label>
+
+                    <select id="brand" name="brand" class="form-select">
+                        <option value="">Tüm markalar</option>
+                        {% for item in brand_options %}
+                            <option
+                                value="{{ item }}"
+                                {% if brand == item %}selected{% endif %}
+                            >
+                                {{ item }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-sm-6 col-lg-3">
+                    <label for="category" class="form-label small fw-semibold">
+                        Kategori
+                    </label>
+
+                    <select id="category" name="category" class="form-select">
+                        <option value="">Tüm kategoriler</option>
+                        {% for item in category_options %}
+                            <option
+                                value="{{ item }}"
+                                {% if category == item %}selected{% endif %}
+                            >
+                                {{ item }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-sm-6 col-lg-3">
+                    <label for="min_price" class="form-label small fw-semibold">
+                        Minimum fiyat
+                    </label>
+
+                    <input
+                        id="min_price"
+                        name="min_price"
+                        type="number"
+                        min="0"
+                        step="100"
+                        value="{{ min_price if min_price is not none else '' }}"
+                        class="form-control"
+                        placeholder="30.000 TL"
+                    >
+                </div>
+
+                <div class="col-sm-6 col-lg-3">
+                    <label for="max_price" class="form-label small fw-semibold">
+                        Maksimum fiyat
+                    </label>
+
+                    <input
+                        id="max_price"
+                        name="max_price"
+                        type="number"
+                        min="0"
+                        step="100"
+                        value="{{ max_price if max_price is not none else '' }}"
+                        class="form-control"
+                        placeholder="60.000 TL"
+                    >
+                </div>
+
+                <div class="col-sm-6 col-lg-2">
+                    <label for="min_ram" class="form-label small fw-semibold">
+                        Minimum RAM
+                    </label>
+
+                    <select id="min_ram" name="min_ram" class="form-select">
+                        <option value="">Farketmez</option>
+                        {% for amount in [8, 16, 24, 32, 64] %}
+                            <option
+                                value="{{ amount }}"
+                                {% if min_ram == amount %}selected{% endif %}
+                            >
+                                {{ amount }} GB
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-sm-6 col-lg-2">
+                    <label for="min_ssd" class="form-label small fw-semibold">
+                        Minimum SSD
+                    </label>
+
+                    <select id="min_ssd" name="min_ssd" class="form-select">
+                        <option value="">Farketmez</option>
+                        {% for amount, label in [
+                            (256, "256 GB"),
+                            (512, "512 GB"),
+                            (1000, "1 TB"),
+                            (2000, "2 TB")
+                        ] %}
+                            <option
+                                value="{{ amount }}"
+                                {% if min_ssd == amount %}selected{% endif %}
+                            >
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-sm-6 col-lg-2">
+                    <label for="gpu" class="form-label small fw-semibold">
+                        Ekran kartı
+                    </label>
+
+                    <input
+                        id="gpu"
+                        name="gpu"
+                        type="search"
+                        value="{{ gpu }}"
+                        class="form-control"
+                        placeholder="RTX 4060"
+                    >
+                </div>
+
+                <div class="col-sm-6 col-lg-2">
+                    <label for="sort" class="form-label small fw-semibold">
+                        Sıralama
+                    </label>
+
+                    <select id="sort" name="sort" class="form-select">
+                        <option value="updated" {% if sort == "updated" %}selected{% endif %}>
+                            Son güncellenen
+                        </option>
+                        <option value="price_asc" {% if sort == "price_asc" %}selected{% endif %}>
+                            Fiyat: düşükten yükseğe
+                        </option>
+                        <option value="price_desc" {% if sort == "price_desc" %}selected{% endif %}>
+                            Fiyat: yüksekten düşüğe
+                        </option>
+                        <option value="name_asc" {% if sort == "name_asc" %}selected{% endif %}>
+                            Ürün adına göre
+                        </option>
+                        <option value="score_desc" {% if sort == "score_desc" %}selected{% endif %}>
+                            En iyi fırsat skoru
+                        </option>
+                        <option value="saving_desc" {% if sort == "saving_desc" %}selected{% endif %}>
+                            En yüksek tasarruf
+                        </option>
+                        <option value="offers_desc" {% if sort == "offers_desc" %}selected{% endif %}>
+                            En çok mağaza
+                        </option>
+                    </select>
+                </div>
+
+                <div class="col-sm-6 col-lg-2">
+                    <label for="page_size" class="form-label small fw-semibold">
+                        Sayfa boyutu
+                    </label>
+
+                    <select id="page_size" name="page_size" class="form-select">
+                        {% for size in [8, 12, 20, 40] %}
+                            <option
+                                value="{{ size }}"
+                                {% if page_size == size %}selected{% endif %}
+                            >
+                                {{ size }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-6 col-lg-2 d-grid">
+                    <button
+                        type="submit"
+                        class="btn btn-dark"
+                        style="min-height: 46px;"
+                    >
+                        Filtrele
+                    </button>
+                </div>
+
+                <div class="col-6 col-lg-2 d-grid">
+                    <a
+                        href="/karsilastir"
+                        class="btn btn-outline-secondary d-flex align-items-center justify-content-center"
+                        style="min-height: 46px;"
+                    >
+                        Temizle
+                    </a>
+                </div>
+            </form>
+
+        </div>
+    </section>
+
+    {% if product_groups %}
+
+        <section class="row g-4">
+
+            {% for group in product_groups %}
+
+                <div class="col-md-6 col-xl-4">
+
+                    <article class="group-card">
+
+                        <div class="group-image-box">
+
+                            {% if group.image %}
+
+                                <img
+                                    src="{{ group.image }}"
+                                    alt="{{ group.product_name }}"
+                                    class="group-image"
+                                    loading="lazy"
+                                    onerror="
+                                        this.style.display='none';
+                                        this.nextElementSibling.style.display='flex';
+                                    "
+                                >
+
+                                <div
+                                    class="group-placeholder"
+                                    style="display: none;"
+                                >
+                                    Görsel yüklenemedi
+                                </div>
+
+                            {% else %}
+
+                                <div class="group-placeholder">
+                                    Görsel yok
+                                </div>
+
+                            {% endif %}
+
+                        </div>
+
+                        <div class="card-body p-4">
+
+                            <div
+                                class="d-flex
+                                       justify-content-between
+                                       align-items-start
+                                       gap-2
+                                       mb-3"
+                            >
+                                <div class="flex-grow-1">
+
+                                    {% if group.category %}
+                                        <div class="mb-2">
+                                            <span
+                                                class="badge
+                                                       text-bg-light
+                                                       border"
+                                            >
+                                                {{ group.category }}
+                                            </span>
+                                        </div>
+                                    {% endif %}
+
+                                    <h2 class="group-title mb-2">
+                                        {{ group.product_name }}
+                                    </h2>
+
+                                    <div class="group-meta">
+                                        {% if group.brand %}
+                                            {{ group.brand }}
+                                        {% endif %}
+
+                                        {% if group.brand and group.model %}
+                                            ·
+                                        {% endif %}
+
+                                        {% if group.model %}
+                                            {{ group.model }}
+                                        {% endif %}
+                                    </div>
+
+                                </div>
+
+                                <span
+                                    class="offer-badge
+                                    {% if group.offer_count > 1 %}
+                                        multi-store-badge
+                                    {% endif %}"
+                                >
+                                    {{ group.offer_count }} mağaza
+                                </span>
+                            </div>
+
+                            <div class="spec-badges">
+                                {% set ram_value = group.get("ram_value") %}
+                                {% set ssd_value = group.get("ssd_value") %}
+                                {% set gpu_value = group.get("gpu_value") %}
+
+                                {% if ram_value is not none %}
+                                    <span class="spec-badge">
+                                        RAM: {{ ram_value|int }} GB
+                                    </span>
+                                {% endif %}
+
+                                {% if ssd_value is not none %}
+                                    <span class="spec-badge">
+                                        SSD:
+                                        {% if ssd_value >= 1000 %}
+                                            {{ (ssd_value / 1000)|int }} TB
+                                        {% else %}
+                                            {{ ssd_value|int }} GB
+                                        {% endif %}
+                                    </span>
+                                {% endif %}
+
+                                {% if gpu_value %}
+                                    <span class="spec-badge">
+                                        {{ gpu_value }}
+                                    </span>
+                                {% endif %}
+                            </div>
+
+                            <div class="card-score-summary">
+                                <div class="card-score-copy">
+                                    <div class="card-score-label">
+                                        {{ group.deal_score_label }}
+                                    </div>
+                                    <div class="card-score-confidence">
+                                        Veri güveni %{{ group.deal_score_confidence }}
+                                    </div>
+                                </div>
+
+                                <span
+                                    class="
+                                        card-score-badge
+                                        score-{{ group.deal_score_type }}
+                                    "
+                                    title="{{ group.deal_score_recommendation }}"
+                                >
+                                    Fırsat
+                                    <span class="card-score-number">
+                                        {{ group.deal_score }}/100
+                                    </span>
+                                </span>
+                            </div>
+
+                            <div class="best-price-box mb-3">
+
+                                <div class="best-price-label">
+                                    En iyi fiyat
+                                </div>
+
+                                <div class="best-price-value">
+
+                                    {% if group.best_price is not none %}
+                                        {{
+                                            "{:,.2f}".format(
+                                                group.best_price
+                                            )
+                                            .replace(",", "X")
+                                            .replace(".", ",")
+                                            .replace("X", ".")
+                                        }}
+                                        TL
+                                    {% else %}
+                                        Fiyat yok
+                                    {% endif %}
+
+                                </div>
+
+                                <div class="best-store">
+                                    {{
+                                        group.best_store
+                                        or "Uygun mağaza bulunamadı"
+                                    }}
+                                </div>
+
+                            </div>
+
+                            <div class="metric-grid mb-3">
+
+                                <div class="metric-box">
+                                    <div class="metric-label">
+                                        En yüksek fiyat
+                                    </div>
+
+                                    <div class="metric-value">
+                                        {% if group.highest_price is not none %}
+                                            {{
+                                                "{:,.2f}".format(
+                                                    group.highest_price
+                                                )
+                                                .replace(",", "X")
+                                                .replace(".", ",")
+                                                .replace("X", ".")
+                                            }}
+                                            TL
+                                        {% else %}
+                                            Veri yok
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="metric-box">
+                                    <div class="metric-label">
+                                        Toplam teklif
+                                    </div>
+
+                                    <div class="metric-value">
+                                        {{ group.total_offer_count }}
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <div class="saving-box mb-3">
+
+                                <div class="saving-title">
+                                    Muhtemel tasarruf
+                                </div>
+
+                                <div class="saving-value">
+                                    {{
+                                        "{:,.2f}".format(
+                                            group.saving_amount
+                                        )
+                                        .replace(",", "X")
+                                        .replace(".", ",")
+                                        .replace("X", ".")
+                                    }}
+                                    TL
+
+                                    {% if group.saving_percent > 0 %}
+                                        <span class="fs-6">
+                                            (%{{ group.saving_percent }})
+                                        </span>
+                                    {% endif %}
+                                </div>
+
+                            </div>
+
+                            <div class="identity-box mb-3">
+                                {{ group.identity_source or group.identity_key }}
+                            </div>
+
+                            <div class="d-grid">
+                              <a
+   				 href="/karsilastir/{{ group.identity_key }}"
+   				 class="btn btn-dark"
+				>	
+   				 Karşılaştırmayı aç
+				</a>
+                            </div>
+
+                        </div>
+
+                    </article>
+
+                </div>
+
+            {% endfor %}
+
+        </section>
+
+    {% else %}
+
+        <section class="empty-state">
+
+            <div class="empty-icon">
+                0
+            </div>
+
+            <h2 class="h5 mb-2">
+                Ürün grubu bulunamadı
+            </h2>
+
+            <p class="text-muted mb-3">
+                Arama kriterine uygun ürün grubu veya teklif bulunmuyor.
+            </p>
+
+            <a
+                href="/karsilastir"
+                class="btn btn-dark"
+            >
+                Tüm ürün gruplarını göster
+            </a>
+
+        </section>
+
+    {% endif %}
+
+    {% if total_pages > 1 %}
+
+        <nav
+            class="mt-4"
+            aria-label="Ürün grubu sayfaları"
+        >
+            <ul
+                class="pagination
+                       flex-wrap
+                       justify-content-center"
+            >
+
+                <li
+                    class="page-item
+                    {% if page <= 1 %}
+                        disabled
+                    {% endif %}"
+                >
+                    <a
+                        class="page-link"
+                        href="/karsilastir?page={{ page - 1 }}&page_size={{ page_size }}&search={{ search|urlencode }}&brand={{ brand|urlencode }}&category={{ category|urlencode }}&min_price={{ min_price if min_price is not none else "" }}&max_price={{ max_price if max_price is not none else "" }}&min_ram={{ min_ram if min_ram is not none else "" }}&min_ssd={{ min_ssd if min_ssd is not none else "" }}&gpu={{ gpu|urlencode }}&sort={{ sort|urlencode }}"
+                    >
+                        Önceki
+                    </a>
+                </li>
+
+                {% for page_number in range(1, total_pages + 1) %}
+
+                    {% if
+                        page_number == 1
+                        or page_number == total_pages
+                        or (
+                            page_number >= page - 2
+                            and page_number <= page + 2
+                        )
+                    %}
+
+                        <li
+                            class="page-item
+                            {% if page_number == page %}
+                                active
+                            {% endif %}"
+                        >
+                            <a
+                                class="page-link"
+                                href="/karsilastir?page={{ page_number }}&page_size={{ page_size }}&search={{ search|urlencode }}&brand={{ brand|urlencode }}&category={{ category|urlencode }}&min_price={{ min_price if min_price is not none else "" }}&max_price={{ max_price if max_price is not none else "" }}&min_ram={{ min_ram if min_ram is not none else "" }}&min_ssd={{ min_ssd if min_ssd is not none else "" }}&gpu={{ gpu|urlencode }}&sort={{ sort|urlencode }}"
+                            >
+                                {{ page_number }}
+                            </a>
+                        </li>
+
+                    {% elif
+                        page_number == page - 3
+                        or page_number == page + 3
+                    %}
+
+                        <li class="page-item disabled">
+                            <span class="page-link">
+                                …
+                            </span>
+                        </li>
+
+                    {% endif %}
+
+                {% endfor %}
+
+                <li
+                    class="page-item
+                    {% if page >= total_pages %}
+                        disabled
+                    {% endif %}"
+                >
+                    <a
+                        class="page-link"
+                        href="/karsilastir?page={{ page + 1 }}&page_size={{ page_size }}&search={{ search|urlencode }}&brand={{ brand|urlencode }}&category={{ category|urlencode }}&min_price={{ min_price if min_price is not none else "" }}&max_price={{ max_price if max_price is not none else "" }}&min_ram={{ min_ram if min_ram is not none else "" }}&min_ssd={{ min_ssd if min_ssd is not none else "" }}&gpu={{ gpu|urlencode }}&sort={{ sort|urlencode }}"
+                    >
+                        Sonraki
+                    </a>
+                </li>
+
+            </ul>
+        </nav>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener(
+        "DOMContentLoaded",
+        function () {
+            const pageSizeSelect = document.getElementById(
+                "page_size"
+            );
+
+            if (pageSizeSelect) {
+                pageSizeSelect.addEventListener(
+                    "change",
+                    function () {
+                        this.form.submit();
+                    }
+                );
+            }
+        }
+    );
+</script>
+{% endblock %}

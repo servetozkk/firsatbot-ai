@@ -1,0 +1,560 @@
+﻿{% extends "base.html" %}
+
+{% block title %}WhatsApp Fırsat Merkezi{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+    <div class="mb-4">
+        <h1 class="fw-bold">WhatsApp Fırsat Merkezi</h1>
+        <p class="text-muted mb-0">
+            Fiyatı düşen ve fırsat puanı yüksek ürünleri görüntüleyin.
+        </p>
+    </div>
+
+    <div class="row g-3 mb-4">
+
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Toplam ürün</div>
+                    <div class="fs-3 fw-bold">
+                        {{ total_product_count }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Bulunan fırsat</div>
+                    <div class="fs-3 fw-bold text-success">
+                        {{ total_result_count }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Geçmişi yetersiz</div>
+                    <div class="fs-3 fw-bold">
+                        {{ insufficient_history_count }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <div class="text-muted small">Fiyatı düşmeyen</div>
+                    <div class="fs-3 fw-bold">
+                        {{ unchanged_product_count }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="card-body">
+
+            <h5 class="card-title mb-3">Filtreler</h5>
+
+            <form method="get" action="/admin/whatsapp">
+
+                <div class="row g-3">
+
+                    <div class="col-md-2">
+                        <label class="form-label">Minimum AI puanı</label>
+                        <input
+                            type="number"
+                            class="form-control"
+                            name="minimum_ai_score"
+                            value="{{ minimum_ai_score }}"
+                            min="0"
+                            max="100"
+                        >
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">Minimum indirim %</label>
+                        <input
+                            type="number"
+                            class="form-control"
+                            name="minimum_price_drop"
+                            value="{{ minimum_price_drop }}"
+                            min="0"
+                            max="100"
+                            step="0.1"
+                        >
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label">Geçmiş sayısı</label>
+                        <input
+                            type="number"
+                            class="form-control"
+                            name="minimum_history_count"
+                            value="{{ minimum_history_count }}"
+                            min="2"
+                            max="100"
+                        >
+                    </div>
+
+                    <div class="col-md-3">
+                        <label class="form-label">Minimum fırsat puanı</label>
+                        <input
+                            type="number"
+                            class="form-control"
+                            name="minimum_opportunity_score"
+                            value="{{ minimum_opportunity_score }}"
+                            min="0"
+                            max="100"
+                        >
+                    </div>
+
+                    <div class="col-md-1">
+                        <label class="form-label">Limit</label>
+                        <input
+                            type="number"
+                            class="form-control"
+                            name="limit"
+                            value="{{ limit }}"
+                            min="1"
+                            max="100"
+                        >
+                    </div>
+
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button
+                            type="submit"
+                            class="btn btn-primary w-100"
+                        >
+                            Fırsatları Getir
+                        </button>
+                    </div>
+
+                </div>
+
+            </form>
+
+            <hr>
+
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <button
+                    type="button"
+                    id="toggle-shared-button"
+                    class="btn btn-outline-secondary"
+                    onclick="toggleSharedVisibility()"
+                >
+                    Paylaşılanları Gizle
+                </button>
+
+                <span
+                    id="shared-product-count"
+                    class="badge bg-success"
+                >
+                    Paylaşılan: 0
+                </span>
+
+                <span
+                    id="visible-product-count"
+                    class="badge bg-primary"
+                >
+                    Görünen: {{ total_result_count }}
+                </span>
+            </div>
+
+        </div>
+    </div>
+
+    {% if results %}
+
+        <div class="row g-4">
+
+            {% for product in results %}
+
+                <div
+                    class="col-12 opportunity-card"
+                    data-product-id="{{ product.id }}"
+                >
+
+                    <div class="card shadow-sm border-0 product-card">
+
+                        <div class="card-body">
+
+                            <div class="row g-4">
+
+                                <div class="col-md-2">
+
+                                    {% if product.image %}
+                                        <img
+                                            src="{{ product.image }}"
+                                            alt="{{ product.name }}"
+                                            class="img-fluid rounded"
+                                            style="max-height: 180px; width: 100%; object-fit: contain;"
+                                        >
+                                    {% else %}
+                                        <div
+                                            class="bg-light rounded d-flex align-items-center justify-content-center"
+                                            style="height: 180px;"
+                                        >
+                                            Görsel yok
+                                        </div>
+                                    {% endif %}
+
+                                </div>
+
+                                <div class="col-md-5">
+
+                                    <h4 class="fw-bold">
+                                        {{ product.name }}
+                                    </h4>
+
+                                    <div class="mb-2">
+                                        <span class="badge bg-success">
+                                            Fırsat puanı:
+                                            {{ product.opportunity_score }}
+                                        </span>
+
+                                        <span class="badge bg-primary">
+                                            AI puanı:
+                                            {{ product.ai_score }}
+                                        </span>
+
+                                        <span class="badge bg-danger">
+                                            %{{ product.price_drop }} indirim
+                                        </span>
+                                    </div>
+
+                                    <div class="fs-4 fw-bold text-success">
+                                        {{ "%.2f"|format(product.price) }} TL
+                                    </div>
+
+                                    <div class="text-muted">
+                                        Önceki fiyat:
+                                        <del>
+                                            {{ "%.2f"|format(product.previous_price) }} TL
+                                        </del>
+                                    </div>
+
+                                    <div class="mt-2">
+                                        Kazanç:
+                                        <strong>
+                                            {{ "%.2f"|format(product.price_difference) }} TL
+                                        </strong>
+                                    </div>
+
+                                    <hr>
+
+                                    <div>
+                                        Satıcı:
+                                        <strong>{{ product.seller }}</strong>
+                                    </div>
+
+                                    <div>
+                                        Puan:
+                                        <strong>{{ product.rating }}</strong>
+                                        —
+                                        {{ product.review_count }} değerlendirme
+                                    </div>
+
+                                    <div>
+                                        Fiyat geçmişi:
+                                        <strong>{{ product.history_count }}</strong>
+                                        kayıt
+                                    </div>
+
+                                    <div class="small text-muted mt-2">
+                                        En düşük:
+                                        {{ "%.2f"|format(product.minimum_30_day_price) }} TL
+                                        |
+                                        Ortalama:
+                                        {{ "%.2f"|format(product.average_30_day_price) }} TL
+                                        |
+                                        En yüksek:
+                                        {{ "%.2f"|format(product.maximum_30_day_price) }} TL
+                                    </div>
+
+                                </div>
+
+                                <div class="col-md-5">
+
+                                    <label class="form-label fw-bold">
+                                        WhatsApp mesajı
+                                    </label>
+
+                                    <textarea
+                                        id="message-{{ product.id }}"
+                                        class="form-control"
+                                        rows="9"
+                                        readonly
+                                    >{{ product.whatsapp_message }}</textarea>
+
+                                  <div class="d-flex flex-wrap gap-2 mt-3">
+
+    <button
+        type="button"
+        class="btn btn-outline-primary"
+        onclick="copyMessage('message-{{ product.id }}', this)"
+    >
+        📋 Mesajı Kopyala
+    </button>
+
+    <button
+        type="button"
+        class="btn btn-success"
+        onclick="shareOnWhatsApp('message-{{ product.id }}', '{{ product.id }}')"
+    >
+        💬 WhatsApp'ta Aç
+    </button>
+
+    <button
+        type="button"
+        class="btn btn-outline-success shared-button"
+        data-product-id="{{ product.id }}"
+        onclick="toggleShared('{{ product.id }}')"
+    >
+        ✅ Paylaşıldı
+    </button>
+
+    <a
+        class="btn btn-outline-danger"
+        href="/admin/whatsapp/deal-image/{{ product.id }}"
+        target="_blank"
+        rel="noopener noreferrer"
+    >
+        📸 Fırsat Görseli
+    </a>
+
+    <a
+        class="btn btn-danger"
+        href="/admin/whatsapp/deal-image/{{ product.id }}?download=true"
+    >
+        ⬇️ İndir
+    </a>
+
+    {% if product.url %}
+        <a
+            class="btn btn-outline-dark"
+            href="{{ product.url }}"
+            target="_blank"
+            rel="noopener noreferrer"
+        >
+            🔗 Ürüne Git
+        </a>
+    {% endif %}
+
+</div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <div class="alert alert-warning">
+            Belirlediğiniz filtrelere uygun fırsat bulunamadı.
+        </div>
+
+    {% endif %}
+
+</div>
+
+<script>
+function shareOnWhatsApp(textareaId, productId) {
+    const textarea = document.getElementById(textareaId);
+
+    if (!textarea) {
+        alert("Paylaşılacak mesaj bulunamadı.");
+        return;
+    }
+
+    const message = textarea.value || "";
+
+    if (!message.trim()) {
+        alert("Paylaşılacak mesaj boş.");
+        return;
+    }
+
+    markAsShared(productId);
+
+    const whatsappUrl =
+        "https://wa.me/?text=" + encodeURIComponent(message);
+
+    window.open(
+        whatsappUrl,
+        "_blank",
+        "noopener,noreferrer"
+    );
+}
+
+async function copyMessage(textareaId, button) {
+    const textarea = document.getElementById(textareaId);
+
+    try {
+        await navigator.clipboard.writeText(textarea.value);
+    } catch (error) {
+        textarea.select();
+        document.execCommand("copy");
+    }
+
+    const oldText = button.innerText;
+    button.innerText = "Kopyalandı";
+
+    setTimeout(function () {
+        button.innerText = oldText;
+    }, 1500);
+}
+
+function getSharedProducts() {
+    try {
+        const saved = localStorage.getItem("whatsappSharedProducts");
+        return saved ? JSON.parse(saved) : {};
+    } catch (error) {
+        return {};
+    }
+}
+
+function saveSharedProducts(products) {
+    localStorage.setItem(
+        "whatsappSharedProducts",
+        JSON.stringify(products)
+    );
+}
+
+function markAsShared(productId) {
+    const sharedProducts = getSharedProducts();
+    sharedProducts[productId] = {
+        sharedAt: new Date().toISOString()
+    };
+    saveSharedProducts(sharedProducts);
+    updateSharedCard(productId);
+    setTimeout(function () {
+        applySharedVisibility();
+    }, 500);
+}
+
+function toggleShared(productId) {
+    const sharedProducts = getSharedProducts();
+    if (sharedProducts[productId]) {
+        delete sharedProducts[productId];
+    } else {
+        sharedProducts[productId] = {
+            sharedAt: new Date().toISOString()
+        };
+    }
+    saveSharedProducts(sharedProducts);
+    updateSharedCard(productId);
+    applySharedVisibility();
+}
+
+function updateSharedCard(productId) {
+    const sharedProducts = getSharedProducts();
+    const cardWrapper = document.querySelector(
+        '.opportunity-card[data-product-id="' + productId + '"]'
+    );
+    const button = document.querySelector(
+        '.shared-button[data-product-id="' + productId + '"]'
+    );
+    if (!cardWrapper || !button) {
+        return;
+    }
+    const card = cardWrapper.querySelector(".product-card");
+    const isShared = Boolean(sharedProducts[productId]);
+    if (isShared) {
+        card.classList.add("border", "border-success");
+        card.style.opacity = "0.72";
+        button.classList.remove("btn-outline-success");
+        button.classList.add("btn-success");
+        button.innerText = "Paylaşıldı ✓";
+    } else {
+        card.classList.remove("border", "border-success");
+        card.style.opacity = "1";
+        button.classList.remove("btn-success");
+        button.classList.add("btn-outline-success");
+        button.innerText = "Paylaşıldı Olarak İşaretle";
+    }
+}
+
+function getHideSharedSetting() {
+    return localStorage.getItem("hideWhatsappSharedProducts") === "true";
+}
+
+function toggleSharedVisibility() {
+    const newValue = !getHideSharedSetting();
+    localStorage.setItem(
+        "hideWhatsappSharedProducts",
+        String(newValue)
+    );
+    applySharedVisibility();
+}
+
+function applySharedVisibility() {
+    const sharedProducts = getSharedProducts();
+    const hideShared = getHideSharedSetting();
+    const cards = document.querySelectorAll(".opportunity-card");
+    let sharedCount = 0;
+    let visibleCount = 0;
+
+    cards.forEach(function (card) {
+        const productId = card.dataset.productId;
+        const isShared = Boolean(sharedProducts[productId]);
+        if (isShared) {
+            sharedCount += 1;
+        }
+        if (hideShared && isShared) {
+            card.style.display = "none";
+        } else {
+            card.style.display = "";
+            visibleCount += 1;
+        }
+    });
+
+    const toggleButton = document.getElementById("toggle-shared-button");
+    const sharedCountElement = document.getElementById("shared-product-count");
+    const visibleCountElement = document.getElementById("visible-product-count");
+
+    if (toggleButton) {
+        if (hideShared) {
+            toggleButton.innerText = "Paylaşılanları Göster";
+            toggleButton.classList.remove("btn-outline-secondary");
+            toggleButton.classList.add("btn-secondary");
+        } else {
+            toggleButton.innerText = "Paylaşılanları Gizle";
+            toggleButton.classList.remove("btn-secondary");
+            toggleButton.classList.add("btn-outline-secondary");
+        }
+    }
+
+    if (sharedCountElement) {
+        sharedCountElement.innerText = "Paylaşılan: " + sharedCount;
+    }
+    if (visibleCountElement) {
+        visibleCountElement.innerText = "Görünen: " + visibleCount;
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".opportunity-card").forEach(function (card) {
+        updateSharedCard(card.dataset.productId);
+    });
+    applySharedVisibility();
+});
+</script>
+{% endblock %}

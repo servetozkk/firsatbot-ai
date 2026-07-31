@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}Linkten Ürün Ekle{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width: 900px;">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <div>
+            <h1 class="h3 mb-1">Linkten Otomatik Ürün Ekle</h1>
+            <p class="text-muted mb-0">
+                Ürün bağlantısını yapıştır. Ürün adı, fiyatı, görseli,
+                mağazası ve teknik bilgileri sistem otomatik çeksin.
+            </p>
+        </div>
+
+        <a href="/admin/products" class="btn btn-outline-secondary">
+            ← Ürünlere Dön
+        </a>
+    </div>
+
+    {% if error %}
+        <div class="alert alert-danger" role="alert">
+            <strong>Ürün eklenemedi.</strong><br>
+            {{ error }}
+        </div>
+    {% endif %}
+
+    {% if success %}
+        <div class="alert alert-success" role="alert">
+            <strong>İşlem başarılı.</strong><br>
+            {{ success }}
+        </div>
+    {% endif %}
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-4 p-md-5">
+            <div class="text-center mb-4">
+                <div class="display-5 mb-3">🔗</div>
+                <h2 class="h4">Sadece ürün linkini gir</h2>
+                <p class="text-muted mb-0">
+                    Desteklenen mağazalardan alınan ürün bağlantısı otomatik
+                    olarak taranır ve veritabanına kaydedilir.
+                </p>
+            </div>
+
+            <form method="post" action="/admin/products/add" id="scanForm">
+                <label for="url" class="form-label fw-semibold">
+                    Ürün bağlantısı
+                    <span class="text-danger">*</span>
+                </label>
+
+                <div class="input-group input-group-lg">
+                    <span class="input-group-text">🌐</span>
+                    <input
+                        type="url"
+                        class="form-control"
+                        id="url"
+                        name="url"
+                        value="{{ form_data.url if form_data else '' }}"
+                        placeholder="https://www.trendyol.com/..."
+                        autocomplete="url"
+                        required
+                        autofocus
+                    >
+                    <button
+                        type="submit"
+                        class="btn btn-primary px-4"
+                        id="scanButton"
+                    >
+                        Ürünü Tara ve Kaydet
+                    </button>
+                </div>
+
+                <div class="form-text mt-2">
+                    Trendyol, Hepsiburada, Amazon ve sistemde aktif olan
+                    diğer mağaza bağlantılarını kullanabilirsin.
+                </div>
+            </form>
+
+            <div id="loadingBox" class="alert alert-info mt-4 d-none" role="alert">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="spinner-border spinner-border-sm" role="status"></div>
+                    <div>
+                        <strong>Ürün taranıyor…</strong><br>
+                        <span class="small">
+                            Mağaza sayfasına göre bu işlem birkaç saniye sürebilir.
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if success %}
+        <div class="card border-success shadow-sm mt-4">
+            <div class="card-body p-4">
+                <h2 class="h5 mb-3">Ürün sisteme kaydedildi</h2>
+
+                {% if scanned_product %}
+                    <div class="row g-3 align-items-center">
+                        {% if scanned_product.image %}
+                            <div class="col-md-3 text-center">
+                                <img
+                                    src="{{ scanned_product.image }}"
+                                    alt="{{ scanned_product.name }}"
+                                    class="img-fluid"
+                                    style="max-height: 170px; object-fit: contain;"
+                                    referrerpolicy="no-referrer"
+                                >
+                            </div>
+                        {% endif %}
+
+                        <div class="col">
+                            <div class="fw-bold fs-5">
+                                {{ scanned_product.name or 'Ürün' }}
+                            </div>
+
+                            {% if store_name %}
+                                <div class="text-muted mt-1">
+                                    Mağaza: {{ store_name }}
+                                </div>
+                            {% endif %}
+
+                            {% if scanned_product.price is not none %}
+                                <div class="fw-bold text-success fs-4 mt-2">
+                                    {{ scanned_product.price }} TL
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <div class="d-flex flex-wrap gap-2 mt-4">
+                    <a href="/karsilastir" class="btn btn-success">
+                        Karşılaştırma Sayfasını Aç
+                    </a>
+                    <a href="/admin/products" class="btn btn-outline-secondary">
+                        Ürün Listesini Aç
+                    </a>
+                    <a href="/admin/products/add" class="btn btn-outline-primary">
+                        Başka Ürün Ekle
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="row g-3 mt-3">
+        <div class="col-md-4">
+            <div class="card h-100 border-0 bg-light">
+                <div class="card-body">
+                    <strong>1. Linki yapıştır</strong>
+                    <div class="small text-muted mt-1">
+                        Mağazadaki ürün detay sayfasının bağlantısını kullan.
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-0 bg-light">
+                <div class="card-body">
+                    <strong>2. Sistem tarasın</strong>
+                    <div class="small text-muted mt-1">
+                        İsim, fiyat, görsel, satıcı ve özellikler otomatik alınır.
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-0 bg-light">
+                <div class="card-body">
+                    <strong>3. Karşılaştırılsın</strong>
+                    <div class="small text-muted mt-1">
+                        Aynı ürünün farklı mağaza teklifleri tek grupta toplanır.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById("scanForm")?.addEventListener("submit", function () {
+        const button = document.getElementById("scanButton");
+        const loadingBox = document.getElementById("loadingBox");
+
+        if (button) {
+            button.disabled = true;
+            button.textContent = "Taranıyor…";
+        }
+
+        loadingBox?.classList.remove("d-none");
+    });
+</script>
+{% endblock %}

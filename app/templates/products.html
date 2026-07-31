@@ -1,0 +1,1028 @@
+{% extends "base.html" %}
+
+{% block title %}
+Ürünler - Fırsat AI
+{% endblock %}
+
+{% block extra_head %}
+<style>
+    .products-page {
+        --panel-radius: 1rem;
+        --panel-shadow: 0 0.4rem 1.4rem rgba(17, 24, 39, 0.08);
+    }
+
+    .products-hero {
+        position: relative;
+        overflow: hidden;
+        padding: 1.8rem;
+        border-radius: 1.25rem;
+        color: #ffffff;
+        background:
+            radial-gradient(
+                circle at top right,
+                rgba(255, 255, 255, 0.18),
+                transparent 30%
+            ),
+            linear-gradient(
+                135deg,
+                #111827 0%,
+                #1f2937 55%,
+                #3730a3 100%
+            );
+    }
+
+    .products-hero::after {
+        position: absolute;
+        right: -55px;
+        bottom: -85px;
+        width: 210px;
+        height: 210px;
+        content: "";
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.07);
+    }
+
+    .products-hero-content {
+        position: relative;
+        z-index: 1;
+    }
+
+    .hero-count {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.55rem 0.85rem;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+        font-size: 0.85rem;
+        font-weight: 650;
+        backdrop-filter: blur(8px);
+    }
+
+    .filter-panel,
+    .products-panel {
+        overflow: hidden;
+        border: 0;
+        border-radius: var(--panel-radius);
+        box-shadow: var(--panel-shadow);
+    }
+
+    .filter-panel .card-header,
+    .products-panel .card-header {
+        padding: 1.1rem 1.25rem;
+        border-bottom: 1px solid #eef0f3;
+        background: #ffffff;
+    }
+
+    .filter-label {
+        margin-bottom: 0.45rem;
+        color: #4b5563;
+        font-size: 0.78rem;
+        font-weight: 700;
+    }
+
+    .filter-panel .form-control,
+    .filter-panel .form-select {
+        min-height: 44px;
+        border-color: #e5e7eb;
+        border-radius: 0.75rem;
+    }
+
+    .filter-panel .form-control:focus,
+    .filter-panel .form-select:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.12);
+    }
+
+    .active-filter {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.42rem 0.7rem;
+        border-radius: 999px;
+        background: #eef2ff;
+        color: #4338ca;
+        font-size: 0.76rem;
+        font-weight: 650;
+    }
+
+    .product-row {
+        transition:
+            background-color 0.2s ease,
+            transform 0.2s ease;
+    }
+
+    .product-row:hover {
+        background: #fafafa;
+    }
+
+    .product-cell {
+        min-width: 330px;
+    }
+
+    .product-thumbnail {
+        display: flex;
+        flex: 0 0 auto;
+        align-items: center;
+        justify-content: center;
+        width: 72px;
+        height: 72px;
+        overflow: hidden;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.9rem;
+        background: #ffffff;
+    }
+
+    .product-thumbnail img {
+        width: 100%;
+        height: 100%;
+        padding: 5px;
+        object-fit: contain;
+    }
+
+    .product-placeholder {
+        color: #9ca3af;
+        font-size: 0.72rem;
+        text-align: center;
+    }
+
+    .product-name {
+        display: -webkit-box;
+        overflow: hidden;
+        color: #111827;
+        font-size: 0.92rem;
+        font-weight: 700;
+        line-height: 1.35;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+    }
+
+    .product-meta {
+        margin-top: 0.35rem;
+        color: #9ca3af;
+        font-size: 0.74rem;
+    }
+
+    .current-price {
+        white-space: nowrap;
+        color: #111827;
+        font-size: 0.98rem;
+        font-weight: 780;
+    }
+
+    .old-price {
+        white-space: nowrap;
+        color: #9ca3af;
+        font-size: 0.8rem;
+        text-decoration: line-through;
+    }
+
+    .discount-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 62px;
+        padding: 0.42rem 0.65rem;
+        border-radius: 999px;
+        background: #dcfce7;
+        color: #166534;
+        font-size: 0.78rem;
+        font-weight: 750;
+    }
+
+    .score-badge {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-width: 64px;
+        padding: 0.42rem 0.6rem;
+        border-radius: 0.8rem;
+        font-weight: 750;
+        line-height: 1.1;
+    }
+
+    .score-badge small {
+        margin-top: 0.2rem;
+        font-size: 0.58rem;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+    }
+
+    .score-diamond {
+        background: #ede9fe;
+        color: #6d28d9;
+    }
+
+    .score-excellent {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .score-good {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .score-average {
+        background: #e2e8f0;
+        color: #475569;
+    }
+
+    .score-weak {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .score-empty {
+        background: #f3f4f6;
+        color: #6b7280;
+    }
+
+    .notification-state {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.42rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .notification-sent {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .notification-pending {
+        background: #f3f4f6;
+        color: #6b7280;
+    }
+
+    .source-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.35rem 0.55rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 999px;
+        color: #4b5563;
+        background: #ffffff;
+        font-size: 0.72rem;
+        font-weight: 650;
+        white-space: nowrap;
+    }
+
+    .table-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.45rem;
+        min-width: 145px;
+    }
+
+    .empty-state {
+        padding: 4rem 1rem;
+        text-align: center;
+    }
+
+    .empty-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 68px;
+        height: 68px;
+        margin-bottom: 1rem;
+        border-radius: 50%;
+        background: #f3f4f6;
+        color: #6b7280;
+        font-weight: 800;
+    }
+
+    .pagination .page-link {
+        min-width: 40px;
+        border-color: #e5e7eb;
+        color: #374151;
+        text-align: center;
+    }
+
+    .pagination .page-item.active .page-link {
+        border-color: #111827;
+        background: #111827;
+        color: #ffffff;
+    }
+
+    .results-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    @media (max-width: 767.98px) {
+        .products-hero {
+            padding: 1.4rem;
+        }
+
+        .product-cell {
+            min-width: 270px;
+        }
+
+        .product-thumbnail {
+            width: 58px;
+            height: 58px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="products-page">
+
+    <section class="products-hero mb-4">
+        <div class="products-hero-content">
+            <div
+                class="d-flex flex-wrap
+                       justify-content-between
+                       align-items-center
+                       gap-3"
+            >
+                <div>
+                    <div class="small text-white-50 mb-2">
+                        Ürün yönetimi
+                    </div>
+
+                    <h1 class="h2 fw-bold mb-2">
+                        Tüm Ürünler
+                    </h1>
+
+                    <p class="text-white-50 mb-0">
+                        Ürünleri filtreleyin, fırsat puanlarını
+                        inceleyin ve detaylara ulaşın.
+                    </p>
+                </div>
+
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <span class="hero-count">
+                        {{ total_products }} ürün
+                    </span>
+
+                    <a
+                        href="/admin"
+                        class="btn btn-light"
+                    >
+                        Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="card filter-panel mb-4">
+        <div
+            class="card-header
+                   d-flex
+                   flex-wrap
+                   justify-content-between
+                   align-items-center
+                   gap-2"
+        >
+            <div>
+                <h2 class="h5 mb-1">
+                    Akıllı filtreler
+                </h2>
+
+                <p class="text-muted small mb-0">
+                    Ürün adı, marka, model, kategori ve satıcıda arama yapar.
+                </p>
+            </div>
+
+            {% if search or minimum_score or notified %}
+                <a
+                    href="/admin/products"
+                    class="btn btn-sm btn-outline-secondary"
+                >
+                    Filtreleri temizle
+                </a>
+            {% endif %}
+        </div>
+
+        <div class="card-body p-3 p-lg-4">
+            <form
+                method="get"
+                action="/admin/products"
+                class="row g-3"
+            >
+                <div class="col-lg-5">
+                    <label
+                        for="search"
+                        class="filter-label"
+                    >
+                        Ürün, marka veya satıcı
+                    </label>
+
+                    <input
+                        type="search"
+                        id="search"
+                        name="search"
+                        value="{{ search }}"
+                        class="form-control"
+                        placeholder="Örnek: iPhone, Samsung, Trendyol"
+                        autocomplete="off"
+                    >
+                </div>
+
+                <div class="col-sm-6 col-lg-2">
+                    <label
+                        for="minimum_score"
+                        class="filter-label"
+                    >
+                        Minimum AI
+                    </label>
+
+                    <select
+                        id="minimum_score"
+                        name="minimum_score"
+                        class="form-select"
+                    >
+                        <option
+                            value=""
+                            {% if minimum_score == "" %}selected{% endif %}
+                        >
+                            Tümü
+                        </option>
+
+                        <option
+                            value="50"
+                            {% if minimum_score|string == "50" %}selected{% endif %}
+                        >
+                            50+ Orta
+                        </option>
+
+                        <option
+                            value="65"
+                            {% if minimum_score|string == "65" %}selected{% endif %}
+                        >
+                            65+ İyi
+                        </option>
+
+                        <option
+                            value="80"
+                            {% if minimum_score|string == "80" %}selected{% endif %}
+                        >
+                            80+ Çok iyi
+                        </option>
+
+                        <option
+                            value="90"
+                            {% if minimum_score|string == "90" %}selected{% endif %}
+                        >
+                            90+ Elmas
+                        </option>
+                    </select>
+                </div>
+
+                <div class="col-sm-6 col-lg-2">
+                    <label
+                        for="notified"
+                        class="filter-label"
+                    >
+                        Bildirim
+                    </label>
+
+                    <select
+                        id="notified"
+                        name="notified"
+                        class="form-select"
+                    >
+                        <option
+                            value=""
+                            {% if not notified %}selected{% endif %}
+                        >
+                            Tümü
+                        </option>
+
+                        <option
+                            value="yes"
+                            {% if notified == "yes" %}selected{% endif %}
+                        >
+                            Gönderilen
+                        </option>
+
+                        <option
+                            value="no"
+                            {% if notified == "no" %}selected{% endif %}
+                        >
+                            Gönderilmeyen
+                        </option>
+                    </select>
+                </div>
+
+                <div class="col-sm-6 col-lg-1">
+                    <label
+                        for="page_size"
+                        class="filter-label"
+                    >
+                        Sayfa
+                    </label>
+
+                    <select
+                        id="page_size"
+                        name="page_size"
+                        class="form-select"
+                    >
+                        {% for size in [10, 20, 50, 100] %}
+                            <option
+                                value="{{ size }}"
+                                {% if page_size == size %}selected{% endif %}
+                            >
+                                {{ size }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div
+                    class="col-sm-6 col-lg-2
+                           d-flex align-items-end"
+                >
+                    <button
+                        type="submit"
+                        class="btn btn-dark w-100"
+                        style="min-height: 44px;"
+                    >
+                        Sonuçları getir
+                    </button>
+                </div>
+            </form>
+
+            {% if search or minimum_score or notified %}
+                <div
+                    class="d-flex flex-wrap
+                           align-items-center
+                           gap-2
+                           mt-3"
+                >
+                    <span class="small text-muted">
+                        Aktif filtreler:
+                    </span>
+
+                    {% if search %}
+                        <span class="active-filter">
+                            Arama: {{ search }}
+                        </span>
+                    {% endif %}
+
+                    {% if minimum_score %}
+                        <span class="active-filter">
+                            AI: {{ minimum_score }}+
+                        </span>
+                    {% endif %}
+
+                    {% if notified == "yes" %}
+                        <span class="active-filter">
+                            Bildirim gönderilen
+                        </span>
+                    {% elif notified == "no" %}
+                        <span class="active-filter">
+                            Bildirim gönderilmeyen
+                        </span>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <section class="card products-panel">
+        <div class="card-header">
+            <div class="results-toolbar">
+                <div>
+                    <h2 class="h5 mb-1">
+                        Ürün sonuçları
+                    </h2>
+
+                    <p class="text-muted small mb-0">
+                        Sayfa {{ page }} / {{ total_pages }}
+                    </p>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2">
+                    <a
+                        href="/admin/products?minimum_score=90&page_size={{ page_size }}"
+                        class="btn btn-sm btn-outline-primary"
+                    >
+                        Elmas fırsatlar
+                    </a>
+
+                    <a
+                        href="/admin/products?minimum_score=80&page_size={{ page_size }}"
+                        class="btn btn-sm btn-outline-success"
+                    >
+                        80+ fırsatlar
+                    </a>
+
+                    <a
+                        href="/admin/products?notified=no&page_size={{ page_size }}"
+                        class="btn btn-sm btn-outline-secondary"
+                    >
+                        Bildirim bekleyenler
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        {% if products %}
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">
+                                Ürün
+                            </th>
+
+                            <th>
+                                Fiyat
+                            </th>
+
+                            <th>
+                                İndirim
+                            </th>
+
+                            <th>
+                                AI fırsat
+                            </th>
+
+                            <th>
+                                Satıcı
+                            </th>
+
+                            <th>
+                                Kaynak
+                            </th>
+
+                            <th>
+                                Bildirim
+                            </th>
+
+                            <th class="text-end pe-4">
+                                İşlem
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for product in products %}
+                            {% set current_price = product.price or 0 %}
+                            {% set previous_price = product.old_price or 0 %}
+                            {% set score = product.ai_score or 0 %}
+
+                            {% if
+                                previous_price
+                                and previous_price > current_price
+                            %}
+                                {% set discount =
+                                    (
+                                        (previous_price - current_price)
+                                        / previous_price
+                                        * 100
+                                    )
+                                %}
+                            {% else %}
+                                {% set discount = 0 %}
+                            {% endif %}
+
+                            <tr class="product-row">
+                                <td class="ps-4 product-cell">
+                                    <div
+                                        class="d-flex
+                                               align-items-center
+                                               gap-3"
+                                    >
+                                        <div class="product-thumbnail">
+                                            {% if product.image %}
+                                                <img
+                                                    src="{{ product.image }}"
+                                                    alt="{{ product.name }}"
+                                                    loading="lazy"
+                                                    onerror="
+                                                        this.style.display='none';
+                                                    "
+                                                >
+                                            {% else %}
+                                                <span class="product-placeholder">
+                                                    Görsel yok
+                                                </span>
+                                            {% endif %}
+                                        </div>
+
+                                        <div>
+                                            <a
+                                                href="/admin/products/{{ product.id }}"
+                                                class="product-name
+                                                       text-decoration-none"
+                                            >
+                                                {{ product.name }}
+                                            </a>
+
+                                            <div class="product-meta">
+                                                #{{ product.id }}
+
+                                                {% if product.brand %}
+                                                    · {{ product.brand }}
+                                                {% endif %}
+
+                                                {% if product.model %}
+                                                    · {{ product.model }}
+                                                {% endif %}
+                                            </div>
+
+                                            {% if product.category %}
+                                                <div class="mt-1">
+                                                    <span
+                                                        class="badge
+                                                               text-bg-light
+                                                               border"
+                                                    >
+                                                        {{ product.category }}
+                                                    </span>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div class="current-price">
+                                        {{ "%.2f"|format(current_price) }} TL
+                                    </div>
+
+                                    {% if
+                                        previous_price
+                                        and previous_price > current_price
+                                    %}
+                                        <div class="old-price mt-1">
+                                            {{ "%.2f"|format(previous_price) }}
+                                            TL
+                                        </div>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {% if discount > 0 %}
+                                        <span class="discount-badge">
+                                            ↓ %{{ "%.1f"|format(discount) }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted small">
+                                            İndirim yok
+                                        </span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    {% if product.ai_score is none %}
+                                        <span
+                                            class="score-badge score-empty"
+                                        >
+                                            —
+                                            <small>PUAN YOK</small>
+                                        </span>
+                                    {% elif score >= 90 %}
+                                        <span
+                                            class="score-badge score-diamond"
+                                        >
+                                            {{ score|round|int }}
+                                            <small>ELMAS</small>
+                                        </span>
+                                    {% elif score >= 80 %}
+                                        <span
+                                            class="score-badge
+                                                   score-excellent"
+                                        >
+                                            {{ score|round|int }}
+                                            <small>ÇOK İYİ</small>
+                                        </span>
+                                    {% elif score >= 65 %}
+                                        <span
+                                            class="score-badge score-good"
+                                        >
+                                            {{ score|round|int }}
+                                            <small>İYİ</small>
+                                        </span>
+                                    {% elif score >= 50 %}
+                                        <span
+                                            class="score-badge score-average"
+                                        >
+                                            {{ score|round|int }}
+                                            <small>ORTA</small>
+                                        </span>
+                                    {% else %}
+                                        <span
+                                            class="score-badge score-weak"
+                                        >
+                                            {{ score|round|int }}
+                                            <small>ZAYIF</small>
+                                        </span>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    <div class="fw-semibold small">
+                                        {{ product.seller or "Bilinmiyor" }}
+                                    </div>
+
+                                    {% if product.rating is not none %}
+                                        <div class="small text-muted mt-1">
+                                            ★ {{ product.rating }}/5
+
+                                            {% if
+                                                product.review_count
+                                                is not none
+                                            %}
+                                                · {{ product.review_count }}
+                                                yorum
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </td>
+
+                                <td>
+                                    <span class="source-badge">
+                                        {{ product.source_site or "Bilinmiyor" }}
+                                    </span>
+                                </td>
+
+                                <td>
+                                    {% if
+                                        product.last_notified_price
+                                        is not none
+                                    %}
+                                        <span
+                                            class="notification-state
+                                                   notification-sent"
+                                        >
+                                            ✓ Gönderildi
+                                        </span>
+
+                                        <div class="small text-muted mt-1">
+                                            {{
+                                                "%.2f"|format(
+                                                    product.last_notified_price
+                                                )
+                                            }}
+                                            TL
+                                        </div>
+                                    {% else %}
+                                        <span
+                                            class="notification-state
+                                                   notification-pending"
+                                        >
+                                            Bekliyor
+                                        </span>
+                                    {% endif %}
+                                </td>
+
+                                <td class="pe-4">
+                                    <div class="table-actions">
+                                        <a
+                                            href="/admin/products/{{ product.id }}"
+                                            class="btn btn-sm btn-dark"
+                                        >
+                                            Detay
+                                        </a>
+
+                                        {% if product.url %}
+                                            <a
+                                                href="{{ product.url }}"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                class="btn btn-sm
+                                                       btn-outline-secondary"
+                                            >
+                                                Mağaza
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">
+                    0
+                </div>
+
+                <h3 class="h5 mb-2">
+                    Ürün bulunamadı
+                </h3>
+
+                <p class="text-muted mb-3">
+                    Seçilen filtrelere uygun ürün bulunmuyor.
+                </p>
+
+                <a
+                    href="/admin/products"
+                    class="btn btn-dark"
+                >
+                    Tüm ürünleri göster
+                </a>
+            </div>
+        {% endif %}
+    </section>
+
+    {% if total_pages > 1 %}
+        <nav
+            class="mt-4"
+            aria-label="Ürün sayfaları"
+        >
+            <ul
+                class="pagination
+                       flex-wrap
+                       justify-content-center"
+            >
+                <li
+                    class="page-item
+                    {% if page <= 1 %}disabled{% endif %}"
+                >
+                    <a
+                        class="page-link"
+                        href="/admin/products?page={{ page - 1 }}&page_size={{ page_size }}&search={{ search|urlencode }}&minimum_score={{ minimum_score }}&notified={{ notified }}"
+                    >
+                        Önceki
+                    </a>
+                </li>
+
+                {% for page_number in range(1, total_pages + 1) %}
+                    {% if
+                        page_number == 1
+                        or page_number == total_pages
+                        or (
+                            page_number >= page - 2
+                            and page_number <= page + 2
+                        )
+                    %}
+                        <li
+                            class="page-item
+                            {% if page_number == page %}active{% endif %}"
+                        >
+                            <a
+                                class="page-link"
+                                href="/admin/products?page={{ page_number }}&page_size={{ page_size }}&search={{ search|urlencode }}&minimum_score={{ minimum_score }}&notified={{ notified }}"
+                            >
+                                {{ page_number }}
+                            </a>
+                        </li>
+                    {% elif
+                        page_number == page - 3
+                        or page_number == page + 3
+                    %}
+                        <li class="page-item disabled">
+                            <span class="page-link">
+                                …
+                            </span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                <li
+                    class="page-item
+                    {% if page >= total_pages %}disabled{% endif %}"
+                >
+                    <a
+                        class="page-link"
+                        href="/admin/products?page={{ page + 1 }}&page_size={{ page_size }}&search={{ search|urlencode }}&minimum_score={{ minimum_score }}&notified={{ notified }}"
+                    >
+                        Sonraki
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    {% endif %}
+
+</div>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const pageSizeSelect = document.getElementById(
+            "page_size"
+        );
+
+        if (pageSizeSelect) {
+            pageSizeSelect.addEventListener(
+                "change",
+                function () {
+                    this.form.submit();
+                }
+            );
+        }
+    });
+</script>
+{% endblock %}

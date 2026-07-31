@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1"
+    >
+
+    <title>Tüm Kategoriler | Fırsat AI</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', path='css/style.css') }}"
+    >
+
+    <style>
+        body {
+            color: #172033;
+        }
+
+        .catalog-shell {
+            max-width: 1440px;
+            margin: 0 auto;
+        }
+
+        .catalog-header {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            border-bottom: 1px solid #dbe2ea;
+            background: rgba(255, 255, 255, .96);
+            backdrop-filter: blur(12px);
+        }
+
+        .catalog-brand {
+            color: #172033;
+            font-size: 1.45rem;
+            font-weight: 900;
+            text-decoration: none;
+        }
+
+        .catalog-search {
+            position: relative;
+            flex: 1 1 560px;
+        }
+
+        .catalog-search input {
+            height: 48px;
+            padding-left: 45px;
+            border-color: #dbe2ea;
+            background: #f1f5f9;
+        }
+
+        .catalog-search-icon {
+            position: absolute;
+            top: 50%;
+            left: 16px;
+            transform: translateY(-50%);
+            color: #64748b;
+        }
+
+        .main-tabs {
+            display: grid;
+            grid-template-columns: repeat(9, minmax(115px, 1fr));
+            gap: 3px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+        .main-tab {
+            display: flex;
+            min-height: 54px;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding: 8px 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 7px;
+            background: #e5e7eb;
+            color: #202938;
+            font-size: .76rem;
+            font-weight: 800;
+            text-align: center;
+            text-decoration: none;
+            white-space: normal;
+        }
+
+        .main-tab:hover {
+            border-color: #4f8edc;
+            background: #eaf3ff;
+            color: #195da7;
+        }
+
+        .catalog-card {
+            border: 1px solid #dfe5ec;
+            border-radius: 15px;
+            background: #fff;
+            box-shadow: 0 7px 20px rgba(15, 23, 42, .045);
+        }
+
+        .featured-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 4px 28px;
+        }
+
+        .featured-link,
+        .category-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            min-height: 38px;
+            color: #315fd6;
+            font-size: .84rem;
+            text-decoration: none;
+        }
+
+        .featured-link:hover,
+        .category-link:hover {
+            color: #1747b7;
+            text-decoration: underline;
+        }
+
+        .link-count {
+            flex: 0 0 auto;
+            color: #94a3b8;
+            font-size: .67rem;
+            text-decoration: none;
+        }
+
+        .link-count.active {
+            color: #16803c;
+            font-weight: 800;
+        }
+
+        .main-category {
+            scroll-margin-top: 165px;
+        }
+
+        .main-category-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #d7dce3;
+        }
+
+        .main-category-name {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 900;
+        }
+
+        .category-groups {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 20px 34px;
+        }
+
+        .category-group {
+            min-width: 0;
+        }
+
+        .category-group-title {
+            margin-bottom: 4px;
+            padding-bottom: 8px;
+            border-bottom: 1px dotted #d6dce5;
+            font-size: .84rem;
+            font-weight: 900;
+        }
+
+        .category-links {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            column-gap: 24px;
+        }
+
+        .category-link {
+            min-width: 0;
+        }
+
+        .category-link-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .category-link.no-products {
+            color: #5573c9;
+        }
+
+        .catalog-summary {
+            color: #64748b;
+            font-size: .78rem;
+        }
+
+        @media (max-width: 1100px) {
+            .main-tabs {
+                grid-template-columns: repeat(9, 140px);
+            }
+
+            .featured-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+
+            .category-groups {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 767.98px) {
+            .featured-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .category-links {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 479.98px) {
+            .featured-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-light">
+<header class="catalog-header">
+    <div class="catalog-shell px-3 px-lg-4 py-3">
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <a href="/" class="catalog-brand">
+                Fırsat AI
+            </a>
+
+            <a href="/kategoriler" class="btn btn-primary">
+                Kategoriler
+            </a>
+
+            <form
+                class="catalog-search"
+                action="/karsilastir"
+                method="get"
+            >
+                <span class="catalog-search-icon">⌕</span>
+                <input
+                    type="search"
+                    name="q"
+                    class="form-control"
+                    placeholder="Neyi ucuza almak istersin?"
+                    autocomplete="off"
+                >
+            </form>
+
+            <a
+                href="/karsilastir"
+                class="btn btn-outline-secondary"
+            >
+                Tüm ürünler
+            </a>
+        </div>
+    </div>
+</header>
+
+<main class="catalog-shell px-3 px-lg-4 py-3 py-lg-4">
+    <nav class="main-tabs mb-4" aria-label="Ana kategoriler">
+        {% for main_category in category_catalog %}
+            <a
+                href="#{{ main_category["slug"] }}"
+                class="main-tab"
+            >
+                <span>{{ main_category["icon"] }}</span>
+                <span>{{ main_category["name"] }}</span>
+            </a>
+        {% endfor %}
+    </nav>
+
+    <section class="catalog-card p-3 p-lg-4 mb-4">
+        <div class="d-flex justify-content-between gap-3 flex-wrap mb-3">
+            <div>
+                <h1 class="h4 fw-bold mb-1">Öne Çıkan Kategoriler</h1>
+                <div class="catalog-summary">
+                    En çok aranan ürün gruplarına hızlıca ulaş.
+                </div>
+            </div>
+
+            <div class="catalog-summary">
+                Toplam {{ total_catalog_items }} alt kategori
+            </div>
+        </div>
+
+        <div class="featured-grid">
+            {% for item in featured_categories %}
+                <a href="{{ item["url"] }}" class="featured-link">
+                    <span>{{ item["name"] }}</span>
+                    {% if item["count"] %}
+                        <span class="link-count active">
+                            {{ item["count"] }} ürün
+                        </span>
+                    {% endif %}
+                </a>
+            {% endfor %}
+        </div>
+    </section>
+
+    {% for main_category in category_catalog %}
+        <section
+            id="{{ main_category["slug"] }}"
+            class="catalog-card main-category p-3 p-lg-4 mb-4"
+        >
+            <div class="main-category-title mb-4">
+                <h2 class="main-category-name">
+                    <span>{{ main_category["icon"] }}</span>
+                    <span>{{ main_category["name"] }}</span>
+                </h2>
+
+                {% if main_category["product_count"] %}
+                    <span class="badge text-bg-success">
+                        {{ main_category["product_count"] }} ürün
+                    </span>
+                {% endif %}
+            </div>
+
+            <div class="category-groups">
+                {% for group in main_category["groups"] %}
+                    <div class="category-group">
+                        <h3 class="category-group-title">
+                            {{ group["name"] }}
+                            {% if group["product_count"] %}
+                                <span class="text-success ms-1">
+                                    ({{ group["product_count"] }})
+                                </span>
+                            {% endif %}
+                        </h3>
+
+                        <div class="category-links">
+                            {% for item in group["items"] %}
+                                <a
+                                    href="{{ item["url"] }}"
+                                    class="category-link{% if not item["has_products"] %} no-products{% endif %}"
+                                >
+                                    <span class="category-link-name">
+                                        {{ item["name"] }}
+                                    </span>
+
+                                    {% if item["count"] %}
+                                        <span class="link-count active">
+                                            {{ item["count"] }}
+                                        </span>
+                                    {% endif %}
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+    {% endfor %}
+</main>
+</body>
+</html>

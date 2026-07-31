@@ -1,0 +1,2024 @@
+{% extends "public_base.html" %}
+
+{% block title %}
+{{ comparison.product_name }} - Fiyat Kar&#351;&#305;la&#351;t&#305;rma | F&#305;rsat AI
+{% endblock %}
+
+{% block extra_head %}
+<style>
+    :root {
+        --detail-bg: #f4f7fb;
+        --detail-surface: #ffffff;
+        --detail-ink: #111827;
+        --detail-muted: #64748b;
+        --detail-line: #e2e8f0;
+        --detail-primary: #2667ff;
+        --detail-primary-dark: #174fcf;
+        --detail-success: #0f9f61;
+        --detail-danger: #e5414f;
+        --detail-warning: #f59e0b;
+        --detail-shadow: 0 18px 42px rgba(15, 23, 42, .08);
+    }
+
+    body {
+        background: var(--detail-bg) !important;
+    }
+
+    .detail-page {
+        max-width: 1450px;
+        margin: 0 auto;
+        color: var(--detail-ink);
+    }
+
+    .breadcrumb-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        margin-bottom: 18px;
+    }
+
+    .premium-breadcrumb {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+        padding: 0;
+        color: var(--detail-muted);
+        font-size: .74rem;
+        list-style: none;
+    }
+
+    .premium-breadcrumb a {
+        color: var(--detail-muted);
+        font-weight: 750;
+        text-decoration: none;
+    }
+
+    .premium-breadcrumb a:hover {
+        color: var(--detail-primary);
+    }
+
+    .back-button {
+        display: inline-flex;
+        min-height: 40px;
+        align-items: center;
+        padding: 0 14px;
+        border: 1px solid var(--detail-line);
+        border-radius: 11px;
+        background: #fff;
+        color: #334155;
+        font-size: .72rem;
+        font-weight: 850;
+        text-decoration: none;
+    }
+
+    .product-hero {
+        position: relative;
+        overflow: hidden;
+        margin-bottom: 18px;
+        padding: 26px;
+        border: 1px solid var(--detail-line);
+        border-radius: 25px;
+        background:
+            radial-gradient(
+                circle at 94% 8%,
+                rgba(59, 130, 246, .12),
+                transparent 26%
+            ),
+            #fff;
+        box-shadow: var(--detail-shadow);
+    }
+
+    .product-hero-grid {
+        display: grid;
+        grid-template-columns: minmax(280px, 390px) minmax(0, 1fr);
+        gap: 30px;
+    }
+
+    .image-panel {
+        position: relative;
+        display: flex;
+        min-height: 390px;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        border: 1px solid var(--detail-line);
+        border-radius: 20px;
+        background: linear-gradient(180deg, #fbfdff, #f7f9fc);
+    }
+
+    .product-image {
+        width: 100%;
+        height: 365px;
+        object-fit: contain;
+        padding: 25px;
+    }
+
+    .image-placeholder {
+        color: #94a3b8;
+        font-size: .86rem;
+        font-weight: 750;
+        text-align: center;
+    }
+
+    .hero-content {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+    }
+
+    .hero-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 7px;
+        margin-bottom: 14px;
+    }
+
+    .hero-tag {
+        display: inline-flex;
+        min-height: 27px;
+        align-items: center;
+        padding: 0 10px;
+        border-radius: 999px;
+        background: #eef3ff;
+        color: #2453bf;
+        font-size: .65rem;
+        font-weight: 850;
+    }
+
+    .hero-tag.success {
+        background: #e7f8ef;
+        color: #087747;
+    }
+
+    .product-title {
+        max-width: 970px;
+        margin: 0 0 14px;
+        color: #111827;
+        font-size: clamp(1.65rem, 3.3vw, 2.8rem);
+        font-weight: 950;
+        line-height: 1.13;
+        letter-spacing: -.04em;
+    }
+
+    .product-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 9px 20px;
+        margin-bottom: 22px;
+        color: var(--detail-muted);
+        font-size: .76rem;
+    }
+
+    .product-meta strong {
+        color: #334155;
+    }
+
+    .hero-price-box {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: end;
+        gap: 16px;
+        margin-top: auto;
+        padding: 20px;
+        border: 1px solid #cfe0ff;
+        border-radius: 18px;
+        background: linear-gradient(135deg, #f3f7ff, #fff);
+    }
+
+    .price-label {
+        margin-bottom: 4px;
+        color: var(--detail-muted);
+        font-size: .68rem;
+        font-weight: 850;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+    }
+
+    .best-price {
+        color: #10235a;
+        font-size: clamp(2rem, 4vw, 3.15rem);
+        font-weight: 950;
+        line-height: 1;
+        letter-spacing: -.05em;
+    }
+
+    .best-store {
+        margin-top: 7px;
+        color: #475569;
+        font-size: .75rem;
+    }
+
+    .best-store strong {
+        color: #172033;
+    }
+
+    .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 8px;
+    }
+
+    .primary-button,
+    .secondary-button {
+        display: inline-flex;
+        min-height: 43px;
+        align-items: center;
+        justify-content: center;
+        padding: 0 15px;
+        border-radius: 11px;
+        font-size: .72rem;
+        font-weight: 900;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    .primary-button {
+        border: 0;
+        background: var(--detail-primary);
+        color: #fff;
+    }
+
+    .primary-button:hover {
+        background: var(--detail-primary-dark);
+        color: #fff;
+    }
+
+    .secondary-button {
+        border: 1px solid var(--detail-line);
+        background: #fff;
+        color: #334155;
+    }
+
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 18px;
+    }
+
+    .summary-card {
+        min-height: 126px;
+        padding: 18px;
+        border: 1px solid var(--detail-line);
+        border-radius: 17px;
+        background: #fff;
+        box-shadow: 0 10px 26px rgba(15, 23, 42, .045);
+    }
+
+    .summary-card.success {
+        border-color: #bfead3;
+        background: linear-gradient(135deg, #edfbf4, #fff);
+    }
+
+    .summary-card.primary {
+        border-color: #cedbff;
+        background: linear-gradient(135deg, #f0f4ff, #fff);
+    }
+
+    .summary-label {
+        margin-bottom: 8px;
+        color: var(--detail-muted);
+        font-size: .66rem;
+        font-weight: 900;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+    }
+
+    .summary-value {
+        color: #172033;
+        font-size: 1.36rem;
+        font-weight: 950;
+        letter-spacing: -.025em;
+    }
+
+    .summary-note {
+        margin-top: 5px;
+        color: #7c8ba1;
+        font-size: .68rem;
+    }
+
+    .content-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 350px;
+        align-items: start;
+        gap: 18px;
+    }
+
+    .main-column,
+    .side-column {
+        display: grid;
+        gap: 18px;
+    }
+
+    .premium-card {
+        overflow: hidden;
+        border: 1px solid var(--detail-line);
+        border-radius: 20px;
+        background: #fff;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, .055);
+    }
+
+    .card-header-premium {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 19px 21px;
+        border-bottom: 1px solid var(--detail-line);
+    }
+
+    .card-kicker {
+        margin-bottom: 3px;
+        color: var(--detail-primary);
+        font-size: .61rem;
+        font-weight: 900;
+        letter-spacing: .09em;
+        text-transform: uppercase;
+    }
+
+    .card-title-premium {
+        margin: 0;
+        color: #172033;
+        font-size: 1.08rem;
+        font-weight: 950;
+    }
+
+    .card-description {
+        margin: 4px 0 0;
+        color: var(--detail-muted);
+        font-size: .71rem;
+    }
+
+    .offer-count-badge {
+        display: inline-flex;
+        min-height: 28px;
+        align-items: center;
+        padding: 0 10px;
+        border-radius: 999px;
+        background: #f1f5f9;
+        color: #475569;
+        font-size: .65rem;
+        font-weight: 850;
+    }
+
+    .offer-list {
+        display: grid;
+        gap: 11px;
+        padding: 16px;
+    }
+
+    .offer-row {
+        position: relative;
+        display: grid;
+        grid-template-columns: minmax(180px, 1fr) auto auto;
+        align-items: center;
+        gap: 18px;
+        padding: 17px;
+        border: 1px solid var(--detail-line);
+        border-radius: 15px;
+        background: #fff;
+        transition:
+            transform .18s ease,
+            border-color .18s ease,
+            box-shadow .18s ease;
+    }
+
+    .offer-row:hover {
+        transform: translateY(-2px);
+        border-color: #b5c7ff;
+        box-shadow: 0 13px 27px rgba(15, 23, 42, .075);
+    }
+
+    .offer-row.best {
+        border: 2px solid #24b36b;
+        background: linear-gradient(135deg, #effcf5, #fff);
+    }
+
+    .offer-main {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: 13px;
+    }
+
+    .store-mark {
+        display: inline-flex;
+        width: 52px;
+        height: 52px;
+        flex: 0 0 52px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 14px;
+        background: #edf2f7;
+        color: #334155;
+        font-size: .69rem;
+        font-weight: 950;
+        text-align: center;
+        text-transform: uppercase;
+    }
+
+    .store-name {
+        color: #172033;
+        font-size: .91rem;
+        font-weight: 900;
+    }
+
+    .seller-name,
+    .availability {
+        margin-top: 3px;
+        color: var(--detail-muted);
+        font-size: .67rem;
+    }
+
+    .best-offer-badge {
+        display: inline-flex;
+        min-height: 23px;
+        align-items: center;
+        margin-top: 6px;
+        padding: 0 8px;
+        border-radius: 999px;
+        background: #16a360;
+        color: #fff;
+        font-size: .59rem;
+        font-weight: 900;
+    }
+
+    .offer-rank {
+        display: inline-flex;
+        width: 30px;
+        height: 30px;
+        flex: 0 0 30px;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--detail-line);
+        border-radius: 50%;
+        background: #fff;
+        color: #64748b;
+        font-size: .72rem;
+        font-weight: 950;
+    }
+
+    .offer-row.best .offer-rank {
+        border-color: #9bd9b9;
+        background: #dcfce7;
+        color: #087747;
+    }
+
+    .price-difference {
+        margin-top: 4px;
+        color: #7c8ba1;
+        font-size: .63rem;
+        font-weight: 750;
+        white-space: nowrap;
+    }
+
+    .price-difference.best-difference {
+        color: var(--detail-success);
+        font-weight: 900;
+    }
+
+    .offer-price-area {
+        min-width: 150px;
+        text-align: right;
+    }
+
+    .offer-price {
+        color: #172033;
+        font-size: 1.22rem;
+        font-weight: 950;
+        white-space: nowrap;
+    }
+
+    .shipping {
+        margin-top: 3px;
+        color: var(--detail-muted);
+        font-size: .64rem;
+    }
+
+    .shipping.free {
+        color: var(--detail-success);
+        font-weight: 850;
+    }
+
+    .store-button {
+        display: inline-flex;
+        min-height: 41px;
+        align-items: center;
+        justify-content: center;
+        padding: 0 14px;
+        border-radius: 11px;
+        background: var(--detail-primary);
+        color: #fff;
+        font-size: .69rem;
+        font-weight: 900;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    .store-button:hover {
+        background: var(--detail-primary-dark);
+        color: #fff;
+    }
+
+    .unavailable-section {
+        padding: 0 16px 16px;
+    }
+
+    .unavailable-toggle {
+        width: 100%;
+        padding: 13px 15px;
+        border: 1px solid var(--detail-line);
+        border-radius: 13px;
+        background: #f8fafc;
+        color: #475569;
+        font-size: .71rem;
+        font-weight: 850;
+        text-align: left;
+    }
+
+    .unavailable-list {
+        display: grid;
+        gap: 9px;
+        margin-top: 10px;
+    }
+
+    .offer-row.unavailable {
+        opacity: .66;
+        background: #f8fafc;
+    }
+
+    .chart-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 14px 18px 0;
+    }
+
+    .chart-range-buttons {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: 7px;
+    }
+
+    .chart-range-button {
+        min-height: 34px;
+        padding: 0 12px;
+        border: 1px solid var(--detail-line);
+        border-radius: 10px;
+        background: #fff;
+        color: #475569;
+        font-size: .66rem;
+        font-weight: 900;
+        cursor: pointer;
+    }
+
+    .chart-range-button.active {
+        border-color: var(--detail-primary);
+        background: var(--detail-primary);
+        color: #fff;
+    }
+
+    .chart-range-note {
+        color: var(--detail-muted);
+        font-size: .65rem;
+        font-weight: 750;
+    }
+
+    .deal-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 29px;
+        padding: 0 11px;
+        border-radius: 999px;
+        font-size: .66rem;
+        font-weight: 950;
+    }
+
+    .deal-badge.super,
+    .deal-badge.good {
+        background: #e7f8ef;
+        color: #087747;
+    }
+
+    .deal-badge.normal,
+    .deal-badge.new {
+        background: #eef3ff;
+        color: #2453bf;
+    }
+
+    .deal-badge.high {
+        background: #fff1f2;
+        color: #be123c;
+    }
+
+    .chart-wrap {
+        position: relative;
+        height: 390px;
+        padding: 18px;
+    }
+
+    .history-metrics {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        padding: 0 18px 18px;
+    }
+
+    .history-metric {
+        padding: 13px;
+        border: 1px solid var(--detail-line);
+        border-radius: 13px;
+        background: #f8fafc;
+    }
+
+    .history-label {
+        color: var(--detail-muted);
+        font-size: .61rem;
+        font-weight: 850;
+        text-transform: uppercase;
+    }
+
+    .history-value {
+        margin-top: 4px;
+        color: #172033;
+        font-size: .86rem;
+        font-weight: 900;
+    }
+
+    .ai-card {
+        background:
+            radial-gradient(
+                circle at top right,
+                rgba(99, 102, 241, .12),
+                transparent 34%
+            ),
+            #fff;
+    }
+
+    .ai-content {
+        padding: 20px;
+    }
+
+    .ai-score-row {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: 18px;
+    }
+
+    .ai-score {
+        display: flex;
+        width: 104px;
+        height: 104px;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border: 9px solid #6366f1;
+        border-radius: 50%;
+        background: #fff;
+    }
+
+    .ai-score.score-success {
+        border-color: #22c55e;
+    }
+
+    .ai-score.score-warning {
+        border-color: #f59e0b;
+    }
+
+    .ai-score.score-danger {
+        border-color: #ef4444;
+    }
+
+    .ai-score.score-secondary {
+        border-color: #94a3b8;
+    }
+
+    .ai-number {
+        color: #172033;
+        font-size: 1.8rem;
+        font-weight: 950;
+        line-height: 1;
+    }
+
+    .ai-total {
+        margin-top: 4px;
+        color: var(--detail-muted);
+        font-size: .61rem;
+        font-weight: 750;
+    }
+
+    .ai-status {
+        color: #172033;
+        font-size: 1.17rem;
+        font-weight: 950;
+    }
+
+    .ai-recommendation {
+        margin-top: 5px;
+        color: var(--detail-muted);
+        font-size: .75rem;
+        line-height: 1.55;
+    }
+
+    .ai-metrics {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 9px;
+        margin-top: 18px;
+    }
+
+    .ai-metric {
+        padding: 12px;
+        border: 1px solid var(--detail-line);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, .82);
+    }
+
+    .ai-metric-label {
+        color: var(--detail-muted);
+        font-size: .59rem;
+        font-weight: 850;
+        text-transform: uppercase;
+    }
+
+    .ai-metric-value {
+        margin-top: 4px;
+        color: #172033;
+        font-size: .78rem;
+        font-weight: 900;
+    }
+
+    .ai-reasons {
+        display: grid;
+        gap: 8px;
+        margin-top: 14px;
+    }
+
+    .ai-reason {
+        padding: 11px 12px;
+        border: 1px solid var(--detail-line);
+        border-left: 4px solid #6366f1;
+        border-radius: 10px;
+        background: #fff;
+        color: #475569;
+        font-size: .69rem;
+        line-height: 1.5;
+    }
+
+    .ai-reason.reason-success {
+        border-left-color: #22c55e;
+    }
+
+    .ai-reason.reason-warning {
+        border-left-color: #f59e0b;
+    }
+
+    .ai-reason.reason-danger {
+        border-left-color: #ef4444;
+    }
+
+    .alarm-body {
+        padding: 19px;
+    }
+
+    .alarm-text {
+        margin-bottom: 14px;
+        color: var(--detail-muted);
+        font-size: .73rem;
+        line-height: 1.55;
+    }
+
+    .alarm-form {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+    }
+
+    .alarm-input {
+        width: 100%;
+        height: 42px;
+        padding: 0 11px;
+        border: 1px solid var(--detail-line);
+        border-radius: 11px;
+        outline: none;
+    }
+
+    .alarm-input:focus {
+        border-color: #9bb7ff;
+        box-shadow: 0 0 0 3px rgba(38, 103, 255, .08);
+    }
+
+    .alarm-status {
+        min-height: 20px;
+        margin-top: 9px;
+        color: var(--detail-success);
+        font-size: .66rem;
+        font-weight: 800;
+    }
+
+    .feature-sections {
+        display: grid;
+    }
+
+    .feature-section + .feature-section {
+        border-top: 1px solid var(--detail-line);
+    }
+
+    .feature-section-title {
+        padding: 14px 18px;
+        background: #f8fafc;
+        color: #334155;
+        font-size: .69rem;
+        font-weight: 900;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+    }
+
+    .feature-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .feature-table td {
+        padding: 12px 18px;
+        border-top: 1px solid #edf1f5;
+        font-size: .75rem;
+    }
+
+    .feature-name {
+        width: 48%;
+        color: var(--detail-muted);
+        font-weight: 700;
+    }
+
+    .feature-value {
+        color: #172033;
+        font-weight: 900;
+        text-align: right;
+    }
+
+    .identity-box {
+        padding: 16px 18px;
+        color: var(--detail-muted);
+        font-size: .68rem;
+    }
+
+    .identity-code {
+        display: block;
+        margin-top: 4px;
+        overflow-wrap: anywhere;
+        color: #475569;
+        font-family: monospace;
+    }
+
+    .empty-panel {
+        padding: 38px 20px;
+        color: var(--detail-muted);
+        font-size: .76rem;
+        text-align: center;
+    }
+
+    @media (max-width: 1150px) {
+        .content-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .side-column {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .side-column .premium-card:last-child {
+            grid-column: 1 / -1;
+        }
+    }
+
+    @media (max-width: 900px) {
+        .product-hero-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .image-panel {
+            min-height: 310px;
+        }
+
+        .product-image {
+            height: 285px;
+        }
+
+        .summary-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    @media (max-width: 700px) {
+        .product-hero {
+            padding: 16px;
+        }
+
+        .hero-price-box {
+            grid-template-columns: 1fr;
+        }
+
+        .hero-actions {
+            justify-content: flex-start;
+        }
+
+        .offer-row {
+            grid-template-columns: 1fr;
+        }
+
+        .offer-price-area {
+            text-align: left;
+        }
+
+        .store-button {
+            width: 100%;
+        }
+
+        .side-column {
+            grid-template-columns: 1fr;
+        }
+
+        .side-column .premium-card:last-child {
+            grid-column: auto;
+        }
+    }
+
+    @media (max-width: 500px) {
+        .summary-grid,
+        .history-metrics,
+        .ai-metrics {
+            grid-template-columns: 1fr;
+        }
+
+        .alarm-form {
+            grid-template-columns: 1fr;
+        }
+
+        .ai-score-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detail-page">
+
+    <div class="breadcrumb-bar">
+        <ol class="premium-breadcrumb">
+            <li><a href="/">Ana sayfa</a></li>
+            <li>&#8250;</li>
+            <li><a href="/kategoriler">Kategoriler</a></li>
+            <li>&#8250;</li>
+            <li>
+                <a href="/karsilastir">
+                    &#220;r&#252;n kar&#351;&#305;la&#351;t&#305;rma
+                </a>
+            </li>
+            <li>&#8250;</li>
+            <li>{{ comparison.product_name }}</li>
+        </ol>
+
+        <a href="/karsilastir" class="back-button">
+            &#8592; &#220;r&#252;nlere d&#246;n
+        </a>
+    </div>
+
+    <section class="product-hero">
+        <div class="product-hero-grid">
+            <div class="image-panel">
+                {% if group.image %}
+                    <img
+                        src="{{ group.image }}"
+                        alt="{{ comparison.product_name }}"
+                        class="product-image"
+                        referrerpolicy="no-referrer"
+                    >
+                {% else %}
+                    <div class="image-placeholder">
+                        Bu &#252;r&#252;n i&#231;in g&#246;rsel bulunmuyor.
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="hero-content">
+                <div class="hero-tags">
+                    <span class="deal-badge {{ deal_badge.code }}" title="{{ deal_badge.description }}">
+                        {% if deal_badge.code == "super" %}★{% elif deal_badge.code == "good" %}✓{% elif deal_badge.code == "high" %}↑{% else %}●{% endif %}
+                        {{ deal_badge.label }}
+                    </span>
+
+                    {% if comparison.category %}
+                        <span class="hero-tag">
+                            {{ comparison.category }}
+                        </span>
+                    {% endif %}
+
+                    {% if comparison.offer_count > 1 %}
+                        <span class="hero-tag success">
+                            {{ comparison.offer_count }} ma&#287;aza kar&#351;&#305;la&#351;t&#305;r&#305;l&#305;yor
+                        </span>
+                    {% endif %}
+
+                    {% if comparison.saving_percent > 0 %}
+                        <span class="hero-tag success">
+                            %{{ comparison.saving_percent }} fiyat fark&#305;
+                        </span>
+                    {% endif %}
+                </div>
+
+                <h1 class="product-title">
+                    {{ comparison.product_name }}
+                </h1>
+
+                <div class="product-meta">
+                    {% if comparison.brand %}
+                        <span>
+                            Marka:
+                            <strong>{{ comparison.brand }}</strong>
+                        </span>
+                    {% endif %}
+
+                    {% if comparison.model %}
+                        <span>
+                            Model:
+                            <strong>{{ comparison.model }}</strong>
+                        </span>
+                    {% endif %}
+
+                    <span>
+                        Aktif teklif:
+                        <strong>{{ comparison.offer_count }}</strong>
+                    </span>
+
+                    <span>
+                        Fiyat kayd&#305;:
+                        <strong>{{ history_data.price_record_count }}</strong>
+                    </span>
+                </div>
+
+                <div class="hero-price-box">
+                    <div>
+                        <div class="price-label">
+                            Kargo d&#226;hil en iyi fiyat
+                        </div>
+
+                        <div class="best-price">
+                            {% if comparison.best_price is not none %}
+                                {{
+                                    "{:,.2f}".format(comparison.best_price)
+                                    .replace(",", "X")
+                                    .replace(".", ",")
+                                    .replace("X", ".")
+                                }}
+                                TL
+                            {% else %}
+                                Fiyat yok
+                            {% endif %}
+                        </div>
+
+                        <div class="best-store">
+                            En iyi ma&#287;aza:
+                            <strong>
+                                {{ comparison.best_store or "Bulunamad&#305;" }}
+                            </strong>
+                        </div>
+                    </div>
+
+                    <div class="hero-actions">
+                        {% if available_offers %}
+                            <a
+                                href="{{ available_offers[0].url }}"
+                                target="_blank"
+                                rel="noopener noreferrer nofollow"
+                                class="primary-button"
+                            >
+                                En ucuz ma&#287;azaya git
+                            </a>
+                        {% endif %}
+
+                        <button
+                            type="button"
+                            class="secondary-button"
+                            onclick="scrollToOffers()"
+                        >
+                            T&#252;m fiyatlar&#305; g&#246;r
+                        </button>
+
+                        <a
+                            href="/karsilastir/compare?left={{ comparison.identity_key }}"
+                            class="secondary-button"
+                        >
+                            &#9878;&#65039; &#304;ki &#220;r&#252;n&#252; Kar&#351;&#305;la&#351;t&#305;r
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="summary-grid">
+        <article class="summary-card success">
+            <div class="summary-label">En d&#252;&#351;&#252;k fiyat</div>
+            <div class="summary-value">
+                {% if history_data.lowest_price is not none %}
+                    {{
+                        "{:,.2f}".format(history_data.lowest_price)
+                        .replace(",", "X")
+                        .replace(".", ",")
+                        .replace("X", ".")
+                    }} TL
+                {% else %}
+                    Veri yok
+                {% endif %}
+            </div>
+            <div class="summary-note">
+                T&#252;m fiyat ge&#231;mi&#351;inde
+            </div>
+        </article>
+
+        <article class="summary-card">
+            <div class="summary-label">Ge&#231;mi&#351; ortalama</div>
+            <div class="summary-value">
+                {% if history_data.average_price is not none %}
+                    {{
+                        "{:,.2f}".format(history_data.average_price)
+                        .replace(",", "X")
+                        .replace(".", ",")
+                        .replace("X", ".")
+                    }} TL
+                {% else %}
+                    Veri yok
+                {% endif %}
+            </div>
+            <div class="summary-note">
+                {{ history_data.price_record_count }} fiyat kayd&#305;
+            </div>
+        </article>
+
+        <article class="summary-card primary">
+            <div class="summary-label">Muhtemel tasarruf</div>
+            <div class="summary-value">
+                {{
+                    "{:,.2f}".format(comparison.saving_amount)
+                    .replace(",", "X")
+                    .replace(".", ",")
+                    .replace("X", ".")
+                }} TL
+            </div>
+            <div class="summary-note">
+                En pahal&#305; aktif teklife g&#246;re
+            </div>
+        </article>
+
+        <article class="summary-card">
+            <div class="summary-label">F&#305;rsat skoru</div>
+            <div class="summary-value">
+                {{ ai_analysis.score }} / 100
+            </div>
+            <div class="summary-note">
+                {{ ai_analysis.status.label }}
+            </div>
+        </article>
+    </section>
+
+    <div class="content-grid">
+        <div class="main-column">
+
+            <section id="offers" class="premium-card">
+                <div class="card-header-premium">
+                    <div>
+                        <div class="card-kicker">Ma&#287;aza kar&#351;&#305;la&#351;t&#305;rmas&#305;</div>
+                        <h2 class="card-title-premium">
+                            G&#252;ncel fiyat teklifleri
+                        </h2>
+                        <p class="card-description">
+                            Toplam fiyat, &#252;r&#252;n ve kargo bedeli birlikte
+                            de&#287;erlendirilerek s&#305;ralan&#305;r.
+                        </p>
+                    </div>
+
+                    <span class="offer-count-badge">
+                        {{ available_offers|length }} aktif teklif
+                    </span>
+                </div>
+
+                {% if available_offers %}
+                    <div class="offer-list">
+                        {% for offer in available_offers %}
+                            <article
+                                class="offer-row {% if loop.first or offer.is_best_offer %}best{% endif %}"
+                            >
+                                <div class="offer-main">
+                                    <span class="offer-rank" aria-label="{{ loop.index }}. sıradaki teklif">
+                                        {% if loop.index == 1 %}
+                                            &#129351;
+                                        {% elif loop.index == 2 %}
+                                            &#129352;
+                                        {% elif loop.index == 3 %}
+                                            &#129353;
+                                        {% else %}
+                                            {{ loop.index }}
+                                        {% endif %}
+                                    </span>
+
+                                    <div class="store-mark">
+                                        {{ offer.store_code[:3] }}
+                                    </div>
+
+                                    <div>
+                                        <div class="store-name">
+                                            {{ offer.store }}
+                                        </div>
+
+                                        <div class="seller-name">
+                                            Sat&#305;c&#305;:
+                                            {{ offer.seller or offer.store }}
+                                        </div>
+
+                                        <div class="availability">
+                                            {{ offer.availability }}
+                                        </div>
+
+                                        {% if loop.first or offer.is_best_offer %}
+                                            <span class="best-offer-badge">
+                                                En iyi teklif
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="offer-price-area">
+                                    <div class="offer-price">
+                                        {{
+                                            "{:,.2f}".format(offer.total_price)
+                                            .replace(",", "X")
+                                            .replace(".", ",")
+                                            .replace("X", ".")
+                                        }} TL
+                                    </div>
+
+                                    {% if offer.shipping_price > 0 %}
+                                        <div class="shipping">
+                                            &#220;r&#252;n:
+                                            {{
+                                                "{:,.2f}".format(offer.price)
+                                                .replace(",", "X")
+                                                .replace(".", ",")
+                                                .replace("X", ".")
+                                            }} TL
+                                            &#183; Kargo:
+                                            {{
+                                                "{:,.2f}".format(offer.shipping_price)
+                                                .replace(",", "X")
+                                                .replace(".", ",")
+                                                .replace("X", ".")
+                                            }} TL
+                                        </div>
+                                    {% else %}
+                                        <div class="shipping free">
+                                            &#220;cretsiz kargo
+                                        </div>
+                                    {% endif %}
+
+                                    {% if comparison.best_price is not none %}
+                                        {% set price_difference = offer.total_price - comparison.best_price %}
+                                        {% if price_difference <= 0.01 %}
+                                            <div class="price-difference best-difference">
+                                                En ucuz fiyat
+                                            </div>
+                                        {% else %}
+                                            <div class="price-difference">
+                                                En ucuzdan
+                                                {{
+                                                    "{:,.2f}".format(price_difference)
+                                                    .replace(",", "X")
+                                                    .replace(".", ",")
+                                                    .replace("X", ".")
+                                                }} TL daha pahalı
+                                            </div>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+
+                                <a
+                                    href="{{ offer.url }}"
+                                    target="_blank"
+                                    rel="noopener noreferrer nofollow"
+                                    class="store-button"
+                                >
+                                    Ma&#287;azaya git &#8599;
+                                </a>
+                            </article>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-panel">
+                        &#350;u anda aktif ma&#287;aza teklifi bulunmuyor.
+                    </div>
+                {% endif %}
+
+                {% if unavailable_offers %}
+                    <div class="unavailable-section">
+                        <details>
+                            <summary class="unavailable-toggle">
+                                Kullan&#305;lamayan {{ unavailable_offers|length }}
+                                teklifi g&#246;ster
+                            </summary>
+
+                            <div class="unavailable-list">
+                                {% for offer in unavailable_offers %}
+                                    <article class="offer-row unavailable">
+                                        <div class="offer-main">
+                                            <div class="store-mark">
+                                                {{ offer.store_code[:3] }}
+                                            </div>
+
+                                            <div>
+                                                <div class="store-name">
+                                                    {{ offer.store }}
+                                                </div>
+                                                <div class="seller-name">
+                                                    {{ offer.seller or offer.store }}
+                                                </div>
+                                                <div class="availability">
+                                                    {{ offer.availability }}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="offer-price-area">
+                                            <div class="offer-price">
+                                                {{
+                                                    "{:,.2f}".format(offer.total_price)
+                                                    .replace(",", "X")
+                                                    .replace(".", ",")
+                                                    .replace("X", ".")
+                                                }} TL
+                                            </div>
+                                        </div>
+
+                                        <span class="secondary-button">
+                                            Kullan&#305;lam&#305;yor
+                                        </span>
+                                    </article>
+                                {% endfor %}
+                            </div>
+                        </details>
+                    </div>
+                {% endif %}
+            </section>
+
+            <section class="premium-card">
+                <div class="card-header-premium">
+                    <div>
+                        <div class="card-kicker">Fiyat analizi</div>
+                        <h2 class="card-title-premium">
+                            Ma&#287;azalara g&#246;re fiyat ge&#231;mi&#351;i
+                        </h2>
+                        <p class="card-description">
+                            Ge&#231;mi&#351; kay&#305;tlar ile g&#252;ncel fiyatlar&#305;n de&#287;i&#351;imini
+                            ayn&#305; grafik &#252;zerinde incele.
+                        </p>
+                    </div>
+                </div>
+
+                {% if chart_labels and chart_datasets %}
+                    <div class="chart-toolbar">
+                        <div class="chart-range-buttons" role="group" aria-label="Grafik tarih aralığı">
+                            <button type="button" class="chart-range-button" data-range="7">7 Gün</button>
+                            <button type="button" class="chart-range-button" data-range="30">30 Gün</button>
+                            <button type="button" class="chart-range-button" data-range="90">90 Gün</button>
+                            <button type="button" class="chart-range-button active" data-range="all">Tümü</button>
+                        </div>
+                        <div id="chartRangeNote" class="chart-range-note">Tüm fiyat kayıtları gösteriliyor.</div>
+                    </div>
+
+                    <div class="chart-wrap">
+                        <canvas id="multiStorePriceChart"></canvas>
+                    </div>
+
+                    <div class="history-metrics">
+                        <div class="history-metric">
+                            <div class="history-label">
+                                Tarih&#238; en d&#252;&#351;&#252;k
+                            </div>
+                            <div class="history-value">
+                                {% if history_data.lowest_price is not none %}
+                                    {{
+                                        "{:,.2f}".format(history_data.lowest_price)
+                                        .replace(",", "X")
+                                        .replace(".", ",")
+                                        .replace("X", ".")
+                                    }} TL
+                                {% else %}
+                                    Veri yok
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="history-metric">
+                            <div class="history-label">
+                                Tarih&#238; en y&#252;ksek
+                            </div>
+                            <div class="history-value">
+                                {% if history_data.highest_price is not none %}
+                                    {{
+                                        "{:,.2f}".format(history_data.highest_price)
+                                        .replace(",", "X")
+                                        .replace(".", ",")
+                                        .replace("X", ".")
+                                    }} TL
+                                {% else %}
+                                    Veri yok
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="history-metric">
+                            <div class="history-label">
+                                Ortalama
+                            </div>
+                            <div class="history-value">
+                                {% if history_data.average_price is not none %}
+                                    {{
+                                        "{:,.2f}".format(history_data.average_price)
+                                        .replace(",", "X")
+                                        .replace(".", ",")
+                                        .replace("X", ".")
+                                    }} TL
+                                {% else %}
+                                    Veri yok
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="empty-panel">
+                        Grafik olu&#351;turmak i&#231;in yeterli fiyat kayd&#305; bulunmuyor.
+                    </div>
+                {% endif %}
+            </section>
+
+            <section class="premium-card">
+                <div class="card-header-premium">
+                    <div>
+                        <div class="card-kicker">Teknik bilgiler</div>
+                        <h2 class="card-title-premium">
+                            &#220;r&#252;n &#246;zellikleri
+                        </h2>
+                        <p class="card-description">
+                            {{ feature_count }} kar&#351;&#305;la&#351;t&#305;r&#305;labilir &#246;zellik.
+                        </p>
+                    </div>
+                </div>
+
+                {% if feature_sections %}
+                    <div class="feature-sections">
+                        {% for section in feature_sections %}
+                            <div class="feature-section">
+                                <div class="feature-section-title">
+                                    {{ section.name }}
+                                </div>
+
+                                <table class="feature-table">
+                                    <tbody>
+                                    {% for feature in section.features %}
+                                        <tr>
+                                            <td class="feature-name">
+                                                {{ feature.name }}
+                                            </td>
+                                            <td class="feature-value">
+                                                {{ feature.value }}
+                                                {% if feature.unit %}
+                                                    {{ feature.unit }}
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-panel">
+                        Bu &#252;r&#252;n i&#231;in hen&#252;z teknik &#246;zellik eklenmedi.
+                    </div>
+                {% endif %}
+
+                <div class="identity-box">
+                    Merkezi &#252;r&#252;n kimli&#287;i:
+                    <span class="identity-code">
+                        {{ comparison.identity_key }}
+                    </span>
+                </div>
+            </section>
+
+        </div>
+
+        <aside class="side-column">
+
+            <section class="premium-card ai-card">
+                <div class="card-header-premium">
+                    <div>
+                        <div class="card-kicker">Yapay zek&#226;</div>
+                        <h2 class="card-title-premium">
+                            F&#305;rsat analizi
+                        </h2>
+                    </div>
+                </div>
+
+                <div class="ai-content">
+                    <div class="ai-score-row">
+                        <div
+                            class="ai-score score-{{ ai_analysis.status.type }}"
+                        >
+                            <span class="ai-number">
+                                {{ ai_analysis.score }}
+                            </span>
+                            <span class="ai-total">100 &#252;zerinden</span>
+                        </div>
+
+                        <div>
+                            <div class="ai-status">
+                                {{ ai_analysis.status.label }}
+                            </div>
+                            <div class="ai-recommendation">
+                                {{ ai_analysis.recommendation }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ai-metrics">
+                        <div class="ai-metric">
+                            <div class="ai-metric-label">
+                                Fiyat trendi
+                            </div>
+                            <div class="ai-metric-value">
+                                {% if ai_analysis.trend.code == "falling" %}
+                                    &#128201; D&#252;&#351;&#252;yor
+                                {% elif ai_analysis.trend.code == "rising" %}
+                                    &#128200; Y&#252;kseliyor
+                                {% elif ai_analysis.trend.code == "stable" %}
+                                    &#10134; Stabil
+                                {% else %}
+                                    Veri yetersiz
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="ai-metric">
+                            <div class="ai-metric-label">
+                                Sahte indirim riski
+                            </div>
+                            <div class="ai-metric-value">
+                                {% if ai_analysis.fake_discount.detected %}
+                                    Dikkat gerekli
+                                {% else %}
+                                    Belirgin risk yok
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="ai-metric">
+                            <div class="ai-metric-label">
+                                Ma&#287;aza say&#305;s&#305;
+                            </div>
+                            <div class="ai-metric-value">
+                                {{ comparison.offer_count }} aktif
+                            </div>
+                        </div>
+
+                        <div class="ai-metric">
+                            <div class="ai-metric-label">
+                                Fiyat fark&#305;
+                            </div>
+                            <div class="ai-metric-value">
+                                %{{ comparison.saving_percent }}
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if ai_analysis.reasons %}
+                        <div class="ai-reasons">
+                            {% for reason in ai_analysis.reasons %}
+                                <div
+                                    class="ai-reason reason-{{ reason.type }}"
+                                >
+                                    {% if reason.title %}
+                                        <strong>{{ reason.title }}</strong><br>
+                                    {% endif %}
+                                    {{ reason.message }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </section>
+
+            <section class="premium-card">
+                <div class="card-header-premium">
+                    <div>
+                        <div class="card-kicker">Fiyat hedefi</div>
+                        <h2 class="card-title-premium">
+                            Hedef fiyat&#305;n&#305; kaydet
+                        </h2>
+                    </div>
+                </div>
+
+                <div class="alarm-body">
+                    <p class="alarm-text">
+                        Belirledi&#287;in hedef bu taray&#305;c&#305;da saklan&#305;r.
+                        Sunucu bildirimi hen&#252;z ba&#287;l&#305; de&#287;ildir.
+                    </p>
+
+                    <div class="alarm-form">
+                        <input
+                            id="targetPrice"
+                            type="number"
+                            min="1"
+                            step="0.01"
+                            class="alarm-input"
+                            placeholder="&#214;rne&#287;in 24.999"
+                        >
+
+                        <button
+                            type="button"
+                            class="primary-button"
+                            onclick="saveTargetPrice()"
+                        >
+                            Kaydet
+                        </button>
+                    </div>
+
+                    <div id="alarmStatus" class="alarm-status"></div>
+                </div>
+            </section>
+
+            <section class="premium-card">
+                <div class="card-header-premium">
+                    <div>
+                        <div class="card-kicker">Ge&#231;mi&#351; &#246;zeti</div>
+                        <h2 class="card-title-premium">
+                            Ma&#287;aza bazl&#305; kay&#305;tlar
+                        </h2>
+                    </div>
+                </div>
+
+                
+{% if price_analysis %}
+<section class="card border-0 shadow-sm mb-4">
+  <div class="card-body p-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-3">
+      <div>
+        <div class="text-muted small fw-semibold">GERÇEK FİYAT ANALİZİ</div>
+        <h2 class="h4 fw-bold mb-1">{{ price_analysis.label }}</h2>
+        <p class="text-muted mb-0">{{ price_analysis.summary }}</p>
+      </div>
+      <div class="text-end">
+        <div class="display-6 fw-bold">{{ price_analysis.score }}/100</div>
+        <div class="small text-muted">Fırsat puanı</div>
+      </div>
+    </div>
+    <div class="row g-3">
+      {% for key, label in [('7','7 gün'),('30','30 gün'),('90','90 gün')] %}
+      {% set item = price_analysis.windows[key] %}
+      <div class="col-12 col-md-4">
+        <div class="border rounded-3 p-3 h-100">
+          <div class="fw-bold mb-2">{{ label }}</div>
+          <div class="small text-muted">Ortalama</div>
+          <div class="fs-5 fw-semibold">{% if item.average %}{{ '{:,.2f}'.format(item.average).replace(',', 'X').replace('.', ',').replace('X', '.') }} TL{% else %}Veri yok{% endif %}</div>
+          <div class="small mt-2">En düşük: {% if item.lowest %}{{ '{:,.2f}'.format(item.lowest).replace(',', 'X').replace('.', ',').replace('X', '.') }} TL{% else %}-{% endif %}</div>
+          <div class="small">En yüksek: {% if item.highest %}{{ '{:,.2f}'.format(item.highest).replace(',', 'X').replace('.', ',').replace('X', '.') }} TL{% else %}-{% endif %}</div>
+          <div class="small text-muted mt-1">{{ item.record_count }} kayıt</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% if price_analysis.is_90_day_low %}
+    <div class="alert alert-success mt-3 mb-0">🔥 Güncel fiyat son 90 günün en düşük seviyesinde.</div>
+    {% elif price_analysis.vs_30_percent is not none %}
+    <div class="alert alert-light border mt-3 mb-0">30 günlük ortalamaya göre değişim: <strong>%{{ '%.2f'|format(price_analysis.vs_30_percent) }}</strong></div>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+
+{% if history_data.stores %}
+                    <div class="offer-list">
+                        {% for store in history_data.stores %}
+                            <div class="history-metric">
+                                <div class="history-label">
+                                    {{ store.store }}
+                                </div>
+                                <div class="history-value">
+                                    G&#252;ncel:
+                                    {{
+                                        "{:,.2f}".format(store.current_price)
+                                        .replace(",", "X")
+                                        .replace(".", ",")
+                                        .replace("X", ".")
+                                    }} TL
+                                </div>
+                                <div class="summary-note">
+                                    En d&#252;&#351;&#252;k:
+                                    {% if store.lowest_price is not none %}
+                                        {{
+                                            "{:,.2f}".format(store.lowest_price)
+                                            .replace(",", "X")
+                                            .replace(".", ",")
+                                            .replace("X", ".")
+                                        }} TL
+                                    {% else %}
+                                        Veri yok
+                                    {% endif %}
+                                    &#183; {{ store.history_count }} kay&#305;t
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-panel">
+                        Ma&#287;aza ge&#231;mi&#351;i bulunmuyor.
+                    </div>
+                {% endif %}
+            </section>
+
+        </aside>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+
+<script>
+    const chartLabels = {{ chart_labels | tojson }};
+    const rawDatasets = {{ chart_datasets | tojson }};
+    let priceHistoryChart = null;
+
+    function scrollToOffers() {
+        const offers = document.getElementById("offers");
+
+        if (offers) {
+            offers.scrollIntoView({
+                behavior: "smooth",
+                block: "start"
+            });
+        }
+    }
+
+    function priceFormatter(value) {
+        return new Intl.NumberFormat(
+            "tr-TR",
+            {
+                style: "currency",
+                currency: "TRY"
+            }
+        ).format(value);
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const canvas = document.getElementById(
+            "multiStorePriceChart"
+        );
+
+        if (canvas && rawDatasets.length > 0) {
+            const palette = [
+                "#2667ff",
+                "#0f9f61",
+                "#e5414f",
+                "#7c3aed",
+                "#0891b2",
+                "#f59e0b"
+            ];
+
+            const datasets = rawDatasets.map(
+                function (dataset, index) {
+                    const chartColor =
+                        palette[index % palette.length];
+
+                    return {
+                        label: dataset.label,
+                        data: dataset.data,
+                        borderColor: chartColor,
+                        backgroundColor: chartColor,
+                        pointBackgroundColor: chartColor,
+                        pointBorderColor: "#ffffff",
+                        pointBorderWidth: 2,
+                        pointRadius: 3,
+                        pointHoverRadius: 6,
+                        borderWidth: 3,
+                        tension: .28,
+                        spanGaps: true,
+                        fill: false
+                    };
+                }
+            );
+
+            priceHistoryChart = new Chart(
+                canvas,
+                {
+                    type: "line",
+                    data: {
+                        labels: chartLabels,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: "index",
+                            intersect: false
+                        },
+                        plugins: {
+                            legend: {
+                                position: "bottom",
+                                labels: {
+                                    usePointStyle: true,
+                                    padding: 18
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        if (
+                                            context.parsed.y === null
+                                            || context.parsed.y === undefined
+                                        ) {
+                                            return (
+                                                context.dataset.label
+                                                + ": Veri yok"
+                                            );
+                                        }
+
+                                        return (
+                                            context.dataset.label
+                                            + ": "
+                                            + priceFormatter(
+                                                context.parsed.y
+                                            )
+                                        );
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    maxRotation: 45,
+                                    minRotation: 0
+                                }
+                            },
+                            y: {
+                                beginAtZero: false,
+                                ticks: {
+                                    callback: function (value) {
+                                        return new Intl.NumberFormat(
+                                            "tr-TR",
+                                            {
+                                                style: "currency",
+                                                currency: "TRY",
+                                                maximumFractionDigits: 0
+                                            }
+                                        ).format(value);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            );
+        }
+
+        const storageKey =
+            "firsat-ai-target-{{ comparison.identity_key }}";
+
+        const savedTarget =
+            window.localStorage.getItem(storageKey);
+
+        if (savedTarget) {
+            const targetInput =
+                document.getElementById("targetPrice");
+
+            const alarmStatus =
+                document.getElementById("alarmStatus");
+
+            if (targetInput) {
+                targetInput.value = savedTarget;
+            }
+
+            if (alarmStatus) {
+                alarmStatus.textContent =
+                    "Kay\u0131tl\u0131 hedef: "
+                    + priceFormatter(Number(savedTarget));
+            }
+        }
+
+        const rangeButtons = document.querySelectorAll(".chart-range-button");
+        const rangeNote = document.getElementById("chartRangeNote");
+
+        function applyChartRange(rangeValue) {
+            if (!priceHistoryChart || rawDatasets.length === 0) {
+                return;
+            }
+
+            const referenceTimestamps = rawDatasets[0].timestamps || [];
+            let includedIndexes = chartLabels.map(function (_, index) { return index; });
+
+            if (rangeValue !== "all" && referenceTimestamps.length > 0) {
+                const days = Number(rangeValue);
+                const validDates = referenceTimestamps
+                    .map(function (value) { return value ? new Date(value) : null; })
+                    .filter(function (value) { return value && !Number.isNaN(value.getTime()); });
+
+                if (validDates.length > 0) {
+                    const latestDate = new Date(Math.max.apply(null, validDates.map(function (value) { return value.getTime(); })));
+                    const threshold = new Date(latestDate);
+                    threshold.setDate(threshold.getDate() - days);
+
+                    includedIndexes = referenceTimestamps
+                        .map(function (value, index) {
+                            if (!value) { return null; }
+                            const date = new Date(value);
+                            return !Number.isNaN(date.getTime()) && date >= threshold ? index : null;
+                        })
+                        .filter(function (value) { return value !== null; });
+                }
+            }
+
+            if (includedIndexes.length === 0) {
+                includedIndexes = chartLabels.map(function (_, index) { return index; });
+            }
+
+            priceHistoryChart.data.labels = includedIndexes.map(function (index) { return chartLabels[index]; });
+            priceHistoryChart.data.datasets.forEach(function (dataset, datasetIndex) {
+                const sourceData = rawDatasets[datasetIndex].data || [];
+                dataset.data = includedIndexes.map(function (index) { return sourceData[index]; });
+            });
+            priceHistoryChart.update();
+
+            rangeButtons.forEach(function (button) {
+                button.classList.toggle("active", button.dataset.range === rangeValue);
+            });
+
+            if (rangeNote) {
+                rangeNote.textContent = rangeValue === "all"
+                    ? "Tüm fiyat kayıtları gösteriliyor."
+                    : "Son " + rangeValue + " günlük fiyat kayıtları gösteriliyor.";
+            }
+        }
+
+        rangeButtons.forEach(function (button) {
+            button.addEventListener("click", function () {
+                applyChartRange(button.dataset.range || "all");
+            });
+        });
+    });
+
+    function saveTargetPrice() {
+        const input =
+            document.getElementById("targetPrice");
+
+        const status =
+            document.getElementById("alarmStatus");
+
+        const value = Number(input.value);
+
+        if (!Number.isFinite(value) || value <= 0) {
+            status.textContent =
+                "Ge\u00e7erli bir hedef fiyat gir.";
+            status.style.color = "#e5414f";
+            return;
+        }
+
+        const storageKey =
+            "firsat-ai-target-{{ comparison.identity_key }}";
+
+        window.localStorage.setItem(
+            storageKey,
+            value.toFixed(2)
+        );
+
+        status.style.color = "#0f9f61";
+        status.textContent =
+            "Hedef kaydedildi: "
+            + priceFormatter(value);
+    }
+</script>
+{% endblock %}
