@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block extra_head %}
+<style>
+.i-page{display:grid;gap:18px}.i-hero{display:flex;align-items:end;justify-content:space-between;gap:18px;padding:22px;border:1px solid #dce5f1;border-radius:20px;background:linear-gradient(135deg,#fff,#f3f6ff)}.i-hero h2{margin:5px 0;color:#172033}.i-hero p{margin:0;color:#64748b;font-size:.7rem}.i-kicker{color:#4f46e5;font-size:.61rem;font-weight:950;letter-spacing:.1em}.i-button{min-height:41px;padding:0 14px;border:0;border-radius:10px;background:#2563eb;color:#fff;font-size:.63rem;font-weight:900}.i-task{display:none;padding:16px;border:1px solid #cbdafa;border-radius:15px;background:#f8fbff}.i-task pre{max-height:300px;overflow:auto;padding:12px;border-radius:10px;background:#0f172a;color:#dbeafe;font-size:.58rem}.i-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.i-card{padding:16px;border:1px solid #e0e7f1;border-radius:16px;background:#fff}.i-card-head{display:flex;justify-content:space-between;gap:12px}.i-card h3{margin:0;color:#172033;font-size:.88rem}.i-card p{margin:4px 0 0;color:#64748b;font-size:.6rem}.i-state{padding:5px 8px;border-radius:999px;background:#f1f5f9;color:#475569;font-size:.5rem;font-weight:900}.i-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:12px}.i-metrics div{padding:8px;border-radius:10px;background:#f8fafc}.i-metrics span{display:block;color:#64748b;font-size:.48rem}.i-metrics b{display:block;margin-top:3px;color:#172033;font-size:.68rem}.i-card button{margin-top:12px;min-height:35px;padding:0 11px;border:1px solid #d8e1ed;border-radius:9px;background:#fff;color:#334155;font-size:.57rem;font-weight:850}.i-history{overflow:auto;border:1px solid #dfe7f2;border-radius:16px;background:#fff}.i-history h3{margin:0;padding:15px}.i-history table{width:100%;min-width:980px;border-collapse:collapse}.i-history th,.i-history td{padding:10px 12px;border-top:1px solid #edf1f6;text-align:left;font-size:.57rem}.good{color:#15803d}.bad{color:#b91c1c}@media(max-width:900px){.i-grid{grid-template-columns:1fr}.i-hero{align-items:stretch;flex-direction:column}}
+</style>
+{% endblock %}
+{% block title %}V9 Katalog Besleme - Fırsat AI{% endblock %}
+{% block page_title %}V9 Otomatik Katalog Besleme{% endblock %}
+{% block page_subtitle %}Mağaza kategorilerini ham havuza, global kataloğa ve teklif motoruna otomatik taşı{% endblock %}
+{% block content %}
+<div class="platform-page i-page">
+<section class="i-hero"><div><span class="i-kicker">V9.3.1 · OTOMATİK BESLEME</span><h2>Kataloglar taranır, uzlaştırılır ve çok mağazalı ürünler oluşur</h2><p>Her plan kendi aralığına göre çalışır. Tarama tamamlanınca ham ürün kuyruğu otomatik işlenir ve global mağaza kapsamı ölçülür.</p><p style="margin-top:7px"><strong>Scheduler:</strong> {{ 'Çalışıyor' if scheduler_status.running else 'Çalışmıyor' }} · {{ scheduler_status.job_count }} görev</p></div><button class="i-button" id="runAll">Tüm aktif katalogları çalıştır</button></section>
+<section class="i-task" id="taskPanel"><strong id="taskTitle">Görev</strong><p id="taskMessage"></p><pre id="taskResult"></pre></section>
+<section class="i-grid">
+{% for plan in plans %}
+{% set row=state.get(plan.id,{}) %}
+<article class="i-card"><div class="i-card-head"><div><h3>{{ plan.name }}</h3><p>{{ plan.sources|length }} mağaza · {{ plan.limit }} ürün/mağaza · {{ plan.interval_minutes }} dakika</p></div><span class="i-state">{{ row.get('status','bekliyor') }}</span></div>
+<div class="i-metrics"><div><span>Son tarama</span><b>{{ row.get('last_run_at','—') }}</b></div><div><span>Sonraki tarama</span><b>{{ row.get('next_run_at','—') }}</b></div><div><span>Yeni çok mağazalı</span><b>{{ row.get('last_result',{}).get('new_multi_store_products',0) }}</b></div></div>
+<button class="run-plan" data-id="{{ plan.id }}" data-name="{{ plan.name }}">Şimdi çalıştır</button></article>
+{% else %}<article class="i-card">Katalog planı bulunamadı.</article>{% endfor %}
+</section>
+<section class="i-history"><h3>Son besleme çalışmaları</h3><table><thead><tr><th>Katalog</th><th>Durum</th><th>Mağaza</th><th>Bulunan</th><th>Kaydedilen</th><th>Yeni global ürün</th><th>Yeni teklif</th><th>Yeni çok mağazalı</th><th>Süre</th></tr></thead><tbody>
+{% for item in history %}<tr><td>{{ item.plan_name }}</td><td class="{{ 'good' if item.status=='completed' else 'bad' }}">{{ item.status }}</td><td>{{ item.successful_store_count }}/{{ item.store_count }}</td><td>{{ item.found_count }}</td><td>{{ item.saved_count }}</td><td>{{ item.new_global_products }}</td><td>{{ item.new_active_offers }}</td><td>{{ item.new_multi_store_products }}</td><td>{{ item.duration_seconds }} sn</td></tr>{% else %}<tr><td colspan="9">Henüz çalışma yok.</td></tr>{% endfor %}
+</tbody></table></section>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+(()=>{const p=document.getElementById('taskPanel'),t=document.getElementById('taskTitle'),m=document.getElementById('taskMessage'),r=document.getElementById('taskResult');
+async function poll(id){const x=await fetch(`/admin/v9-ingestion/tasks/${id}`,{cache:'no-store'});const d=await x.json();const q=d.task;p.style.display='block';t.textContent=q.title;m.textContent=q.message;r.textContent=JSON.stringify(q.result||q.error||{},null,2);if(q.status==='queued'||q.status==='running')setTimeout(()=>poll(id),1800);}
+async function start(url,name){p.style.display='block';t.textContent=name;m.textContent='Başlatılıyor...';r.textContent='';const x=await fetch(url,{method:'POST'});const d=await x.json();if(!x.ok){m.textContent=d.detail||'Başlatılamadı';return;}poll(d.task.id);}
+document.getElementById('runAll').addEventListener('click',()=>start('/admin/v9-ingestion/run-all','Tüm aktif kataloglar'));
+document.querySelectorAll('.run-plan').forEach(b=>b.addEventListener('click',()=>start(`/admin/v9-ingestion/${b.dataset.id}/run`,b.dataset.name)));})();
+</script>
+{% endblock %}

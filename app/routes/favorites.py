@@ -1,15 +1,13 @@
-﻿from uuid import uuid4
+from __future__ import annotations
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 
 from app.database.database import SessionLocal
-from app.database.models import Favorite
+from app.database.models import Favorite, ProductGroup
+from app.services.user_identity_service import resolve_owner_key
 
-router = APIRouter(
-    prefix="/favorites",
-    tags=["Favorites"],
-)
+router = APIRouter(prefix="/favorites", tags=["favorites"])
 
 
 def get_db():
@@ -20,119 +18,29 @@ def get_db():
         db.close()
 
 
-def get_visitor_id(
-    visitor_id: str | None,
-    response: Response,
-) -> str:
-    if visitor_id:
-        return visitor_id
-
-    new_id = str(uuid4())
-
-    response.set_cookie(
-        key="visitor_id",
-        value=new_id,
-        max_age=60 * 60 * 24 * 365,
-        httponly=True,
-        samesite="lax",
-    )
-
-    return new_id
-
-
 @router.get("")
-def list_favorites(
-    response: Response,
-    visitor_id: str | None = Cookie(default=None),
-    db: Session = Depends(get_db),
-):
-    visitor = get_visitor_id(visitor_id, response)
-
-    favorites = (
-        db.query(Favorite)
-        .filter(Favorite.visitor_id == visitor)
-        .all()
-    )
-
-    return {
-        "count": len(favorites),
-        "favorites": [
-            {
-                "id": item.id,
-                "product_group_id": item.product_group_id,
-                "created_at": item.created_at,
-            }
-            for item in favorites
-        ],
-    }
+def get_favorites(response: Response, visitor_id: str | None = Cookie(default=None), firsat_session: str | None = Cookie(default=None), db: Session = Depends(get_db)):
+    key, user = resolve_owner_key(db, response, session_token=firsat_session, visitor_id=visitor_id)
+    rows = db.query(Favorite).filter(Favorite.visitor_id == key).order_by(Favorite.created_at.desc()).all()
+    return {"count": len(rows), "authenticated": user is not None, "favorites": [{"id": r.id, "product_group_id": r.product_group_id, "created_at": r.created_at.isoformat()} for r in rows]}
 
 
 @router.post("/{group_id}")
-def add_favorite(
-    group_id: int,
-    response: Response,
-    visitor_id: str | None = Cookie(default=None),
-    db: Session = Depends(get_db),
-):
-    visitor = get_visitor_id(visitor_id, response)
-
-    exists = (
-        db.query(Favorite)
-        .filter(
-            Favorite.visitor_id == visitor,
-            Favorite.product_group_id == group_id,
-        )
-        .first()
-    )
-
-    if exists:
-        return {
-            "success": True,
-            "message": "Ürün zaten favorilerde.",
-        }
-
-    favorite = Favorite(
-        visitor_id=visitor,
-        product_group_id=group_id,
-    )
-
-    db.add(favorite)
-    db.commit()
-    db.refresh(favorite)
-
-    return {
-        "success": True,
-        "favorite_id": favorite.id,
-    }
+def add_favorite(group_id: int, response: Response, visitor_id: str | None = Cookie(default=None), firsat_session: str | None = Cookie(default=None), db: Session = Depends(get_db)):
+    if db.query(ProductGroup.id).filter(ProductGroup.id == group_id).first() is None:
+        raise HTTPException(404, "Ürün grubu bulunamadı.")
+    key, user = resolve_owner_key(db, response, session_token=firsat_session, visitor_id=visitor_id)
+    row = db.query(Favorite).filter(Favorite.visitor_id == key, Favorite.product_group_id == group_id).first()
+    if row is None:
+        row = Favorite(visitor_id=key, product_group_id=group_id)
+        db.add(row); db.commit(); db.refresh(row)
+    return {"success": True, "favorite_id": row.id, "authenticated": user is not None}
 
 
 @router.delete("/{group_id}")
-def remove_favorite(
-    group_id: int,
-    response: Response,
-    visitor_id: str | None = Cookie(default=None),
-    db: Session = Depends(get_db),
-):
-    visitor = get_visitor_id(visitor_id, response)
-
-    favorite = (
-        db.query(Favorite)
-        .filter(
-            Favorite.visitor_id == visitor,
-            Favorite.product_group_id == group_id,
-        )
-        .first()
-    )
-
-    if favorite is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Favori bulunamadı.",
-        )
-
-    db.delete(favorite)
-    db.commit()
-
-    return {
-        "success": True,
-    }
+def remove_favorite(group_id: int, response: Response, visitor_id: str | None = Cookie(default=None), firsat_session: str | None = Cookie(default=None), db: Session = Depends(get_db)):
+    key, user = resolve_owner_key(db, response, session_token=firsat_session, visitor_id=visitor_id)
+    row = db.query(Favorite).filter(Favorite.visitor_id == key, Favorite.product_group_id == group_id).first()
+    if row is not None:
+        db.delete(row); db.commit()
+    return {"success": True, "authenticated": user is not None}

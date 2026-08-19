@@ -1,0 +1,42 @@
+{% from "components/breadcrumbs.html" import render_breadcrumbs %}
+{% extends "public_base.html" %}
+{% block title %}{{ seo_title }}{% endblock %}
+{% block content %}
+{{ render_breadcrumbs(breadcrumbs_v13) }}
+<style>
+.coupon-hero{background:linear-gradient(135deg,#eff6ff,#f5f3ff);border:1px solid #dbeafe;border-radius:22px;padding:28px;margin-bottom:22px}.coupon-filters{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}.coupon-filters a{padding:9px 14px;border:1px solid #d9e1ef;border-radius:999px;text-decoration:none;color:#24324a;background:#fff}.coupon-filters a.active{background:#3457f1;color:#fff;border-color:#3457f1}.coupon-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:16px}.coupon-card{border:1px solid #e1e7f0;border-radius:18px;background:#fff;padding:18px;box-shadow:0 8px 22px rgba(31,45,78,.06)}.coupon-code{display:flex;align-items:center;justify-content:space-between;background:#f3f6ff;border:1px dashed #7890ff;border-radius:12px;padding:11px 12px;margin:12px 0;font-weight:800;letter-spacing:.7px}.coupon-benefit{font-size:1.2rem;font-weight:800;color:#178449}.coupon-meta{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}.coupon-meta span{background:#f4f6f9;border-radius:999px;padding:5px 9px;font-size:.82rem}.coupon-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.coupon-actions a,.coupon-actions button{border:1px solid #3557f2;border-radius:9px;padding:8px 11px;background:#fff;color:#2446d8;text-decoration:none;cursor:pointer}.coupon-actions a.primary{background:#3557f2;color:#fff}.empty-box{padding:32px;border:1px dashed #ccd5e4;border-radius:16px;text-align:center}.coupon-note{font-size:.85rem;color:#687386;margin-top:16px}@media(max-width:640px){.coupon-grid{grid-template-columns:1fr}.coupon-hero{padding:20px}.coupon-actions>*{flex:1;text-align:center}}
+</style>
+<section class="coupon-hero">
+  
+  <h1>Kupon Merkezi</h1>
+  <p>Mağazaların ürün tekliflerinde yayınladığı kupon kodlarını ve otomatik kupon avantajlarını tek yerde karşılaştırın.</p>
+  <div class="coupon-meta">
+    <span>{{ coupons.items|length }} kupon</span><span>{{ coupons.counts.code }} kodlu kupon</span><span>{{ coupons.counts.automatic }} otomatik kupon</span>
+  </div>
+</section>
+<div class="coupon-filters">
+  <a href="/kuponlar" class="{{ 'active' if not coupons.filters.coupon_type else '' }}">Tümü</a>
+  <a href="/kuponlar?type=code" class="{{ 'active' if coupons.filters.coupon_type=='code' else '' }}">Kupon kodlu</a>
+  <a href="/kuponlar?type=automatic" class="{{ 'active' if coupons.filters.coupon_type=='automatic' else '' }}">Otomatik kupon</a>
+</div>
+{% if coupons.items %}
+<div class="coupon-grid">
+{% for item in coupons.items %}
+<article class="coupon-card">
+  <div><strong>{{ item.store_name }}</strong> · {{ item.category }}</div>
+  <h2 style="font-size:1rem;margin:8px 0"><a href="{{ item.product_url }}">{{ item.name }}</a></h2>
+  <div class="coupon-benefit">{{ item.benefit_label }}</div>
+  {% if item.code %}<div class="coupon-code"><span>{{ item.code }}</span><button type="button" onclick="navigator.clipboard.writeText('{{ item.code }}');this.textContent='Kopyalandı'">Kopyala</button></div>{% else %}<div class="coupon-code"><span>Otomatik uygulanır</span></div>{% endif %}
+  <div class="coupon-meta">
+    {% if item.minimum_basket %}<span>Min. {{ '%.0f'|format(item.minimum_basket) }} TL</span>{% endif %}
+    {% if item.valid_until %}<span>Son: {{ item.valid_until }}</span>{% endif %}
+    {% if item.estimated_coupon_price < item.price %}<span>Tahmini {{ '%.2f'|format(item.estimated_coupon_price) }} TL</span>{% endif %}
+  </div>
+  <p>{{ item.source_text }}</p>
+  <div class="coupon-actions"><a class="primary" href="{{ item.product_url }}">Fiyatları karşılaştır</a>{% if item.store_url %}<a href="{{ item.store_url }}" target="_blank" rel="nofollow sponsored noopener">Mağazada doğrula</a>{% endif %}</div>
+</article>
+{% endfor %}
+</div>
+{% else %}<div class="empty-box"><strong>Bu filtrelerde doğrulanabilir kupon bulunamadı.</strong><p>Mağaza teklifleri güncellendikçe kuponlar burada otomatik görünür.</p></div>{% endif %}
+<p class="coupon-note">{{ coupons.disclaimer }}</p>
+{% endblock %}

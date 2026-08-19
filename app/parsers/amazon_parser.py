@@ -7,8 +7,11 @@ from urllib.parse import urlsplit
 
 from selectolax.parser import HTMLParser
 
+from app.services.product_image_service import collect_image_urls, serialize_image_gallery
 from app.models.product import Product
 from app.parsers.base_parser import BaseParser
+from app.services.amazon_price_recovery_v226 import recover_amazon_price
+from app.services.amazon_structured_offer_v227 import choose_structured_offer_price
 
 
 class AmazonParser(BaseParser):
@@ -54,6 +57,7 @@ class AmazonParser(BaseParser):
         self,
         html: str,
         url: str,
+        fallback_price: float | None = None,
     ) -> Product:
         """
         Amazon HTML içeriğini Product modeline
@@ -98,6 +102,18 @@ class AmazonParser(BaseParser):
             embedded_data=embedded_data,
             html=html,
         )
+
+        if (price is None or price <= 0) and fallback_price is not None:
+            try:
+                recovered_fallback = float(fallback_price)
+            except (TypeError, ValueError):
+                recovered_fallback = 0.0
+            if recovered_fallback > 0:
+                price = recovered_fallback
+                print(
+                    "V22.8 Amazon exact-ASIN arama kartı fiyatı kullanıldı:",
+                    f"{price:.2f} TL",
+                )
 
         if price is None or price <= 0:
             raise ValueError(
@@ -186,6 +202,9 @@ class AmazonParser(BaseParser):
             seller=seller or "Amazon",
             url=url,
             image=image,
+            image_gallery=serialize_image_gallery(
+                collect_image_urls(html, primary=image, base_url=url)
+            ),
             brand=brand,
             model=model,
             category=category,
@@ -375,6 +394,19 @@ class AmazonParser(BaseParser):
             if parsed is not None:
                 return parsed
 
+        structured_price, structured_meta = choose_structured_offer_price(
+            embedded_data=embedded_data,
+            raw_html=html,
+        )
+        if structured_price is not None:
+            print(
+                "V22.7 Amazon structured offer:",
+                f"{structured_price:.2f} TL",
+                f"path={structured_meta.get('path') if structured_meta else 'unknown'}",
+                f"score={structured_meta.get('score') if structured_meta else 'n/a'}",
+            )
+            return structured_price
+
         embedded_price = (
             self._find_value_recursive(
                 embedded_data,
@@ -428,7 +460,63 @@ class AmazonParser(BaseParser):
             if parsed is not None:
                 return parsed
 
+        recovered = self._recover_price_from_buying_options(
+            tree=tree,
+            html=html,
+        )
+        if recovered is not None:
+            print(
+                "V22.6 Amazon fiyat kurtarma:",
+                f"{recovered:.2f} TL",
+            )
+            return recovered
+
         return None
+
+    def _recover_price_from_buying_options(
+        self,
+        *,
+        tree: HTMLParser,
+        html: str,
+    ) -> float | None:
+        """V22.6: Buy Box olmayan Amazon ürünlerinde güvenli fiyat kurtarma."""
+        text_blocks: list[tuple[str, int]] = []
+
+        for selector in (
+            "#buybox-see-all-buying-choices",
+            "#olpLinkWidget_feature_div",
+            "#buybox",
+            "#desktop_buybox",
+            "#apex_desktop",
+            "[data-feature-name='buybox']",
+            "[data-feature-name='desktop_buybox']",
+        ):
+            for node in tree.css(selector):
+                text_blocks.append((self._node_to_text(node), 80))
+
+        normalized_html = re.sub(r"\s+", " ", str(html or ""))
+        for marker in (
+            "Öne çıkan teklif yok",
+            "öne çıkan teklif yok",
+            "yeni ürün",
+            "yeni teklif",
+            "buying options",
+            "new offers",
+            "other sellers",
+        ):
+            for found in re.finditer(
+                re.escape(marker),
+                normalized_html,
+                flags=re.IGNORECASE,
+            ):
+                window = normalized_html[
+                    max(0, found.start() - 250):
+                    min(len(normalized_html), found.end() + 500)
+                ]
+                text_blocks.append((window, 60))
+
+        return recover_amazon_price(text_blocks)
+
 
     def _extract_old_price(
         self,

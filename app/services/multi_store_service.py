@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from sqlalchemy.exc import IntegrityError
+
 from datetime import datetime
 import json
 import re
@@ -7,6 +9,7 @@ import unicodedata
 from typing import Any
 
 from app.database.models import (
+    DeletedProduct,
     OfferPriceHistory,
     ProductDB,
     ProductFeature,
@@ -22,11 +25,19 @@ from app.services.normalization_service import (
 from app.services.product_identity_service import (
     ProductIdentityService,
 )
+from app.services.product_attribute_extractor import (
+    ProductAttributeExtractor,
+)
 from app.services.offer_matching_service import OfferMatchingService
+from app.services.offer_detail_service import (
+    apply_offer_details,
+    normalize_offer_details,
+)
 from app.services.store_service import (
     detect_store_code,
     ensure_store,
 )
+from app.services.canonical_lifecycle_v230_service import resolve_product_group
 
 
 def build_group_identity(
@@ -77,13 +88,27 @@ def ensure_product_group(
         normalized_name,
     ) = build_group_identity(product)
 
-    product_group = (
-        db.query(ProductGroup)
-        .filter(
-            ProductGroup.group_key == group_key
-        )
+    blocked = (
+        db.query(DeletedProduct.id)
+        .filter(DeletedProduct.identity_key == group_key)
         .first()
     )
+    if blocked is not None:
+        raise ValueError("Bu ürün kimliği admin tarafından kalıcı olarak silinmiştir.")
+
+    # V23.0 SINGLE SOURCE OF TRUTH:
+    # ProductGroup lookup artık startup audit ve GlobalProduct ile aynı resolver'ı kullanır.
+    product_group = resolve_product_group(
+        db,
+        identity_source=identity_source,
+        group_key=group_key,
+    )
+    if product_group is not None:
+        print(
+            "V23.0 canonical resolver ProductGroup yeniden kullanıldı:",
+            f"group={product_group.id}",
+            identity_source,
+        )
 
     # Tam kimlik anahtarı bulunamazsa farklı mağazaların başlık yazım
     # farklarını (128GB/128 GB, Black/Siyah gibi) puanlı eşleştirici çözer.
@@ -115,7 +140,10 @@ def ensure_product_group(
 
     if product_group:
         product_group.updated_at = now
-        product_group.identity_source = identity_source
+        # Mevcut grubun kararlı kimliğini son gelen mağaza başlığıyla
+        # değiştirmeyiz. Eski/boş gruplarda yeni kimlik kaynağı doldurulur.
+        if not product_group.identity_source:
+            product_group.identity_source = identity_source
 
         if product.name:
             product_group.canonical_name = product.name
@@ -154,11 +182,32 @@ def ensure_product_group(
         updated_at=now,
     )
 
-    db.add(product_group)
-    db.flush()
+    # V19.2: Aynı kimlik anahtarı eşzamanlı bir işlem tarafından
+    # oluşturulmuş olabilir. SAVEPOINT ile benzersiz anahtar yarışını
+    # güvenli biçimde çözüp mevcut kanonik grubu yeniden kullanırız.
+    try:
+        with db.begin_nested():
+            db.add(product_group)
+            db.flush()
+    except IntegrityError:
+        # DB-level v23.0 identity_source guard yarış anında ikinci create'i engeller.
+        product_group = resolve_product_group(
+            db,
+            identity_source=identity_source,
+            group_key=group_key,
+        )
+        if product_group is None:
+            raise
+        print(
+            "V23.0 DB guard ProductGroup yeniden kullanıldı:",
+            f"group={product_group.id}",
+            identity_source,
+        )
+        return product_group
 
     print(
-        "Yeni ürün grubu oluşturuldu:",
+        "V19.2 kanonik ürün grubu ilk kez oluşturuldu:",
+        f"group={product_group.id}",
         identity_source,
     )
 
@@ -679,6 +728,14 @@ def sync_product_features(
                 created_at=now,
             )
             db.add(feature_value)
+        elif (
+            source == "title-parser-v1"
+            and feature_value.source
+            and feature_value.source != "title-parser-v1"
+        ):
+            # Başlıktan yapılan tahmin, scraper veya yönetici tarafından
+            # kaydedilmiş gerçek teknik verinin üzerine yazamaz.
+            continue
 
         feature_value.value_text = detected["value_text"]
         feature_value.value_number = detected["value_number"]
@@ -748,7 +805,9 @@ def update_best_offer(
     offers = (
         db.query(ProductOffer)
         .filter(
-            ProductOffer.group_id == group_id
+            ProductOffer.group_id == group_id,
+            ProductOffer.is_active.is_(True),
+            ProductOffer.is_hidden.is_(False),
         )
         .all()
     )
@@ -813,7 +872,9 @@ def calculate_group_comparison(
     offers = (
         db.query(ProductOffer)
         .filter(
-            ProductOffer.group_id == group_id
+            ProductOffer.group_id == group_id,
+            ProductOffer.is_active.is_(True),
+            ProductOffer.is_hidden.is_(False),
         )
         .all()
     )
@@ -880,6 +941,30 @@ def calculate_group_comparison(
     }
 
 
+# V23.62.66_PRODUCT_OFFER_URL_UNIQUE_CONVERGENCE
+def _v236266_assign_offer_url_conflict_safe(db, offer: ProductOffer, target_url: str | None) -> bool:
+    url = str(target_url or "").strip()
+    if not url:
+        return False
+    url_owner = (
+        db.query(ProductOffer)
+        .filter(ProductOffer.url == url)
+        .order_by(ProductOffer.id.asc())
+        .first()
+    )
+    if url_owner is not None and url_owner.id != offer.id:
+        print(
+            "V23.62.66 OFFER URL UNIQUE-KEY CONVERGENCE:",
+            f"target_offer={offer.id}",
+            f"url_owner={url_owner.id}",
+            f"url={url}",
+            "action=preserve-existing-target-url",
+        )
+        return False
+    offer.url = url
+    return True
+
+
 def sync_product_offer(
     db,
     database_product: ProductDB,
@@ -903,7 +988,25 @@ def sync_product_offer(
         product,
     )
 
-    feature_count = sync_product_features(
+    # Başlık/açıklamadan çıkarılan temel özellikler önce yazılır.
+    # Scraper'ın gerçek teknik özellikleri aşağıda ikinci kez senkronize
+    # edildiği için aynı alanlarda her zaman gerçek veri öncelikli kalır.
+    inferred = ProductAttributeExtractor.extract(
+        name=product.name or database_product.name,
+        description=product.description or database_product.description,
+        specifications=product.specifications or database_product.specifications,
+        category=product_group.category or product.category or database_product.category,
+        brand=product_group.brand or product.brand or database_product.brand,
+        model=product_group.model or product.model or database_product.model,
+    )
+    inferred_feature_count = sync_product_features(
+        db=db,
+        product_group=product_group,
+        specifications=inferred.as_specifications(),
+        source="title-parser-v1",
+    )
+
+    explicit_feature_count = sync_product_features(
         db=db,
         product_group=product_group,
         specifications=(
@@ -915,11 +1018,13 @@ def sync_product_offer(
             or database_product.source_site
         ),
     )
+    feature_count = inferred_feature_count + explicit_feature_count
 
     if feature_count:
         print(
             "Teknik özellik kaydedildi/güncellendi:",
             feature_count,
+            f"(otomatik: {inferred_feature_count}, gerçek: {explicit_feature_count})",
         )
 
     offer = (
@@ -931,8 +1036,41 @@ def sync_product_offer(
         .first()
     )
 
+    # V23.62.65: (store_id, store_product_id) is the database-level unique
+    # identity for a store offer. Canonical/raw convergence can leave a
+    # product_id-linked legacy offer pointing at another store while the exact
+    # store/SKU offer already exists. Never mutate the product-linked row into
+    # an occupied unique key; converge updates onto the exact-key row instead.
+    exact_store_offer_v236265 = None
+    if product.product_code:
+        exact_store_offer_v236265 = (
+            db.query(ProductOffer)
+            .filter(
+                ProductOffer.store_id == store.id,
+                ProductOffer.store_product_id == product.product_code,
+            )
+            .order_by(ProductOffer.id.asc())
+            .first()
+        )
+
+    if (
+        offer is not None
+        and exact_store_offer_v236265 is not None
+        and exact_store_offer_v236265.id != offer.id
+    ):
+        print(
+            "V23.62.65 OFFER UNIQUE-KEY CONVERGENCE:",
+            f"product_linked_offer={offer.id}",
+            f"exact_key_offer={exact_store_offer_v236265.id}",
+            f"store={store.code}",
+            f"store_product_id={product.product_code}",
+            "action=update-exact-key-row",
+        )
+        offer = exact_store_offer_v236265
+
     now = datetime.utcnow()
     current_product_price = float(product.price)
+    offer_details = normalize_offer_details(product)
 
     if offer:
         previous_offer_price = float(
@@ -950,7 +1088,7 @@ def sync_product_offer(
             )
 
         offer.seller = product.seller
-        offer.url = product.url
+        _v236266_assign_offer_url_conflict_safe(db, offer, product.url)
         offer.current_price = current_product_price
         offer.availability = (
             product.stock_status
@@ -958,6 +1096,12 @@ def sync_product_offer(
         )
         offer.rating = product.rating
         offer.review_count = product.review_count
+        apply_offer_details(offer, offer_details)
+        offer.is_active = True
+        offer.is_hidden = False
+        offer.lifecycle_status = "ACTIVE"
+        offer.inactive_at = None
+        offer.consecutive_misses = 0
         offer.last_checked_at = now
         offer.updated_at = now
 
@@ -1010,6 +1154,133 @@ def sync_product_offer(
 
         return offer
 
+    # Aynı mağazanın kalıcı ürün kodu daha önce farklı URL veya legacy
+    # ProductDB kaydıyla kaydedilmiş olabilir. Veritabanındaki benzersiz
+    # (store_id, store_product_id) kuralına uygun biçimde INSERT yerine
+    # mevcut teklif güncellenir.
+    exact_store_offer = None
+    if product.product_code:
+        exact_store_offer = (
+            db.query(ProductOffer)
+            .filter(
+                ProductOffer.store_id == store.id,
+                ProductOffer.store_product_id == product.product_code,
+            )
+            .order_by(ProductOffer.id.asc())
+            .first()
+        )
+
+    if exact_store_offer is not None:
+        previous_offer_price = float(exact_store_offer.current_price or 0)
+        previous_group_id = exact_store_offer.group_id
+
+        exact_store_offer.group_id = product_group.id
+        exact_store_offer.product_id = database_product.id
+        exact_store_offer.seller = product.seller
+        _v236266_assign_offer_url_conflict_safe(db, exact_store_offer, product.url)
+        exact_store_offer.current_price = current_product_price
+        exact_store_offer.availability = product.stock_status or "Bilinmiyor"
+        exact_store_offer.rating = product.rating
+        exact_store_offer.review_count = product.review_count
+        apply_offer_details(exact_store_offer, offer_details)
+        exact_store_offer.is_active = True
+        exact_store_offer.is_hidden = False
+        exact_store_offer.lifecycle_status = "ACTIVE"
+        exact_store_offer.inactive_at = None
+        exact_store_offer.consecutive_misses = 0
+        exact_store_offer.last_checked_at = now
+        exact_store_offer.updated_at = now
+
+        if abs(previous_offer_price - current_product_price) >= 0.01:
+            exact_store_offer.old_price = previous_offer_price or None
+            add_offer_price_history(
+                db=db,
+                offer_id=exact_store_offer.id,
+                price=current_product_price,
+                created_at=now,
+            )
+
+        db.flush()
+        update_best_offer(db, product_group.id)
+        if previous_group_id and previous_group_id != product_group.id:
+            update_best_offer(db, previous_group_id)
+        comparison = calculate_group_comparison(db, product_group.id)
+        print("Aynı mağaza ürün teklifi güncellendi (upsert).")
+        print("Mağaza karşılaştırması:", comparison)
+        return exact_store_offer
+
+    same_store_offer = (
+        db.query(ProductOffer)
+        .filter(
+            ProductOffer.group_id == product_group.id,
+            ProductOffer.store_id == store.id,
+            ProductOffer.is_active.is_(True),
+            ProductOffer.is_hidden.is_(False),
+        )
+        .order_by(ProductOffer.current_price.asc(), ProductOffer.id.asc())
+        .first()
+    )
+
+    if same_store_offer is not None:
+        existing_total = calculate_offer_total_price(same_store_offer)
+        incoming_total = current_product_price + float(
+            offer_details.shipping_price or 0
+        )
+
+        if incoming_total < existing_total:
+            same_store_offer.is_active = False
+            same_store_offer.is_hidden = True
+            same_store_offer.is_best_offer = False
+            same_store_offer.lifecycle_status = "ARCHIVED"
+            same_store_offer.inactive_at = now
+            same_store_offer.admin_note = (
+                "Aynı mağazadaki daha pahalı renk/varyant teklifi; "
+                "ucuz teklif aktif bırakıldı."
+            )
+        else:
+            # Yeni URL ürün kaydı olarak korunur ancak mağaza karşılaştırmasını
+            # şişirmemesi için teklif gizli ve arşivlenmiş oluşturulur.
+            archived_offer = ProductOffer(
+                group_id=product_group.id,
+                store_id=store.id,
+                product_id=database_product.id,
+                store_product_id=product.product_code,
+                seller=product.seller,
+                url=product.url,
+                current_price=current_product_price,
+                old_price=product.old_price,
+                shipping_price=offer_details.shipping_price,
+                availability=(product.stock_status or "Bilinmiyor"),
+                rating=product.rating,
+                review_count=product.review_count,
+                is_best_offer=False,
+                is_active=False,
+                is_hidden=True,
+                lifecycle_status="ARCHIVED",
+                inactive_at=now,
+                admin_note=(
+                    "Aynı mağazadaki renk/varyant tekrarı; "
+                    "en uygun mağaza teklifi aktif."
+                ),
+                last_checked_at=now,
+                created_at=now,
+                updated_at=now,
+            )
+            apply_offer_details(archived_offer, offer_details)
+            db.add(archived_offer)
+            db.flush()
+            add_offer_price_history(
+                db=db,
+                offer_id=archived_offer.id,
+                price=current_product_price,
+                created_at=now,
+            )
+            update_best_offer(db, product_group.id)
+            comparison = calculate_group_comparison(db, product_group.id)
+            print("Aynı mağaza varyantı arşivlendi.")
+            print("Mağaza karşılaştırması:", comparison)
+            return archived_offer
+
     offer = ProductOffer(
         group_id=product_group.id,
         store_id=store.id,
@@ -1019,7 +1290,7 @@ def sync_product_offer(
         url=product.url,
         current_price=current_product_price,
         old_price=product.old_price,
-        shipping_price=None,
+        shipping_price=offer_details.shipping_price,
         availability=(
             product.stock_status
             or "Bilinmiyor"
@@ -1027,13 +1298,59 @@ def sync_product_offer(
         rating=product.rating,
         review_count=product.review_count,
         is_best_offer=False,
+        is_active=True,
+        is_hidden=False,
+        lifecycle_status="ACTIVE",
+        consecutive_misses=0,
         last_checked_at=now,
         created_at=now,
         updated_at=now,
     )
 
-    db.add(offer)
-    db.flush()
+    apply_offer_details(offer, offer_details)
+
+    try:
+        # Paralel worker'ların aynı mağaza ürününü aynı anda görmesi halinde
+        # tüm ana transaction'ı bozmadan yalnızca INSERT savepoint'i geri
+        # alınır ve kazanan kayıt güncellenir.
+        with db.begin_nested():
+            db.add(offer)
+            db.flush()
+    except IntegrityError:
+        if not product.product_code:
+            raise
+
+        existing_after_race = (
+            db.query(ProductOffer)
+            .filter(
+                ProductOffer.store_id == store.id,
+                ProductOffer.store_product_id == product.product_code,
+            )
+            .order_by(ProductOffer.id.asc())
+            .first()
+        )
+        if existing_after_race is None:
+            raise
+
+        existing_after_race.group_id = product_group.id
+        existing_after_race.product_id = database_product.id
+        existing_after_race.seller = product.seller
+        existing_after_race.url = product.url
+        existing_after_race.current_price = current_product_price
+        existing_after_race.availability = product.stock_status or "Bilinmiyor"
+        existing_after_race.rating = product.rating
+        existing_after_race.review_count = product.review_count
+        apply_offer_details(existing_after_race, offer_details)
+        existing_after_race.is_active = True
+        existing_after_race.is_hidden = False
+        existing_after_race.lifecycle_status = "ACTIVE"
+        existing_after_race.inactive_at = None
+        existing_after_race.consecutive_misses = 0
+        existing_after_race.last_checked_at = now
+        existing_after_race.updated_at = now
+        db.flush()
+        print("Paralel teklif çakışması güvenli upsert ile çözüldü.")
+        offer = existing_after_race
 
     add_offer_price_history(
         db=db,

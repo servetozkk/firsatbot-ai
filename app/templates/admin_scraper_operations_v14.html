@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Scraper Operasyonları v14.1{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <h1>Scraper Operasyonları v14.1</h1>
+  <p><strong>Durum:</strong> {{ report.status }}</p>
+  <div class="row g-3">
+    {% for key, value in report.checks.items() %}
+    <div class="col-md-6">
+      <div class="card p-3 h-100">
+        <strong>{{ key }}</strong>
+        <span>{{ "OK" if value else "HATA" }}</span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <h2 class="mt-4">Hedef mağazalar</h2>
+  <ul>
+    {% for store in report.target_stores %}
+    <li>{{ store.code }} — operasyonel düzeltme: {{ "aktif" if store.operational_fix else "pasif" }}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

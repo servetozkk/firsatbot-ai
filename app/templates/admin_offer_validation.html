@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block extra_head %}
+<link rel="stylesheet" href="/static/css/admin_platform_v60.css?v=3">
+<style>
+.ov-page{display:grid;gap:18px}.ov-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:22px;border:1px solid #dfe7f2;border-radius:20px;background:linear-gradient(135deg,#fff,#f4f7ff)}
+.ov-head h2{margin:4px 0;color:#172033;font-size:1.2rem}.ov-head p{margin:0;color:#64748b;font-size:.72rem}.ov-kicker{color:#3153e8;font-size:.62rem;font-weight:950;letter-spacing:.1em}
+.ov-head form{display:flex;gap:8px}.ov-head select,.ov-head button{min-height:40px;border:1px solid #d8e1ee;border-radius:11px;background:#fff;padding:0 12px;font-size:.67rem;font-weight:850}.ov-head button{background:#2563eb;color:#fff;border-color:#2563eb}
+.ov-summary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}.ov-summary article{padding:15px;border:1px solid #e2e8f0;border-radius:15px;background:#fff}.ov-summary span{display:block;color:#64748b;font-size:.58rem;font-weight:850}.ov-summary strong{display:block;margin-top:4px;color:#172033;font-size:1.18rem}
+.ov-store-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.ov-store{padding:16px;border:1px solid #dfe7f2;border-radius:17px;background:#fff}.ov-store-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.ov-store h3{margin:0;color:#172033;font-size:.9rem}.ov-store small{color:#64748b}.ov-score{display:grid;place-items:center;width:50px;height:50px;border-radius:50%;background:#eef2ff;color:#3730a3;font-size:.9rem;font-weight:950}
+.ov-score.good{background:#dcfce7;color:#15803d}.ov-score.warn{background:#fef3c7;color:#a16207}.ov-score.bad{background:#fee2e2;color:#b91c1c}
+.ov-bar{height:7px;margin:12px 0 9px;border-radius:999px;background:#eef2f7;overflow:hidden}.ov-bar span{display:block;height:100%;border-radius:inherit;background:#2563eb}
+.ov-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.ov-metrics div{padding:8px;border-radius:10px;background:#f8fafc}.ov-metrics span{display:block;color:#64748b;font-size:.52rem}.ov-metrics b{color:#172033;font-size:.7rem}
+.ov-issues{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}.ov-issues span{padding:5px 7px;border-radius:999px;background:#f1f5f9;color:#475569;font-size:.52rem;font-weight:800}
+.ov-table-card{overflow:hidden;border:1px solid #dfe7f2;border-radius:18px;background:#fff}.ov-table-wrap{overflow:auto}.ov-table{width:100%;min-width:1180px;border-collapse:collapse}.ov-table th{padding:11px;background:#f8fafc;color:#64748b;font-size:.57rem;text-align:left}.ov-table td{padding:12px;border-top:1px solid #eef2f7;color:#334155;font-size:.65rem;vertical-align:top}
+.ov-product{max-width:300px}.ov-product strong{display:block;color:#172033}.ov-product small{display:block;margin-top:3px;color:#94a3b8}.ov-pill{display:inline-flex;min-height:24px;align-items:center;padding:0 7px;border-radius:999px;font-size:.54rem;font-weight:900}.ov-pill.good{background:#dcfce7;color:#15803d}.ov-pill.warn{background:#fef3c7;color:#a16207}.ov-pill.bad{background:#fee2e2;color:#b91c1c}
+.ov-issue-list{display:flex;flex-wrap:wrap;gap:4px;max-width:360px}.ov-issue-list span{padding:4px 6px;border-radius:7px;background:#f8fafc;color:#475569;font-size:.5rem}.ov-issue-list span.critical{background:#fee2e2;color:#b91c1c}.ov-issue-list span.warning{background:#fef3c7;color:#a16207}
+.ov-empty{padding:30px;text-align:center;color:#64748b}
+@media(max-width:1000px){.ov-store-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.ov-summary{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:650px){.ov-head{align-items:stretch;flex-direction:column}.ov-head form{flex-direction:column}.ov-store-grid{grid-template-columns:1fr}.ov-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+{% endblock %}
+{% block title %}Mağaza Teklif Doğrulama - Fırsat AI{% endblock %}
+{% block page_title %}Mağaza Teklif Doğrulama Merkezi{% endblock %}
+{% block page_subtitle %}Mağaza bazında gerçek teklif verilerini, eksikleri ve kalite puanlarını doğrulayın{% endblock %}
+{% block content %}
+<div class="platform-page ov-page">
+  <section class="ov-head">
+    <div>
+      <span class="ov-kicker">TEKLİF SİSTEMİ · AŞAMA 8</span>
+      <h2>Gerçek mağaza verisi kontrolü</h2>
+      <p>Kargo, teslimat, garanti, stok, fiyat, satıcı, görsel ve eşleşme kalitesini gerçek kayıtlar üzerinden ölçer.</p>
+    </div>
+    <form method="get">
+      <select name="store">
+        <option value="">Tüm mağazalar</option>
+        {% for item in stores %}
+        <option value="{{ item.code }}" {% if selected_store == item.code %}selected{% endif %}>{{ item.name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit">Raporu getir</button>
+    </form>
+  </section>
+
+  <section class="ov-summary">
+    <article><span>İNCELENEN TEKLİF</span><strong>{{ report.summary.offer_count }}</strong></article>
+    <article><span>MAĞAZA</span><strong>{{ report.summary.store_count }}</strong></article>
+    <article><span>ORTALAMA KALİTE</span><strong>{{ report.summary.average_score }}/100</strong></article>
+    <article><span>HAZIR TEKLİF</span><strong>{{ report.summary.ready_offers }}</strong></article>
+    <article><span>KRİTİK SORUNLU</span><strong>{{ report.summary.critical_offers }}</strong></article>
+  </section>
+
+  <section class="ov-store-grid">
+    {% for row in report.stores %}
+    <article class="ov-store">
+      <div class="ov-store-head">
+        <div><h3>{{ row.store.name }}</h3><small>{{ row.offer_count }} teklif · {{ row.coverage_percent }}% hazır</small></div>
+        <span class="ov-score {{ 'good' if row.score >= 85 else 'warn' if row.score >= 60 else 'bad' }}">{{ row.score|round|int }}</span>
+      </div>
+      <div class="ov-bar"><span style="width:{{ row.score }}%"></span></div>
+      <div class="ov-metrics">
+        <div><span>Kritik</span><b>{{ row.critical }}</b></div>
+        <div><span>Uyarı</span><b>{{ row.warning }}</b></div>
+        <div><span>Bilgi</span><b>{{ row.info }}</b></div>
+      </div>
+      <div class="ov-issues">
+        {% for code,count in row.top_issues %}
+        <span>{{ code }} · {{ count }}</span>
+        {% else %}
+        <span>Sorun bulunmadı</span>
+        {% endfor %}
+      </div>
+    </article>
+    {% else %}
+    <div class="ov-empty">Mağaza teklifi bulunamadı.</div>
+    {% endfor %}
+  </section>
+
+  <section class="ov-table-card">
+    <div class="ov-table-wrap">
+      <table class="ov-table">
+        <thead><tr><th>Kalite</th><th>Ürün</th><th>Mağaza / Satıcı</th><th>Fiyat</th><th>Stok</th><th>Kargo / Teslimat</th><th>Garanti</th><th>Eksikler</th><th>Bağlantı</th></tr></thead>
+        <tbody>
+        {% for row in report.rows %}
+        <tr>
+          <td><span class="ov-pill {{ 'good' if row.score >= 85 else 'warn' if row.score >= 60 else 'bad' }}">{{ row.score }}/100</span></td>
+          <td class="ov-product"><strong>{{ row.group.canonical_name or row.product.name }}</strong><small>{{ row.product.brand or row.group.brand or 'Marka yok' }} · {{ row.product.model or row.group.model or 'Model yok' }}</small></td>
+          <td><strong>{{ row.store.name }}</strong><br><small>{{ row.offer.seller or 'Satıcı yok' }}</small></td>
+          <td><strong>{{ fmt_money(row.offer.current_price) }}</strong>{% if row.offer.shipping_price %}<br><small>+ {{ fmt_money(row.offer.shipping_price) }} kargo</small>{% endif %}</td>
+          <td>{{ row.offer.availability or 'Bilinmiyor' }}<br><small>{{ row.offer.lifecycle_status or 'ACTIVE' }}</small></td>
+          <td>{{ row.offer.shipping_method or '—' }}<br><small>{{ row.offer.delivery_text or 'Teslimat yok' }}</small></td>
+          <td>{{ row.offer.warranty_type or '—' }}</td>
+          <td><div class="ov-issue-list">{% for issue in row.issues %}<span class="{{ issue.severity }}">{{ issue.label }}</span>{% else %}<span>Eksik yok</span>{% endfor %}</div></td>
+          <td><a href="{{ row.offer.url }}" target="_blank" rel="noopener noreferrer">Mağazada aç ↗</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="9" class="ov-empty">Teklif bulunamadı.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+{% endblock %}

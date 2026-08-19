@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Tüm Yönetim Modülleri{% endblock %}
+{% block page_title %}Modül Merkezi{% endblock %}
+{% block page_subtitle %}Sistemde kayıtlı yönetim ekranlarına tek yerden erişin{% endblock %}
+{% block extra_head %}
+<style>
+.module-hero{background:linear-gradient(135deg,#111827,#312e81 60%,#6d28d9);color:#fff;border-radius:22px;padding:24px;margin-bottom:20px}
+.module-hero h2{font-weight:950;margin:0 0 6px}
+.module-group{margin:22px 0}
+.module-group-title{font-size:1rem;font-weight:900;color:#334155;margin-bottom:10px}
+.module-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.module-card{display:flex;flex-direction:column;background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:16px;text-decoration:none;color:#0f172a;min-height:130px;box-shadow:0 8px 24px rgba(15,23,42,.04)}
+.module-card:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(15,23,42,.09);color:#312e81}
+.module-card strong{font-size:1rem;font-weight:900}
+.module-card p{font-size:.8rem;color:#64748b;margin:7px 0 14px}
+.module-card code{margin-top:auto;font-size:.68rem;color:#6366f1}
+@media(max-width:1000px){.module-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:650px){.module-grid{grid-template-columns:1fr}}
+</style>
+{% endblock %}
+{% block content %}
+<div class="module-hero">
+<div style="font-size:.75rem;font-weight:900;color:#c4b5fd">FIRSATAI YÖNETİM HARİTASI</div>
+<h2>{{ module_count }} yönetim ekranı erişime hazır</h2>
+<p style="margin:0;color:#e2e8f0">Bu liste uygulamanın gerçek route kayıtlarından otomatik oluşturulur. Yeni modüller eklendiğinde burada kendiliğinden görünür.</p>
+</div>
+
+{% for group, modules in groups.items() %}
+<section class="module-group">
+<div class="module-group-title">{{ group }} · {{ modules|length }}</div>
+<div class="module-grid">
+{% for module in modules %}
+<a class="module-card" href="{{ module.path }}">
+<strong>{{ module.title }}</strong>
+<p>{{ module.description }}</p>
+<code>{{ module.path }}</code>
+</a>
+{% endfor %}
+</div>
+</section>
+{% endfor %}
+{% endblock %}

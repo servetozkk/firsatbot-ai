@@ -6,7 +6,10 @@ from datetime import datetime
 from typing import Any
 
 from app.services.category_service import get_active_categories
+from app.services.catalog_scan_plan_service import get_active_catalog_plans
+from app.core.config import settings
 from app.services.category_discovery_service import CategoryDiscoveryService
+from app.services.workload_priority_v23612 import user_deep_priority_active_v23612
 
 _discovery_service = CategoryDiscoveryService()
 
@@ -47,6 +50,28 @@ def get_scan_interval_seconds() -> int:
     return minutes * 60
 
 
+
+def scan_all_active_catalog_plans() -> dict[str, Any]:
+    plans=get_active_catalog_plans(); result={"catalog_count":len(plans),"store_count":0,"found_count":0,"saved_count":0,"failed_store_count":0,"results":[]}
+    for plan in plans:
+        if user_deep_priority_active_v23612():
+            print("V23.61.4 CATEGORY PLAN YIELD: user-ingestion-priority-active.")
+            break
+        for source in [s for s in plan.get("sources",[]) if s.get("active",True)]:
+            if user_deep_priority_active_v23612():
+                print("V23.61.4 CATEGORY SOURCE YIELD: user-ingestion-priority-active.")
+                break
+            result["store_count"]+=1
+            try:
+                row=_discovery_service.scan_and_save(category_url=source["url"],limit=plan["limit"]).to_dict()
+                result["found_count"]+=int(row.get("found_count",0));result["saved_count"]+=int(row.get("saved_count",0));result["results"].append({"plan":plan["name"],"store":source["store_name"],"success":True,**row})
+            except Exception as error:
+                result["failed_store_count"]+=1;result["results"].append({"plan":plan["name"],"store":source["store_name"],"success":False,"error":str(error)})
+    return result
+
+def scan_scheduled_catalogs() -> dict[str, Any]:
+    return scan_all_active_catalog_plans() if get_active_catalog_plans() else scan_all_active_categories()
+
 def scan_all_active_categories() -> dict[str, Any]:
     """
     Tüm aktif kategorileri sırayla tarar.
@@ -78,6 +103,9 @@ def scan_all_active_categories() -> dict[str, Any]:
     )
 
     for category in categories:
+        if user_deep_priority_active_v23612():
+            print("V23.61.4 CATEGORY SCHEDULER YIELD: user-ingestion-priority-active.")
+            break
         category_name = category.get(
             "name",
             "İsimsiz kategori",
@@ -207,7 +235,7 @@ async def scheduler_loop() -> None:
 
         try:
             await asyncio.to_thread(
-                scan_all_active_categories
+                scan_scheduled_catalogs
             )
 
         except asyncio.CancelledError:
@@ -229,6 +257,10 @@ async def start_scheduler() -> None:
     """
 
     global _scheduler_task
+
+    if not settings.enable_scheduler:
+        print("Kategori scheduler devre dışı.")
+        return
 
     if (
         _scheduler_task is not None

@@ -1,4 +1,7 @@
 from pathlib import Path
+from difflib import SequenceMatcher
+import re
+import unicodedata
 
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
@@ -12,12 +15,20 @@ from app.services.category_catalog import (
 )
 
 from app.database.database import SessionLocal
+from app.web.account_routes import _current_user
+from app.services.smart_search_service import enrich_and_rank_candidates, parse_smart_query
+from app.services.advanced_filter_service import build_dynamic_facets, apply_dynamic_filters, filter_metadata
+from app.services.advanced_sort_service import SORT_OPTIONS, sort_candidates
+
 from app.database.models import (
     PriceHistory,
     ProductDB,
     ProductGroup,
     ProductOffer,
     Store,
+    Favorite,
+    PriceAlert,
+    RecentlyViewed,
 )
 
 
@@ -290,6 +301,7 @@ def home(request: Request):
     db = SessionLocal()
 
     try:
+        # Ana sayfa verisini N+1 sorgu oluşturmadan toplu olarak yükle.
         groups = (
             db.query(ProductGroup)
             .order_by(ProductGroup.updated_at.desc(), ProductGroup.id.desc())
@@ -320,33 +332,43 @@ def home(request: Request):
             for category in category_catalog
         ]
 
+        offer_rows = (
+            db.query(ProductOffer, Store)
+            .join(Store, Store.id == ProductOffer.store_id)
+            .filter(ProductOffer.is_hidden.is_(False))
+            .order_by(ProductOffer.group_id.asc(), ProductOffer.current_price.asc())
+            .all()
+        )
+        offers_by_group: dict[int, list[tuple[ProductOffer, Store]]] = {}
+        for offer, store in offer_rows:
+            offers_by_group.setdefault(int(offer.group_id), []).append((offer, store))
+
         cards: list[dict[str, object]] = []
+        unavailable_values = {"stokta yok", "out of stock", "unavailable"}
         for group in groups:
-            offers = (
-                db.query(ProductOffer, Store)
-                .join(Store, Store.id == ProductOffer.store_id)
-                .filter(ProductOffer.group_id == group.id)
-                .order_by(ProductOffer.current_price.asc())
-                .all()
-            )
+            offers = offers_by_group.get(int(group.id), [])
             if not offers:
                 continue
 
             available_rows = [
                 (offer, store)
                 for offer, store in offers
-                if str(offer.availability or "").casefold()
-                not in {"stokta yok", "out of stock", "unavailable"}
+                if str(offer.availability or "").casefold() not in unavailable_values
             ] or offers
 
-            prices = [float(offer.current_price or 0) for offer, _ in available_rows if float(offer.current_price or 0) > 0]
-            if not prices:
+            priced_rows = [
+                (offer, store)
+                for offer, store in available_rows
+                if float(offer.current_price or 0) > 0
+            ]
+            if not priced_rows:
                 continue
 
             best_offer, best_store = min(
-                available_rows,
+                priced_rows,
                 key=lambda row: float(row[0].current_price or float("inf")),
             )
+            prices = [float(offer.current_price or 0) for offer, _ in priced_rows]
             best_price = float(best_offer.current_price or 0)
             highest_price = max(prices)
             saving_amount = max(0.0, highest_price - best_price)
@@ -363,6 +385,7 @@ def home(request: Request):
             cards.append(
                 {
                     "id": group.id,
+                    "group_key": group.group_key,
                     "name": group.canonical_name,
                     "price": best_price,
                     "old_price": old_price if old_price > best_price else highest_price,
@@ -374,12 +397,13 @@ def home(request: Request):
                     "image": group.image,
                     "ai_score": min(100, int(round(55 + displayed_discount * 3))) if displayed_discount > 0 else 50,
                     "category": group.category or "Diğer",
+                    "brand": group.brand or "",
                     "stock_status": best_offer.availability or "Bilinmiyor",
-                    "detail_url": f"/karsilastir/{group.group_key}",
+                    "detail_url": f"/urun/{group.group_key}",
                     "store_url": best_offer.url,
                     "created_at": group.created_at,
                     "last_price_change": best_offer.updated_at,
-                    "offer_count": len(available_rows),
+                    "offer_count": len(priced_rows),
                 }
             )
 
@@ -411,11 +435,177 @@ def home(request: Request):
             reverse=True,
         )[:8]
         biggest_discount = max((int(card["discount_percent"]) for card in cards), default=0)
+        total_offer_count = sum(int(card.get("offer_count") or 0) for card in cards)
+        most_compared_products = sorted(
+            cards,
+            key=lambda card: (int(card.get("offer_count") or 0), int(card.get("review_count") or 0)),
+            reverse=True,
+        )[:8]
+
+        popular_store_rows = (
+            db.query(Store.name, func.count(ProductOffer.id))
+            .join(ProductOffer, ProductOffer.store_id == Store.id)
+            .filter(Store.name.isnot(None), Store.name != "")
+            .group_by(Store.id, Store.name)
+            .order_by(func.count(ProductOffer.id).desc(), Store.name.asc())
+            .limit(8)
+            .all()
+        )
+        store_logo_map = {
+            "trendyol": "/static/img/stores/trendyol.svg",
+            "hepsiburada": "/static/img/stores/hepsiburada.svg",
+            "amazon": "/static/img/stores/amazon.svg",
+            "teknosa": "/static/img/stores/teknosa.svg",
+            "mediamarkt": "/static/img/stores/mediamarkt.svg",
+            "media markt": "/static/img/stores/mediamarkt.svg",
+            "n11": "/static/img/stores/n11.svg",
+            "çiçeksepeti": "/static/img/stores/ciceksepeti.svg",
+            "cicek sepeti": "/static/img/stores/ciceksepeti.svg",
+        }
+
+        popular_stores = []
+        for name, offer_count in popular_store_rows:
+            store_name = str(name).strip()
+            normalized_store_name = store_name.casefold()
+            logo_url = store_logo_map.get(normalized_store_name)
+            if logo_url is None:
+                for keyword, mapped_logo in store_logo_map.items():
+                    if keyword in normalized_store_name:
+                        logo_url = mapped_logo
+                        break
+
+            popular_stores.append(
+                {
+                    "name": store_name,
+                    "offer_count": int(offer_count or 0),
+                    "initial": store_name[:1].upper() or "M",
+                    "logo_url": logo_url or "/static/img/stores/generic.svg",
+                    "search_url": f"/magaza/{urlencode({'x': store_name})[2:]}",
+                }
+            )
+
+        brand_counts: dict[str, int] = {}
+        for card in cards:
+            brand = str(card.get("brand") or "").strip()
+            if brand:
+                brand_counts[brand] = brand_counts.get(brand, 0) + 1
+
+        popular_brands = [
+            {
+                "name": brand,
+                "product_count": count,
+                "initial": brand[:1].upper(),
+                "url": f"/marka/{urlencode({'x': brand})[2:]}",
+            }
+            for brand, count in sorted(
+                brand_counts.items(),
+                key=lambda item: (-item[1], item[0].lower()),
+            )[:10]
+        ]
+
+        featured_deal = best_deals[0] if best_deals else (top_scored_products[0] if top_scored_products else None)
+        price_drop_count = len([card for card in cards if float(card["old_price"] or 0) > float(card["price"] or 0)])
+        multi_store_count = len([card for card in cards if int(card.get("offer_count") or 0) > 1])
+        total_saving_potential = round(
+            sum(float(card.get("saving_amount") or 0) for card in best_deals),
+            2,
+        )
+
+        current_user = _current_user(db, request.cookies.get("firsat_session"))
+
+        personalized_home = False
+        user_favorite_count = 0
+        user_active_alert_count = 0
+        user_recent_count = 0
+        favorite_deals: list[dict[str, object]] = []
+        recently_viewed_products: list[dict[str, object]] = []
+        recommended_for_user: list[dict[str, object]] = []
+        user_interest_categories: list[str] = []
+
+        if current_user is not None:
+            personalized_home = True
+            visitor_key = f"user:{current_user.id}"
+            card_by_group_id = {int(card["id"]): card for card in cards}
+
+            favorite_rows = (
+                db.query(Favorite)
+                .filter(Favorite.visitor_id == visitor_key)
+                .order_by(Favorite.created_at.desc())
+                .all()
+            )
+            active_alert_rows = (
+                db.query(PriceAlert)
+                .filter(
+                    PriceAlert.visitor_id == visitor_key,
+                    PriceAlert.is_active.is_(True),
+                )
+                .all()
+            )
+            recent_rows = (
+                db.query(RecentlyViewed)
+                .filter(RecentlyViewed.user_id == current_user.id)
+                .order_by(RecentlyViewed.viewed_at.desc())
+                .limit(20)
+                .all()
+            )
+
+            user_favorite_count = len(favorite_rows)
+            user_active_alert_count = len(active_alert_rows)
+            user_recent_count = len(recent_rows)
+
+            favorite_ids = [row.product_group_id for row in favorite_rows]
+            recent_ids = [row.product_group_id for row in recent_rows]
+            favorite_deals = [
+                card_by_group_id[group_id]
+                for group_id in favorite_ids
+                if group_id in card_by_group_id
+                and int(card_by_group_id[group_id].get("discount_percent") or 0) > 0
+            ][:8]
+            recently_viewed_products = [
+                card_by_group_id[group_id]
+                for group_id in recent_ids
+                if group_id in card_by_group_id
+            ][:8]
+
+            category_weights: dict[str, int] = {}
+            for group_id in favorite_ids:
+                card = card_by_group_id.get(group_id)
+                if card and card.get("category"):
+                    category = str(card["category"])
+                    category_weights[category] = category_weights.get(category, 0) + 3
+            for group_id in recent_ids:
+                card = card_by_group_id.get(group_id)
+                if card and card.get("category"):
+                    category = str(card["category"])
+                    category_weights[category] = category_weights.get(category, 0) + 1
+
+            user_interest_categories = [
+                item[0]
+                for item in sorted(category_weights.items(), key=lambda item: (-item[1], item[0]))[:3]
+            ]
+            excluded_ids = set(favorite_ids) | set(recent_ids[:4])
+            recommendation_pool = [
+                card for card in cards
+                if int(card["id"]) not in excluded_ids
+                and (not user_interest_categories or str(card.get("category") or "") in user_interest_categories)
+            ]
+            recommendation_pool.sort(
+                key=lambda card: (
+                    int(card.get("ai_score") or 0),
+                    int(card.get("discount_percent") or 0),
+                    int(card.get("offer_count") or 0),
+                ),
+                reverse=True,
+            )
+            recommended_for_user = recommendation_pool[:8]
+            if not recommended_for_user:
+                recommended_for_user = top_scored_products[:8]
 
         return templates.TemplateResponse(
             request=request,
             name="index.html",
             context={
+                "current_user": current_user,
                 "products": cards,
                 "total_products": total_products,
                 "average_price": average_price,
@@ -429,6 +619,22 @@ def home(request: Request):
                 "price_drop_products": price_drop_products,
                 "newest_products": newest_products,
                 "biggest_discount": biggest_discount,
+                "total_offer_count": total_offer_count,
+                "most_compared_products": most_compared_products,
+                "popular_stores": popular_stores,
+                "popular_brands": popular_brands,
+                "featured_deal": featured_deal,
+                "price_drop_count": price_drop_count,
+                "multi_store_count": multi_store_count,
+                "total_saving_potential": total_saving_potential,
+                "personalized_home": personalized_home,
+                "user_favorite_count": user_favorite_count,
+                "user_active_alert_count": user_active_alert_count,
+                "user_recent_count": user_recent_count,
+                "favorite_deals": favorite_deals,
+                "recently_viewed_products": recently_viewed_products,
+                "recommended_for_user": recommended_for_user,
+                "user_interest_categories": user_interest_categories,
             },
         )
     finally:
@@ -437,15 +643,21 @@ def home(request: Request):
 
 @router.get("/api/search/suggestions")
 def search_suggestions(q: str = ""):
-    """Ana sayfadaki arama kutusu için hızlı ürün grubu önerileri."""
+    """Ürün, marka, kategori ve mağazaları tek akıllı arama panelinde döndürür."""
     cleaned = " ".join(str(q or "").split()).strip()
     if len(cleaned) < 2:
-        return JSONResponse({"items": []})
+        return JSONResponse({"query": cleaned, "corrected_query": None, "sections": [], "items": []})
 
+    def normalize(value: str | None) -> str:
+        raw = unicodedata.normalize("NFKD", str(value or "").casefold())
+        raw = "".join(char for char in raw if not unicodedata.combining(char))
+        return re.sub(r"[^a-z0-9]+", " ", raw).strip()
+
+    normalized_query = normalize(cleaned)
     db = SessionLocal()
     try:
         pattern = f"%{cleaned}%"
-        groups = (
+        direct_groups = (
             db.query(ProductGroup)
             .filter(
                 or_(
@@ -456,11 +668,38 @@ def search_suggestions(q: str = ""):
                 )
             )
             .order_by(ProductGroup.updated_at.desc())
-            .limit(8)
+            .limit(12)
             .all()
         )
-        items = []
-        for group in groups:
+
+        candidate_groups = direct_groups
+        corrected_query = None
+        if len(candidate_groups) < 5:
+            pool = db.query(ProductGroup).order_by(ProductGroup.updated_at.desc()).limit(400).all()
+            scored = []
+            for group in pool:
+                haystacks = [group.canonical_name, group.brand, group.model, group.category]
+                score = max(
+                    SequenceMatcher(None, normalized_query, normalize(value)).ratio()
+                    for value in haystacks if value
+                ) if any(haystacks) else 0
+                name_norm = normalize(group.canonical_name)
+                token_bonus = sum(0.08 for token in normalized_query.split() if token and token in name_norm)
+                scored.append((score + token_bonus, group))
+            scored.sort(key=lambda item: item[0], reverse=True)
+            seen_ids = {group.id for group in candidate_groups}
+            for score, group in scored:
+                if score < 0.48 or group.id in seen_ids:
+                    continue
+                candidate_groups.append(group)
+                seen_ids.add(group.id)
+                if len(candidate_groups) >= 10:
+                    break
+            if not direct_groups and scored and scored[0][0] >= 0.62:
+                corrected_query = scored[0][1].canonical_name
+
+        product_items = []
+        for group in candidate_groups[:8]:
             best_offer = (
                 db.query(ProductOffer, Store)
                 .join(Store, Store.id == ProductOffer.store_id)
@@ -469,18 +708,73 @@ def search_suggestions(q: str = ""):
                 .first()
             )
             offer, store = best_offer if best_offer else (None, None)
-            items.append(
-                {
-                    "name": group.canonical_name,
-                    "brand": group.brand,
-                    "category": group.category,
-                    "image": group.image,
-                    "price": float(offer.current_price) if offer else None,
-                    "store": store.name if store else None,
-                    "url": f"/karsilastir/{group.group_key}",
-                }
-            )
-        return JSONResponse({"items": items})
+            product_items.append({
+                "type": "product",
+                "name": group.canonical_name,
+                "brand": group.brand,
+                "category": group.category,
+                "image": group.image,
+                "price": float(offer.current_price) if offer else None,
+                "store": store.name if store else None,
+                "url": f"/karsilastir/{group.group_key}",
+            })
+
+        brands = [row[0] for row in (
+            db.query(ProductGroup.brand)
+            .filter(ProductGroup.brand.isnot(None), ProductGroup.brand != "")
+            .distinct().limit(250).all()
+        )]
+        categories = [row[0] for row in (
+            db.query(ProductGroup.category)
+            .filter(ProductGroup.category.isnot(None), ProductGroup.category != "")
+            .distinct().limit(250).all()
+        )]
+        stores = [row[0] for row in db.query(Store.name).filter(Store.name.isnot(None), Store.name != "").distinct().limit(250).all()]
+
+        def ranked_entities(values, kind, limit=4):
+            ranked=[]
+            for value in values:
+                norm=normalize(value)
+                ratio=SequenceMatcher(None, normalized_query, norm).ratio()
+                if normalized_query in norm:
+                    ratio += 0.45
+                if norm.startswith(normalized_query):
+                    ratio += 0.25
+                if ratio >= 0.52:
+                    ranked.append((ratio, value))
+            ranked.sort(key=lambda item: (-item[0], normalize(item[1])))
+            result=[]
+            for _, value in ranked[:limit]:
+                if kind == 'brand':
+                    url=f"/marka/{value}"
+                    icon='🏷️'
+                elif kind == 'category':
+                    url=f"/arama?category={value}"
+                    icon='📂'
+                else:
+                    url=f"/magaza/{value}"
+                    icon='🏪'
+                result.append({"type": kind, "name": value, "url": url, "icon": icon})
+            return result
+
+        sections=[]
+        entity_sections = [
+            ("products", "Ürünler", product_items),
+            ("brands", "Markalar", ranked_entities(brands, "brand")),
+            ("categories", "Kategoriler", ranked_entities(categories, "category")),
+            ("stores", "Mağazalar", ranked_entities(stores, "store")),
+        ]
+        for key, title, items in entity_sections:
+            if items:
+                sections.append({"key": key, "title": title, "items": items})
+
+        return JSONResponse({
+            "query": cleaned,
+            "corrected_query": corrected_query,
+            "sections": sections,
+            "items": product_items,
+            "total": sum(len(section["items"]) for section in sections),
+        })
     finally:
         db.close()
 
@@ -713,6 +1007,7 @@ def _build_collection_context(
         "search_text": search_text,
         "selected_category": selected_category,
         "selected_sort": selected_sort,
+                "sort_options": SORT_OPTIONS,
         "minimum_price_value": params.get("min_price", ""),
         "maximum_price_value": params.get("max_price", ""),
         "minimum_score_value": (
@@ -965,6 +1260,7 @@ from app.services.catalog_search_service import (
     parse_capacity_gb,
     parse_identity_attributes,
 )
+from app.services.global_catalog_search_service import build_global_search_candidates
 
 
 def _currency_filter(value):
@@ -1010,16 +1306,31 @@ def _page_items(current_page: int, total_pages: int):
     return result
 
 
+@router.get("/api/filters/v13")
+def advanced_filter_metadata(request: Request):
+    categories=[item.strip() for item in request.query_params.getlist("category") if item.strip()]
+    return filter_metadata(categories)
+
+
 @router.get("/arama")
 def advanced_catalog_search(request: Request):
     params = request.query_params
     query = " ".join(str(params.get("q", "") or "").split())
+    smart_query = parse_smart_query(query)
     selected_brands = [item.strip() for item in params.getlist("brand") if item.strip()]
     selected_categories = [item.strip() for item in params.getlist("category") if item.strip()]
     selected_storage = [item.strip() for item in params.getlist("storage") if item.strip()]
     selected_ram = [item.strip() for item in params.getlist("ram") if item.strip()]
+    selected_stores = [item.strip() for item in params.getlist("store") if item.strip()]
+    selected_dynamic = {
+        key.removeprefix("attr_"): [item.strip() for item in params.getlist(key) if item.strip()]
+        for key in params.keys()
+        if key.startswith("attr_")
+    }
+    only_in_stock = str(params.get("in_stock", "") or "").lower() in {"1", "true", "on", "yes"}
+    only_free_shipping = str(params.get("free_shipping", "") or "").lower() in {"1", "true", "on", "yes"}
     selected_sort = str(params.get("sort", "relevance") or "relevance")
-    if selected_sort not in {"relevance", "price_asc", "price_desc", "stores", "newest"}:
+    if selected_sort not in SORT_OPTIONS:
         selected_sort = "relevance"
 
     min_price = _request_float(params.get("min_price"))
@@ -1029,54 +1340,25 @@ def advanced_catalog_search(request: Request):
 
     db = SessionLocal()
     try:
-        groups = db.query(ProductGroup).order_by(ProductGroup.updated_at.desc()).all()
-        candidates = []
-        for group in groups:
-            rows = (
-                db.query(ProductOffer, Store)
-                .join(Store, Store.id == ProductOffer.store_id)
-                .filter(ProductOffer.group_id == group.id)
-                .order_by(ProductOffer.current_price.asc())
-                .all()
-            )
-            valid_rows = [(offer, store) for offer, store in rows if float(offer.current_price or 0) > 0]
-            if not valid_rows:
-                continue
-            best_offer, best_store = valid_rows[0]
-            price = float(best_offer.current_price or 0)
-            attrs = parse_identity_attributes(group.identity_source)
-            score = calculate_relevance(
-                query,
-                name=group.canonical_name,
-                brand=group.brand,
-                model=group.model,
-                category=group.category,
-                identity_source=group.identity_source,
-            )
-            if query and score <= 0:
-                continue
-            candidates.append({
-                "id": group.id,
-                "name": group.canonical_name,
-                "brand": str(group.brand or "").strip(),
-                "model": str(group.model or "").strip(),
-                "category": str(group.category or "").strip(),
-                "image": group.image,
-                "price": price,
-                "offer_count": len(valid_rows),
-                "best_store": best_store.name,
-                "url": f"/karsilastir/{group.group_key}",
-                "updated_at": group.updated_at,
-                "relevance": score,
-                "storage": attrs.get("storage", ""),
-                "ram": attrs.get("ram", ""),
-            })
+        candidates = build_global_search_candidates(
+            db=db,
+            query=smart_query.get("search_text") or query,
+        )
+        candidates = enrich_and_rank_candidates(candidates, smart_query)
+        if min_price is None and smart_query.get("price_min") is not None:
+            min_price = float(smart_query["price_min"])
+        if max_price is None and smart_query.get("price_max") is not None:
+            max_price = float(smart_query["price_max"])
 
         # Facet counts are generated before their own filters so users can widen choices.
         brand_facets = _facet_rows(Counter(item["brand"] for item in candidates if item["brand"]))
         category_facets = _facet_rows(Counter(item["category"] for item in candidates if item["category"]))
         storage_facets = _facet_rows(Counter(item["storage"] for item in candidates if item["storage"]), capacity=True)
         ram_facets = _facet_rows(Counter(item["ram"] for item in candidates if item["ram"]), capacity=True)
+        store_facets = _facet_rows(Counter(store for item in candidates for store in item["stores"] if store))
+
+        # v13.4.0: kategoriye duyarlı dinamik filtre şeması ve sayaçları
+        dynamic_facets = build_dynamic_facets(candidates, selected_categories)
 
         if selected_brands:
             selected_set = {value.casefold() for value in selected_brands}
@@ -1090,21 +1372,43 @@ def advanced_catalog_search(request: Request):
         if selected_ram:
             selected_set = {value.casefold() for value in selected_ram}
             candidates = [item for item in candidates if item["ram"].casefold() in selected_set]
+        if selected_stores:
+            selected_set = {value.casefold() for value in selected_stores}
+            store_filtered_candidates = []
+            for item in candidates:
+                matching_offers = [
+                    offer for offer in item["offers"]
+                    if offer["store"].casefold() in selected_set
+                ]
+                if not matching_offers:
+                    continue
+                matching_offers.sort(key=lambda offer: offer.get("total_price", offer["price"]))
+                item = dict(item)
+                item["price"] = matching_offers[0].get("total_price", matching_offers[0]["price"])
+                item["best_store"] = matching_offers[0]["store"]
+                item["offer_count"] = len(matching_offers)
+                item["in_stock"] = any(
+                    not any(word in offer["availability"].casefold() for word in ("yok", "tükendi", "stok dışı", "out of stock"))
+                    for offer in matching_offers
+                )
+                item["free_shipping"] = any(
+                    offer["shipping_price"] is not None and offer["shipping_price"] <= 0
+                    for offer in matching_offers
+                )
+                store_filtered_candidates.append(item)
+            candidates = store_filtered_candidates
+        candidates = apply_dynamic_filters(candidates, selected_dynamic)
+        if only_in_stock:
+            candidates = [item for item in candidates if item["in_stock"]]
+        if only_free_shipping:
+            candidates = [item for item in candidates if item["free_shipping"]]
         if min_price is not None:
             candidates = [item for item in candidates if item["price"] >= min_price]
         if max_price is not None:
             candidates = [item for item in candidates if item["price"] <= max_price]
 
-        if selected_sort == "price_asc":
-            candidates.sort(key=lambda item: (item["price"], item["name"].casefold()))
-        elif selected_sort == "price_desc":
-            candidates.sort(key=lambda item: (-item["price"], item["name"].casefold()))
-        elif selected_sort == "stores":
-            candidates.sort(key=lambda item: (-item["offer_count"], -item["relevance"], item["name"].casefold()))
-        elif selected_sort == "newest":
-            candidates.sort(key=lambda item: item["updated_at"], reverse=True)
-        else:
-            candidates.sort(key=lambda item: (-item["relevance"], -item["offer_count"], item["price"]))
+        # v13.4.1: Akakçe tarzı açıklanabilir sıralama motoru
+        candidates = sort_candidates(candidates, selected_sort)
 
         total_results = len(candidates)
         total_pages = max(1, ceil(total_results / page_size))
@@ -1118,6 +1422,10 @@ def advanced_catalog_search(request: Request):
             "category": selected_categories,
             "storage": selected_storage,
             "ram": selected_ram,
+            "store": selected_stores,
+            "in_stock": ["1"] if only_in_stock else [],
+            "free_shipping": ["1"] if only_free_shipping else [],
+            **{f"attr_{key}": values for key, values in selected_dynamic.items()},
             "min_price": [str(params.get("min_price"))] if params.get("min_price") else [],
             "max_price": [str(params.get("max_price"))] if params.get("max_price") else [],
             "sort": [selected_sort],
@@ -1138,19 +1446,27 @@ def advanced_catalog_search(request: Request):
             context={
                 "page_title": f"{query} arama sonuçları" if query else "Tüm ürünler",
                 "query": query,
+                "smart_query": smart_query,
                 "products": products,
                 "total_results": total_results,
                 "selected_sort": selected_sort,
+                "sort_options": SORT_OPTIONS,
                 "selected_brands": selected_brands,
                 "selected_categories": selected_categories,
                 "selected_storage": selected_storage,
                 "selected_ram": selected_ram,
+                "selected_stores": selected_stores,
+                "selected_dynamic": selected_dynamic,
+                "only_in_stock": only_in_stock,
+                "only_free_shipping": only_free_shipping,
                 "min_price_value": params.get("min_price", ""),
                 "max_price_value": params.get("max_price", ""),
                 "brand_facets": brand_facets,
                 "category_facets": category_facets,
                 "storage_facets": storage_facets,
                 "ram_facets": ram_facets,
+                "store_facets": store_facets,
+                "dynamic_facets": dynamic_facets,
                 "current_page": current_page,
                 "total_pages": total_pages,
                 "page_items": _page_items(current_page, total_pages),

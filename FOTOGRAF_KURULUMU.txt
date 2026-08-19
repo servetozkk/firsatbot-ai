@@ -1,0 +1,13 @@
+FIRSATAI V4 - URUN FOTOGRAFLARINI GETIRME
+
+1. Calisan sunucuyu Ctrl+C ile kapat.
+2. FOTOGRAFLARI_GETIR.bat dosyasina cift tikla.
+3. Islem tamamlanana kadar pencereyi kapatma.
+4. Sonra BASLAT.bat dosyasina cift tikla.
+5. Urun detay sayfasini Ctrl+Shift+R ile yenile.
+
+NOTLAR
+- Veritabaniniz silinmez.
+- Kullanici, favori, yorum ve fiyat gecmisi korunur.
+- Logo, banner, ikon, placeholder ve kucuk resimler filtrelenir.
+- Magaza sayfasi ek fotograflari engelliyorsa o urunde daha az fotograf gorunebilir.

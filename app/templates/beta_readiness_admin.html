@@ -1,0 +1,13 @@
+{% extends "public_base.html" %}
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4"><div><h1 class="h3 mb-1">Kapalı Beta Hazırlığı</h1><p class="text-muted mb-0">FırsatAI v{{ engine_version }} bütünleşik sistem denetimi</p></div><span class="badge fs-6 {% if report.status == 'BETA_READY' %}text-bg-success{% else %}text-bg-danger{% endif %}">{{ report.status }}</span></div>
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body"><div class="text-muted">Toplam modül</div><div class="fs-3 fw-bold">{{ report.summary.total_modules }}</div></div></div></div>
+    <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body"><div class="text-muted">Sağlıklı</div><div class="fs-3 fw-bold text-success">{{ report.summary.healthy_modules }}</div></div></div></div>
+    <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body"><div class="text-muted">API route</div><div class="fs-3 fw-bold">{{ report.source_metrics.api_routes }}</div></div></div></div>
+    <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body"><div class="text-muted">DB bütünlüğü</div><div class="fs-3 fw-bold">{{ report.database.integrity }}</div></div></div></div>
+  </div>
+  <div class="card"><div class="card-header fw-semibold">Modüller</div><div class="table-responsive"><table class="table table-hover mb-0"><thead><tr><th>Modül</th><th>Durum</th><th>Eksik dosya</th></tr></thead><tbody>{% for name, module in report.modules.items() %}<tr><td>{{ name }}</td><td><span class="badge {% if module.status == 'ok' %}text-bg-success{% else %}text-bg-danger{% endif %}">{{ module.status }}</span></td><td>{{ module.missing|join(', ') if module.missing else '—' }}</td></tr>{% endfor %}</tbody></table></div></div>
+</div>
+{% endblock %}

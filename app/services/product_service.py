@@ -2,11 +2,15 @@ import json
 from datetime import datetime
 from typing import Any
 
+from app.services.product_image_service import parse_image_gallery, serialize_image_gallery
+from app.services.data_integrity_service import is_product_blocked, stable_product_key, sync_persistent_gallery
 from app.ai.scorer import calculate_score
 from app.database.database import SessionLocal
 from app.database.models import (
+    DeletedProduct,
     PriceHistory,
     ProductDB,
+    ProductOffer,
 )
 from app.models.product import Product
 from app.notifier.telegram import send_product
@@ -15,6 +19,8 @@ from app.services.multi_store_service import sync_product_offer
 from app.services.product_identity_service import (
     ProductIdentityService,
 )
+from app.services.global_catalog_service import sync_raw_and_global_catalog
+from app.services.catalog_reconciliation_service import sync_global_offer
 from app.services.product_validator import (
     ProductValidationError,
     ProductValidator,
@@ -285,6 +291,14 @@ def update_existing_product(
     if product.image:
         existing.image = str(product.image)
 
+    if getattr(product, "image_gallery", None) or product.image:
+        sync_persistent_gallery(
+            db,
+            product=existing,
+            values=parse_image_gallery(getattr(product, "image_gallery", None)),
+            source_store=product.source_site or product.seller,
+        )
+
     update_optional_field(
         existing,
         "brand",
@@ -397,6 +411,9 @@ def create_new_product(
             if product.image
             else None
         ),
+        image_gallery=serialize_image_gallery(
+            parse_image_gallery(getattr(product, "image_gallery", None))
+        ),
         ai_score=score,
         last_notified_price=None,
         brand=product.brand,
@@ -412,6 +429,13 @@ def create_new_product(
         ),
         source_site=product.source_site,
         product_code=product.product_code,
+        stable_key=stable_product_key(
+            identity_key=ProductIdentityService.explain(product).get("identity_key"),
+            product_code=product.product_code,
+            url=product.url,
+            name=product.name,
+        ),
+        is_deleted=False,
         last_price_change=now,
         created_at=now,
         updated_at=now,
@@ -419,6 +443,13 @@ def create_new_product(
 
     db.add(new_product)
     db.flush()
+
+    sync_persistent_gallery(
+        db,
+        product=new_product,
+        values=parse_image_gallery(getattr(product, "image_gallery", None)),
+        source_store=product.source_site or product.seller,
+    )
 
     history = PriceHistory(
         product_id=new_product.id,
@@ -445,6 +476,8 @@ def create_new_product(
 
 def save_product(
     product: Product,
+    *,
+    enqueue_repair: bool = True,
 ) -> None:
     """
     Scraper tarafından gelen ürünü doğrular ve
@@ -454,6 +487,11 @@ def save_product(
     çoklu mağaza tekliflerini senkronize eder ve gerekli
     durumlarda Telegram bildirimi gönderir.
     """
+
+    # Tüm mağazalar için ortak marka/model zenginleştirmesi.
+    # Scraper JSON-LD içinde model göndermese bile ürün adı üzerinden güvenli
+    # biçimde Apple/iPhone, Galaxy, Redmi, POCO vb. kimlikleri tamamlanır.
+    product = ProductIdentityService.enrich_product(product)
 
     try:
         product = ProductValidator.validate(
@@ -495,13 +533,55 @@ def save_product(
     db = SessionLocal()
 
     try:
+        identity_key = str(identity_info.get("identity_key") or "").strip()
+        stable_key = stable_product_key(
+            identity_key=identity_key,
+            product_code=product.product_code,
+            url=product.url,
+            name=product.name,
+        )
+        if is_product_blocked(
+            db,
+            url=product.url,
+            product_code=product.product_code,
+            identity_key=identity_key,
+            stable_key=stable_key,
+        ):
+            print("Ürün kalıcı olarak silinmiş; yeniden eklenmedi:", product.name)
+            return
+
         existing = (
             db.query(ProductDB)
-            .filter(
-                ProductDB.url == product.url
-            )
+            .execution_options(include_deleted=True)
+            .filter(ProductDB.url == product.url)
             .first()
         )
+
+        # Mağaza URL'leri değişebildiği için yalnızca URL ile aramak aynı
+        # mağaza ürününün ikinci kez oluşturulmasına yol açabilir. Mağazanın
+        # kalıcı ürün kodu varsa mağaza + ürün kodu üzerinden mevcut legacy
+        # ürün kaydını da bulur ve yeni kayıt açmak yerine günceller.
+        if existing is None and product.product_code:
+            existing = (
+                db.query(ProductDB)
+                .execution_options(include_deleted=True)
+                .filter(
+                    ProductDB.product_code == product.product_code,
+                    ProductDB.source_site == product.source_site,
+                )
+                .order_by(ProductDB.id.asc())
+                .first()
+            )
+            if existing is not None:
+                print(
+                    "Mevcut mağaza ürünü ürün koduyla bulundu; "
+                    "URL ve teklif güncellenecek."
+                )
+        if existing is not None and existing.is_deleted:
+            print("Ürün soft-delete durumunda; güncellenmedi:", product.name)
+            return
+        if existing is not None and not existing.stable_key:
+            existing.stable_key = stable_key
 
         now = datetime.utcnow()
 
@@ -512,15 +592,72 @@ def save_product(
                 product=product,
                 now=now,
             )
+            database_product = existing
 
         else:
-            create_new_product(
+            database_product = create_new_product(
                 db=db,
                 product=product,
                 now=now,
             )
 
+        raw_product, global_product, global_variant = (
+            sync_raw_and_global_catalog(
+                db=db,
+                product=product,
+                legacy_product_id=database_product.id,
+                identity_info=identity_info,
+            )
+        )
+        legacy_offer = (
+            db.query(ProductOffer)
+            .filter(ProductOffer.product_id == database_product.id)
+            .first()
+        )
+        global_offer = sync_global_offer(
+            db=db,
+            raw=raw_product,
+            legacy_offer=legacy_offer,
+        )
+
+        print(
+            "V9 katalog:",
+            f"raw={raw_product.id}",
+            f"global={global_product.id}",
+            f"variant={global_variant.id}",
+            f"offer={global_offer.id if global_offer else 'yok'}",
+        )
+
         db.commit()
+
+        # V14.9: Tek mağazada kalan yeni/güncellenen global ürün için
+        # diğer mağazalarda aynı ürünü arayan arka plan görevi başlatılır.
+        # Çapraz mağaza adayları kaydedilirken aktif kaynak koruması,
+        # iç içe yeni tarama görevleri oluşmasını engeller.
+        try:
+            from app.services.multi_store_offer_repair_v14_service import (
+                enqueue_multi_store_repair,
+                is_multi_store_repair_active,
+            )
+            active_offer_count = int(global_product.active_offer_count or 0)
+            if not enqueue_repair:
+                print("V22 legacy otomatik repair atlandı: production ingestion kontrolünde.")
+            elif is_multi_store_repair_active():
+                print(
+                    "V19 zincirleme çoklu mağaza görevi atlandı:",
+                    "aktif onarım bağlamı",
+                )
+            elif active_offer_count <= 1:
+                enqueue_result = enqueue_multi_store_repair(
+                    source_product=product,
+                    target_global_product_id=global_product.id,
+                )
+                print("V14.9 çoklu mağaza görevi:", enqueue_result)
+        except Exception as discovery_error:
+            print(
+                "V14.9 çoklu mağaza görevi başlatılamadı:",
+                f"{type(discovery_error).__name__}: {discovery_error}",
+            )
 
         print(
             "Veritabanı güncellendi."

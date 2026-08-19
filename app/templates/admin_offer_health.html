@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block extra_head %}
+<link rel="stylesheet" href="/static/css/admin_platform_v60.css?v=4">
+<style>
+.oh-page{display:grid;gap:18px}.oh-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:22px;border:1px solid #dfe7f2;border-radius:20px;background:linear-gradient(135deg,#fff,#f4f7ff)}
+.oh-head h2{margin:5px 0;color:#172033;font-size:1.18rem}.oh-head p{margin:0;color:#64748b;font-size:.72rem}.oh-kicker{color:#3153e8;font-size:.62rem;font-weight:950;letter-spacing:.1em}
+.oh-head-actions{display:flex;gap:8px}.oh-head select,.oh-head button,.oh-head a{min-height:40px;display:inline-flex;align-items:center;border:1px solid #d8e1ee;border-radius:11px;background:#fff;padding:0 12px;color:#334155;font-size:.66rem;font-weight:850;text-decoration:none}.oh-head button{background:#2563eb;color:#fff;border-color:#2563eb}
+.oh-summary{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}.oh-summary article{padding:15px;border:1px solid #e2e8f0;border-radius:15px;background:#fff}.oh-summary span{display:block;color:#64748b;font-size:.56rem;font-weight:850}.oh-summary strong{display:block;margin-top:4px;color:#172033;font-size:1.12rem}
+.oh-summary .good{background:#f0fdf4}.oh-summary .warn{background:#fffbeb}.oh-summary .bad{background:#fff1f2}
+.oh-layout{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:14px}.oh-store-list{display:grid;gap:12px}.oh-store{padding:17px;border:1px solid #dfe7f2;border-radius:17px;background:#fff}
+.oh-store-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}.oh-store-title h3{margin:0;color:#172033;font-size:.95rem}.oh-store-title p{margin:4px 0 0;color:#64748b;font-size:.62rem}
+.oh-score{display:grid;place-items:center;width:58px;height:58px;border-radius:50%;background:#eef2ff;color:#3730a3;font-size:1rem;font-weight:950}.oh-score.good{background:#dcfce7;color:#15803d}.oh-score.warn{background:#fef3c7;color:#a16207}.oh-score.bad{background:#fee2e2;color:#b91c1c}
+.oh-state-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin-top:13px}.oh-state{padding:9px;border-radius:11px;background:#f8fafc}.oh-state span{display:block;color:#64748b;font-size:.52rem}.oh-state b{display:block;margin-top:3px;color:#172033;font-size:.73rem}
+.oh-coverage{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin-top:12px}.oh-coverage article{padding:8px;border:1px solid #eef2f7;border-radius:10px}.oh-coverage span{display:block;color:#64748b;font-size:.49rem}.oh-coverage b{display:block;margin-top:2px;color:#172033;font-size:.64rem}
+.oh-bar{height:6px;margin-top:5px;border-radius:999px;background:#eef2f7;overflow:hidden}.oh-bar i{display:block;height:100%;background:#2563eb;border-radius:inherit}
+.oh-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:12px}.oh-tags span{padding:5px 7px;border-radius:999px;background:#f1f5f9;color:#475569;font-size:.5rem;font-weight:800}
+.oh-store-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:13px}.oh-store-actions a{min-height:34px;display:inline-flex;align-items:center;padding:0 10px;border:1px solid #dbe4f0;border-radius:9px;color:#334155;font-size:.58rem;font-weight:850;text-decoration:none}.oh-store-actions a.primary{background:#2563eb;border-color:#2563eb;color:#fff}
+.oh-side{display:grid;align-content:start;gap:12px}.oh-panel{padding:16px;border:1px solid #dfe7f2;border-radius:16px;background:#fff}.oh-panel h3{margin:0 0 11px;color:#172033;font-size:.82rem}.oh-missing{display:grid;gap:8px}.oh-missing-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}.oh-missing-row span{color:#475569;font-size:.61rem}.oh-missing-row b{color:#172033;font-size:.64rem}
+.oh-empty{padding:30px;text-align:center;color:#64748b}
+@media(max-width:1100px){.oh-layout{grid-template-columns:1fr}.oh-side{grid-template-columns:repeat(2,minmax(0,1fr))}.oh-summary{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:700px){.oh-head{align-items:stretch;flex-direction:column}.oh-head-actions{flex-direction:column}.oh-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.oh-state-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.oh-coverage{grid-template-columns:repeat(2,minmax(0,1fr))}.oh-side{grid-template-columns:1fr}}
+</style>
+{% endblock %}
+{% block title %}Teklif Sağlık Merkezi - Fırsat AI{% endblock %}
+{% block page_title %}Teklif Sağlık Merkezi{% endblock %}
+{% block page_subtitle %}Mağaza başarısını, veri kapsamasını ve bozuk teklifleri tek ekranda izleyin{% endblock %}
+{% block content %}
+<div class="platform-page oh-page">
+  <section class="oh-head">
+    <div>
+      <span class="oh-kicker">TEKLİF SİSTEMİ · AŞAMA 9</span>
+      <h2>Mağaza ve teklif sağlığı</h2>
+      <p>Hazır, eksik ve hatalı teklifleri; veri kapsama yüzdelerini ve tarama güncelliğini mağaza bazında gösterir.</p>
+    </div>
+    <form method="get" class="oh-head-actions">
+      <select name="store">
+        <option value="">Tüm mağazalar</option>
+        {% for item in stores %}<option value="{{ item.code }}" {% if selected_store==item.code %}selected{% endif %}>{{ item.name }}</option>{% endfor %}
+      </select>
+      <button type="submit">Filtrele</button>
+      <a href="/admin/offer-validation{% if selected_store %}?store={{ selected_store }}{% endif %}">Detaylı doğrulama</a>
+      <a href="/admin/scraper">Tarama Merkezi</a>
+    </form>
+  </section>
+
+  <section class="oh-summary">
+    <article><span>TOPLAM TEKLİF</span><strong>{{ dashboard.summary.offer_count }}</strong></article>
+    <article><span>MAĞAZA</span><strong>{{ dashboard.summary.store_count }}</strong></article>
+    <article class="good"><span>HAZIR</span><strong>{{ dashboard.summary.ready }}</strong></article>
+    <article class="warn"><span>EKSİK</span><strong>{{ dashboard.summary.incomplete }}</strong></article>
+    <article class="bad"><span>HATALI</span><strong>{{ dashboard.summary.broken }}</strong></article>
+    <article><span>HAZIRLIK ORANI</span><strong>%{{ dashboard.summary.ready_percent }}</strong></article>
+  </section>
+
+  <section class="oh-layout">
+    <div class="oh-store-list">
+      {% for row in dashboard.stores %}
+      <article class="oh-store">
+        <div class="oh-store-head">
+          <div class="oh-store-title">
+            <h3>{{ row.store.name }}</h3>
+            <p>{{ row.offers }} teklif · son kayıt {{ row.latest_age_hours if row.latest_age_hours is not none else '—' }} saat önce · ortalama eşleşme {{ row.avg_match }}</p>
+          </div>
+          <span class="oh-score {{ 'good' if row.score>=85 else 'warn' if row.score>=60 else 'bad' }}">{{ row.score|round|int }}</span>
+        </div>
+
+        <div class="oh-state-grid">
+          <div class="oh-state"><span>Hazır</span><b>{{ row.ready }} · %{{ row.success_percent }}</b></div>
+          <div class="oh-state"><span>Eksik</span><b>{{ row.incomplete }}</b></div>
+          <div class="oh-state"><span>Hatalı</span><b>{{ row.broken }} · %{{ row.problem_percent }}</b></div>
+          <div class="oh-state"><span>Aktif</span><b>{{ row.active }} · %{{ row.active_percent }}</b></div>
+        </div>
+
+        <div class="oh-coverage">
+          {% for label,value in [('Satıcı',row.seller_coverage),('Kargo',row.shipping_coverage),('Teslimat',row.delivery_coverage),('Garanti',row.warranty_coverage),('Görsel',row.image_coverage)] %}
+          <article><span>{{ label }}</span><b>%{{ value }}</b><div class="oh-bar"><i style="width:{{ value }}%"></i></div></article>
+          {% endfor %}
+        </div>
+
+        <div class="oh-tags">
+          {% for code,count in row.top_issues %}<span>{{ code }} · {{ count }}</span>{% else %}<span>Eksik alan yok</span>{% endfor %}
+        </div>
+
+        <div class="oh-store-actions">
+          <a class="primary" href="/admin/offer-validation?store={{ row.store.code }}">Teklifleri incele</a>
+          <a href="/admin/offers?store={{ row.store.id }}">Teklif merkezinde aç</a>
+          <a href="/admin/scraper">Yeniden taramaya git</a>
+        </div>
+      </article>
+      {% else %}
+      <div class="oh-empty">Teklif kaydı bulunamadı.</div>
+      {% endfor %}
+    </div>
+
+    <aside class="oh-side">
+      <section class="oh-panel">
+        <h3>En çok eksik alanlar</h3>
+        <div class="oh-missing">
+          {% for code,count in dashboard.top_missing_fields %}
+          <div class="oh-missing-row"><span>{{ code }}</span><b>{{ count }}</b></div>
+          {% else %}<div class="oh-empty">Eksik alan yok.</div>{% endfor %}
+        </div>
+      </section>
+      <section class="oh-panel">
+        <h3>Son 24 saatte bozulanlar</h3>
+        <strong style="font-size:1.5rem;color:#b91c1c">{{ dashboard.summary.recent_broken }}</strong>
+        <p style="color:#64748b;font-size:.65rem;line-height:1.6">Yeni veya güncellenmiş olmasına rağmen kritik doğrulama sorunu taşıyan teklifler.</p>
+      </section>
+    </aside>
+  </section>
+</div>
+{% endblock %}

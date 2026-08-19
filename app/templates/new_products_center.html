@@ -1,0 +1,44 @@
+{% from "components/breadcrumbs.html" import render_breadcrumbs %}
+{% extends "public_base.html" %}
+{% block title %}Yeni Çıkan Ürünler | FırsatAI{% endblock %}
+{% block content %}
+{{ render_breadcrumbs(breadcrumbs_v13) }}
+<style>
+.new-products-hero{padding:2rem;border-radius:1.25rem;background:linear-gradient(135deg,#0f172a,#1d4ed8);color:white;margin-bottom:1.25rem}
+.new-products-toolbar{display:flex;gap:.75rem;flex-wrap:wrap;align-items:end;margin-bottom:1rem}
+.new-products-toolbar label{font-size:.8rem;font-weight:700;display:block;margin-bottom:.25rem}
+.new-products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:1rem}
+.new-product-card{border:1px solid var(--bs-border-color);border-radius:1rem;padding:1rem;background:var(--bs-body-bg);display:flex;flex-direction:column;gap:.75rem}
+.new-product-card img{width:100%;height:170px;object-fit:contain;background:#fff;border-radius:.75rem}
+.new-badge{display:inline-flex;align-items:center;padding:.3rem .6rem;border-radius:999px;background:#dcfce7;color:#166534;font-weight:800;font-size:.78rem}
+.meta-line{font-size:.86rem;color:var(--bs-secondary-color)}
+@media(max-width:576px){.new-products-hero{padding:1.25rem}.new-products-toolbar>div{width:100%}.new-products-toolbar select,.new-products-toolbar input{width:100%}}
+</style>
+<section class="new-products-hero">
+  <h1 class="h2 mb-2">Yeni Çıkan Ürünler</h1>
+  <p class="mb-0">Kataloğa yakın zamanda eklenen ürünleri fiyat ve mağaza kapsamıyla keşfedin.</p>
+</section>
+<form class="new-products-toolbar" method="get" action="/yeni-urunler">
+  <div><label>Dönem</label><select class="form-select" name="days"><option value="7" {% if new_products_data.period_days==7 %}selected{% endif %}>Son 7 gün</option><option value="30" {% if new_products_data.period_days==30 %}selected{% endif %}>Son 30 gün</option><option value="90" {% if new_products_data.period_days==90 %}selected{% endif %}>Son 90 gün</option></select></div>
+  <div><label>Sıralama</label><select class="form-select" name="sort"><option value="newest" {% if new_products_data.filters.sort=='newest' %}selected{% endif %}>En yeni</option><option value="price_asc" {% if new_products_data.filters.sort=='price_asc' %}selected{% endif %}>En düşük fiyat</option><option value="stores_desc" {% if new_products_data.filters.sort=='stores_desc' %}selected{% endif %}>En çok mağaza</option></select></div>
+  <div><label>Marka</label><select class="form-select" name="brand"><option value="">Tümü</option>{% for item in new_products_data.brands %}<option value="{{ item[0] }}" {% if new_products_data.filters.brand==item[0] %}selected{% endif %}>{{ item[0] }} ({{ item[1] }})</option>{% endfor %}</select></div>
+  <div><label>Kategori</label><select class="form-select" name="category"><option value="">Tümü</option>{% for item in new_products_data.categories %}<option value="{{ item[0] }}" {% if new_products_data.filters.category==item[0] %}selected{% endif %}>{{ item[0] }} ({{ item[1] }})</option>{% endfor %}</select></div>
+  <div><button class="btn btn-primary" type="submit">Uygula</button> <a class="btn btn-outline-secondary" href="/yeni-urunler">Temizle</a></div>
+</form>
+<p class="meta-line">{{ new_products_data.total }} ürün bulundu · {{ new_products_data.disclaimer }}</p>
+<div class="new-products-grid">
+{% for item in new_products_data['items'] %}
+<article class="new-product-card">
+  {% if item.image %}<img src="{{ item.image }}" alt="{{ item.name }}" loading="lazy">{% endif %}
+  <div><span class="new-badge">{{ item.label }}</span></div>
+  <h2 class="h6 mb-0">{{ item.name }}</h2>
+  <div class="meta-line">{{ item.brand }} · {{ item.category }}</div>
+  <div class="meta-line">{{ item.age_days }} gün önce eklendi · {{ item.store_count }} mağaza</div>
+  {% if item.lowest_price is not none %}<div class="h5 mb-0">{{ "{:,.2f}".format(item.lowest_price).replace(',', 'X').replace('.', ',').replace('X', '.') }} TL</div>{% else %}<div class="meta-line">Aktif fiyat yok</div>{% endif %}
+  <div class="d-flex gap-2 mt-auto"><a class="btn btn-primary btn-sm flex-fill" href="{{ item.product_url }}">Ürünü incele</a><a class="btn btn-outline-primary btn-sm" href="{{ item.compare_url }}">Karşılaştır</a></div>
+</article>
+{% else %}
+<div class="alert alert-info">Seçilen dönemde doğrulanmış yeni ürün bulunamadı.</div>
+{% endfor %}
+</div>
+{% endblock %}

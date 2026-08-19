@@ -8,7 +8,9 @@ from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
 
+from app.services.product_image_service import collect_image_urls, serialize_image_gallery
 from app.models.product import Product
+from app.services.semantic_price_v222 import choose_semantic_sale_price
 
 
 class TeknosaParser:
@@ -23,6 +25,28 @@ class TeknosaParser:
     """
 
     BASE_URL = "https://www.teknosa.com"
+
+    @staticmethod
+    def _model_from_name_or_url(name: str, url: str) -> str | None:
+        """Teknosa'nın A9/A69 mağaza eklerini temizleyip model kodunu çıkarır."""
+        raw = f"{name or ''} {url or ''}".casefold()
+        raw = re.sub(r"[^a-z0-9]+", "-", raw)
+
+        match = re.search(
+            r"(x\d{3,5}[a-z]{1,3})(?:a\d{1,3})?"
+            r"[-_ ]+([a-z]{1,4}\d{3,6})(?:a\d{1,3})?",
+            raw,
+            flags=re.IGNORECASE,
+        )
+        if match:
+            return f"{match.group(1).upper()}-{match.group(2).upper()}"
+
+        family = re.search(
+            r"(x\d{3,5}[a-z]{1,3})(?:a\d{1,3})?",
+            raw,
+            flags=re.IGNORECASE,
+        )
+        return family.group(1).upper() if family else None
 
     def parse(
         self,
@@ -122,6 +146,28 @@ class TeknosaParser:
             ),
         )
 
+        # V22.2 semantic fiyat katmanı: selector içinde "alışveriş kredisi ile
+        # ayda 44.956 TL ... 121.999 TL" gibi bir metin varsa ilk sayıyı ana
+        # satış fiyatı sanmayız. Sayfadaki TL adaylarını çevresel bağlamıyla
+        # (ayda/taksit/kredi negatif; satış/sepette/fiyat pozitif) puanlarız.
+        semantic_price, semantic_debug = choose_semantic_sale_price(
+            soup.get_text(" ", strip=True),
+            selected_price=current_price,
+            min_price=500.0,
+            max_price=500_000.0,
+        )
+        if (
+            semantic_price is not None
+            and current_price is not None
+            and abs(float(semantic_price) - float(current_price)) > 0.01
+        ):
+            print(
+                f"V22.2 Teknosa semantic fiyat düzeltmesi: "
+                f"{float(current_price):.2f} -> {float(semantic_price):.2f} TL | "
+                f"{semantic_debug.get('reason')}"
+            )
+            current_price = float(semantic_price)
+
         # Eski fiyat güncel fiyattan küçük/eşitse geçersizdir.
         if (
             old_price is not None
@@ -138,6 +184,24 @@ class TeknosaParser:
             )
             if old_price is None:
                 old_price = detected_old
+
+        # V21.9: Laptop sayfalarında selector bazen taksit/yan bilgi gibi
+        # düşük bir TL değerini ana fiyat sanabiliyor. Ürün adı açıkça laptop
+        # sınıfındaysa 5.000 TL altındaki sonucu sayfadaki baskın gerçek TL
+        # fiyatıyla yeniden doğrularız. Bu mağaza-spesifik parser korumasıdır;
+        # genel katalog katmanında ayrıca Price Integrity karantinası vardır.
+        if self._looks_like_laptop(name) and current_price is not None and current_price < 5000:
+            dominant_price = self._dominant_laptop_price_from_text(
+                soup.get_text(" ", strip=True)
+            )
+            if dominant_price is not None:
+                print(
+                    f"V21.9 Teknosa fiyat düzeltmesi: {current_price:.2f} -> "
+                    f"{dominant_price:.2f} TL (baskın sayfa fiyatı)"
+                )
+                current_price = dominant_price
+                if old_price is not None and old_price <= current_price:
+                    old_price = None
 
         if current_price is None:
             raise ValueError(
@@ -185,6 +249,7 @@ class TeknosaParser:
                     "Ürün Modeli",
                 ),
             ),
+            self._model_from_name_or_url(name, url),
         )
 
         category = self._first_nonempty(
@@ -307,6 +372,16 @@ class TeknosaParser:
         specifications = self._extract_specifications(
             soup
         )
+        specifications.update(
+            self._extract_level2_evidence(
+                soup=soup,
+                html=html,
+                url=url,
+                name=name,
+                model=model,
+                description=description,
+            )
+        )
 
         return Product(
             name=self._clean_text(name),
@@ -321,6 +396,9 @@ class TeknosaParser:
             seller=self._clean_text(seller) or "TEKNOSA",
             url=url,
             image=image,
+            image_gallery=serialize_image_gallery(
+                collect_image_urls(html, primary=image, base_url=url)
+            ),
             brand=(
                 self._clean_text(brand)
                 if brand
@@ -538,6 +616,37 @@ class TeknosaParser:
         return lower, higher
 
     @staticmethod
+    def _looks_like_laptop(name: str | None) -> bool:
+        text = str(name or "").casefold()
+        return any(token in text for token in (
+            "laptop", "notebook", "dizüstü", "dizustu",
+            "vivobook", "zenbook", "expertbook", "tuf gaming",
+        ))
+
+    def _dominant_laptop_price_from_text(self, text: str) -> float | None:
+        values: list[float] = []
+        for raw in re.findall(
+            r"\b\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?\s*(?:TL|₺)\b",
+            str(text or ""),
+            flags=re.IGNORECASE,
+        ):
+            parsed = self._parse_price(raw)
+            if parsed is not None and 5000 <= parsed <= 250000:
+                values.append(parsed)
+        if not values:
+            return None
+        counts: dict[float, int] = {}
+        first_index: dict[float, int] = {}
+        for index, value in enumerate(values):
+            key = round(float(value), 2)
+            counts[key] = counts.get(key, 0) + 1
+            first_index.setdefault(key, index)
+        return max(
+            counts,
+            key=lambda value: (counts[value], -first_index[value]),
+        )
+
+    @staticmethod
     def _brand_from_json_ld(
         product_data: dict[str, Any],
     ) -> str | None:
@@ -661,6 +770,72 @@ class TeknosaParser:
             return "Stokta"
 
         return "Bilinmiyor"
+
+    def _extract_level2_evidence(
+        self,
+        *,
+        soup: BeautifulSoup,
+        html: str,
+        url: str,
+        name: str | None,
+        model: str | None,
+        description: str | None,
+    ) -> dict[str, str]:
+        """Extract RAM/storage/CPU evidence from every safe page source.
+
+        Teknosa may expose these values only in URL slugs, embedded hydration
+        JSON or page text. Values are normalized into specification fields so
+        the strict matcher can evaluate level-2 evidence consistently.
+        """
+        sources = [
+            str(name or ""),
+            str(model or ""),
+            str(description or ""),
+            str(url or ""),
+            soup.get_text(" ", strip=True),
+        ]
+        for script in soup.find_all("script"):
+            raw = script.string or script.get_text(" ", strip=True)
+            if raw and any(token in raw.casefold() for token in ("ram", "ssd", "120u", "product")):
+                sources.append(raw[:500000])
+        sources.append(str(html or "")[:1000000])
+
+        folded = " ".join(sources).casefold()
+        folded = folded.translate(str.maketrans({"ı":"i","ğ":"g","ü":"u","ş":"s","ö":"o","ç":"c"}))
+        normalized = re.sub(r"[^a-z0-9]+", " ", folded)
+        evidence: dict[str, str] = {}
+
+        cpu = re.search(r"\b(?:core\s*[3579]\s*)?(\d{3,5}[a-z]{1,3})\b", normalized, re.I)
+        if cpu and cpu.group(1).casefold() not in {"512gb", "256gb", "120hz"}:
+            evidence["İşlemci Modeli"] = cpu.group(1).upper()
+
+        ram_patterns = (
+            r"\b(\d{1,3})\s*gb\s*(?:ram|ddr[345x]?|lpddr[345x]?)\b",
+            r"\b(?:ram|ddr[345x]?|lpddr[345x]?)\s*(\d{1,3})\s*gb\b",
+        )
+        for pattern in ram_patterns:
+            match = re.search(pattern, normalized, re.I)
+            if match:
+                value = int(match.group(1))
+                if 2 <= value <= 256:
+                    evidence["RAM"] = f"{value} GB"
+                    break
+
+        storage_patterns = (
+            r"\b(\d+(?:[.,]\d+)?)\s*(tb|gb)\s*(?:ssd|nvme|m2|depolama)\b",
+            r"\b(?:ssd|nvme|m2|depolama)\s*(\d+(?:[.,]\d+)?)\s*(tb|gb)\b",
+        )
+        for pattern in storage_patterns:
+            match = re.search(pattern, normalized, re.I)
+            if match:
+                number = float(match.group(1).replace(",", "."))
+                unit = match.group(2).casefold()
+                gb = int(round(number * 1024 if unit == "tb" else number))
+                if 64 <= gb <= 16384:
+                    evidence["SSD Kapasitesi"] = f"{gb} GB"
+                    break
+
+        return evidence
 
     def _extract_specifications(
         self,
@@ -862,7 +1037,7 @@ class TeknosaParser:
 
         seller = match.group(1)
         seller = re.split(
-            r"\b(?:Garanti|Karşılaştır|Sepete)\b",
+            r"\b(?:Satıcıya\s*Sor|Saticiya\s*Sor|Garanti|Karşılaştır|Sepete)\b",
             seller,
             maxsplit=1,
             flags=re.IGNORECASE,

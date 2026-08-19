@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "public_base.html" %}
 {% block title %}Ürün Karşılaştırma - Fırsat AI{% endblock %}
 
 {% block extra_head %}
@@ -63,7 +63,49 @@
     box-shadow:0 14px 34px rgba(15,23,42,.22);
     font-weight:700
 }
-@media(max-width:767.98px){.comparison-table{min-width:760px}.compare-hero{padding:1.25rem}.product-head{min-height:auto}}
+@media(max-width:767.98px){
+    .compare-page{padding-inline:2px}
+    .compare-page > .btn{margin-left:2px}
+    .compare-hero{padding:1.25rem 1rem;border-radius:18px}
+    .compare-hero h1{font-size:1.55rem}
+    .compare-card{border-radius:16px}
+    .compare-card .card-body{padding:1rem!important}
+    .compare-card form .col-md-5,.compare-card form .col-md-2{width:100%}
+    .compare-card form .btn{min-height:46px}
+    .product-head{min-height:auto;padding:1rem}
+    .product-head .d-flex{flex-direction:column;align-items:center;text-align:center}
+    .product-image,.product-placeholder{width:132px;height:132px}
+    .product-head h2{font-size:1.05rem;line-height:1.35}
+    .price-value{font-size:1.2rem}
+    .score-box{padding:.8rem .45rem}
+    .score-number{font-size:1.35rem}
+    .compare-toolbar{align-items:stretch;padding:.85rem}
+    .compare-toolbar .form-control{max-width:none;width:100%}
+    .toolbar-check{flex:1 1 100%;justify-content:flex-start}
+    .compare-toolbar .btn{flex:1 1 calc(50% - .4rem)}
+    #visibleFeatureCount{width:100%;text-align:center}
+    .table-responsive{overflow:visible}
+    .comparison-table{min-width:0!important;border-collapse:separate;border-spacing:0 12px;padding:0 10px 12px}
+    .comparison-table thead{display:none}
+    .comparison-table,.comparison-table tbody{display:block;width:100%}
+    .comparison-table tr.comparison-row{display:grid;grid-template-columns:1fr 1fr;overflow:hidden;border:1px solid #e2e8f0;border-radius:14px;background:#fff;box-shadow:0 6px 16px rgba(15,23,42,.05)}
+    .comparison-table td{display:block;width:auto!important;padding:.75rem!important;border:0!important}
+    .comparison-table .feature-label{grid-column:1/-1;background:#f8fafc;color:#334155;text-align:left;font-size:.8rem}
+    .comparison-table .feature-cell{position:relative;text-align:left;padding-top:1.55rem!important;font-size:.86rem;word-break:break-word}
+    .comparison-table .feature-cell:nth-child(2){border-right:1px solid #e2e8f0!important}
+    .comparison-table .feature-cell:nth-child(2)::before,.comparison-table .feature-cell:nth-child(3)::before{position:absolute;top:.35rem;left:.75rem;color:#64748b;font-size:.62rem;font-weight:900;text-transform:uppercase;letter-spacing:.03em}
+    .comparison-table .feature-cell:nth-child(2)::before{content:'Birinci ürün'}
+    .comparison-table .feature-cell:nth-child(3)::before{content:'İkinci ürün'}
+    .comparison-table .section-header-row{display:block;margin-top:8px}
+    .comparison-table .section-header-row td{padding:0!important}
+    .section-title{border-radius:12px;padding:.72rem .8rem;font-size:.72rem}
+    .result-banner{padding:1rem;border-radius:14px}
+}
+@media(max-width:420px){
+    .comparison-table tr.comparison-row{grid-template-columns:1fr}
+    .comparison-table .feature-cell:nth-child(2){border-right:0!important;border-bottom:1px solid #e2e8f0!important}
+    .compare-toolbar .btn{flex-basis:100%}
+}
 </style>
 {% endblock %}
 
@@ -120,7 +162,7 @@
 <div class="small text-muted mb-3">{{ summary.best_store if summary and summary.best_store else "Mağaza yok" }}</div>
 <div class="d-flex justify-content-between small"><span>Teknik avantaj</span><strong>{{ wins }}</strong></div>
 <div class="advantage-bar mb-3"><div class="advantage-fill" style="width:{{ percent }}%"></div></div>
-<a href="/karsilastir/{{ product.group_key }}" class="btn btn-sm btn-outline-dark">Ürün detayını aç</a>
+<a href="/urun/{{ product.group_key }}" class="btn btn-sm btn-outline-dark">Ürün detayını aç</a>
 </div></div></div></div>
 {% endfor %}
 </div></div></section>

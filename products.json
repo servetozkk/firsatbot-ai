@@ -188,5 +188,445 @@
         "name": "TEKNETSTORE Macbook Air 15 M2 M3 M4 M5 A2941 A3114 A3241 A3448 Uyumlu Şeffaf Kılıf Koruyucu Kapak Kristal Parlak",
         "url": "https://www.trendyol.com/teknetstore/macbook-air-15-m2-m3-m4-m5-a2941-a3114-a3241-a3448-uyumlu-seffaf-kilif-koruyucu-kapak-kristal-parlak-p-752760055",
         "active": true
+    },
+    {
+        "name": "LENOVO Ideapad Slim 3 AMD Ryzen 3-30 8GB 512GB SSD 15,6\" FHD FreeDOS 82XQ0129TX",
+        "url": "https://www.trendyol.com/lenovo/ideapad-slim-3-amd-ryzen-3-30-8gb-512gb-ssd-15-6-fhd-freedos-82xq0129tx-p-1159656639",
+        "active": true
+    },
+    {
+        "name": "Genel Markalar Red Bull Motosiklet Kask Laptop Telefon Çıkartma Redbull",
+        "url": "https://www.trendyol.com/genel-markalar/red-bull-motosiklet-kask-laptop-telefon-cikartma-redbull-p-689443165",
+        "active": true
+    },
+    {
+        "name": "Samsung Fold8 Ultra 5G 1TB Mürdüm Akıllı Telefon Fiyatı ve Özellikleri",
+        "url": "https://www.teknosa.com/samsung-fold8-ultra-5g-1tb-murdum-akilli-telefon-p-100000063703",
+        "active": true
+    },
+    {
+        "name": "Samsung Fold8 Ultra 5G 1TB Gri Akıllı Telefon Fiyatı ve Özellikleri",
+        "url": "https://www.teknosa.com/samsung-fold8-ultra-5g-1tb-gri-akilli-telefon-p-100000063699",
+        "active": true
+    },
+    {
+        "name": "Samsung Fold8 Ultra 5G 256 GB Mürdüm Akıllı Telefon Fiyatı ve Özellikleri",
+        "url": "https://www.teknosa.com/samsung-fold8-ultra-5g-256-gb-murdum-akilli-telefon-p-100000063683",
+        "active": true
+    },
+    {
+        "name": "Samsung Flip8 5G 256 GB Pembe Akıllı Telefon Fiyatı ve Özellikleri",
+        "url": "https://www.teknosa.com/samsung-flip8-5g-256-gb-pembe-akilli-telefon-p-100000063696",
+        "active": true
+    },
+    {
+        "name": "Samsung Fold8 5G 1TB Lavanta Akıllı Telefon Fiyatı ve Özellikleri",
+        "url": "https://www.teknosa.com/samsung-fold8-5g-1tb-lavanta-akilli-telefon-p-100000063679",
+        "active": true
+    },
+    {
+        "name": "Xiaomi Redmi 15C 8 + 256 GB (Xiaomi Türkiye Garantili) Yeşil 256 GB Fiyatları ve Özellikleri",
+        "url": "https://www.n11.com/urun/xiaomi-redmi-15c-8-256-gb-xiaomi-turkiye-garantili-99175414",
+        "active": true
+    },
+    {
+        "name": "Samsung Galaxy A07 4 GB 128 GB (Samsung Türkiye Garantili) Siyah 128 GB Fiyatları ve Özellikleri",
+        "url": "https://www.n11.com/urun/samsung-galaxy-a07-4-gb-128-gb-samsung-turkiye-garantili-106765738",
+        "active": true
+    },
+    {
+        "name": "Samsung Galaxy A26 256 GB (Samsung Türkiye Garantili) Siyah 256 GB Fiyatları ve Özellikleri",
+        "url": "https://www.n11.com/urun/samsung-galaxy-a26-256-gb-samsung-turkiye-garantili-75386739",
+        "active": true
+    },
+    {
+        "name": "iPhone 15 256 Gb Akıllı Telefon Mavi",
+        "url": "https://www.vatanbilgisayar.com/iphone-15-256-gb-akilli-telefon-mavi.html",
+        "active": true
+    },
+    {
+        "name": "iPhone 15",
+        "url": "https://www.vatanbilgisayar.com/iphone-15-akilli-telefon.html",
+        "active": true
+    },
+    {
+        "name": "iPhone 15 128 Gb Akıllı Telefon Mavi",
+        "url": "https://www.vatanbilgisayar.com/iphone-15-128-gb-akilli-telefon-mavi.html",
+        "active": true
+    },
+    {
+        "name": "Apple iPhone 17 Pro Max 256 GB Abis Cep Telefonu (Apple Türkiye Garantili)",
+        "url": "https://www.pazarama.com/apple-iphone-17-pro-max-256-gb-siyah-cep-telefonu-apple-turkiye-garantili-p-195950639254",
+        "active": true
+    },
+    {
+        "name": "Apple iPhone 17 Pro 256GB Abis",
+        "url": "https://www.pazarama.com/iphone-17-pro-256gb-deep-blue-mg8j4tua-p-195950627602",
+        "active": true
+    },
+    {
+        "name": "Samsung Galaxy S25 Ultra 512 GB 12 GB Ram Mavi Cep Telefonu (Samsung Türkiye Garantili)",
+        "url": "https://www.pazarama.com/samsung-galaxy-s25-ultra-512-gb-12-gb-ram-mavi-cep-telefonu-samsung-turkiye-garantili-p-8806095849171",
+        "active": true
+    },
+    {
+        "name": "Vwin Yonca Power Güç Kablosu Şarj Adaptörü 3 Pin Notebook PC Laptop Güç Kablosu 500W 3x0.75mm",
+        "url": "https://www.trendyol.com/vwin/yonca-power-guc-kablosu-sarj-adaptoru-3-pin-notebook-pc-laptop-guc-kablosu-500w-3x0-75mm-p-1154815369",
+        "active": true
+    },
+    {
+        "name": "Voit Irun New Katlanabilir Koşu Bandı 12 Km/s Brushless Motor Bluetooth Uzaktan Kumandalı",
+        "url": "https://www.trendyol.com/voit/irun-new-katlanabilir-kosu-bandi-12-km-s-brushless-motor-bluetooth-uzaktan-kumandali-p-941363599",
+        "active": true
+    },
+    {
+        "name": "Voit V-Fit by Vibro Run Titreşimli Koşu Bandı – Loop Bant Seti Hediyeli - Katlanabilir, 8 km/s, Titreşim Modlu, Kumandalı",
+        "url": "https://www.trendyol.com/voit/v-fit-by-vibro-run-titresimli-kosu-bandi-loop-bant-seti-hediyeli-katlanabilir-8-km-s-titresim-modlu-kumandali-p-1162736253",
+        "active": true
+    },
+    {
+        "name": "Voit Compact Katlanabilir Koşu ve Yürüyüş Bandı – Manuel Eğimli, Uzaktan Kumandalı, 10 km/h",
+        "url": "https://www.trendyol.com/voit/compact-katlanabilir-kosu-ve-yuruyus-bandi-manuel-egimli-uzaktan-kumandali-10-km-h-p-928112919",
+        "active": true
+    },
+    {
+        "name": "MORCA Macbook Kılıf Notebook Çanta Tablet Laptop Kılıfı 13\"-14\" Kapitone Desenli Deri Siyah",
+        "url": "https://www.trendyol.com/morca/macbook-kilif-notebook-canta-tablet-laptop-kilifi-13-14-kapitone-desenli-deri-siyah-p-688078342",
+        "active": true
+    },
+    {
+        "name": "MORCA Macbook Air Pro 13.3\" & 14\" Inç Laptop Kılıfı Hasır Mint Yeşili",
+        "url": "https://www.trendyol.com/morca/macbook-air-pro-13-3-14-inc-laptop-kilifi-hasir-mint-yesili-p-831212330",
+        "active": true
+    },
+    {
+        "name": "MORCA Omuz Askılı Notebook Çanta Tablet Laptop Kılıfı 13\"-14\" V Model Deri Siyah",
+        "url": "https://www.trendyol.com/morca/omuz-askili-notebook-canta-tablet-laptop-kilifi-13-14-v-model-deri-siyah-p-734112500",
+        "active": true
+    },
+    {
+        "name": "MORCA Omuz Askılı Notebook Çanta Tablet Laptop Kılıfı 15\"-15,9\" Kapitone Deri Siyah",
+        "url": "https://www.trendyol.com/morca/omuz-askili-notebook-canta-tablet-laptop-kilifi-15-15-9-kapitone-deri-siyah-p-683368563",
+        "active": true
+    },
+    {
+        "name": "Samsung Galaxy Z Fold8 16GB/1TB Lavanta Cep Telefonu",
+        "url": "https://www.trendyol.com/samsung/galaxy-z-fold8-16gb-1tb-lavanta-cep-telefonu-p-1173671745",
+        "active": true
+    },
+    {
+        "name": "Samsung Galaxy Z Flip8 12GB/512GB Pembe Cep Telefonu",
+        "url": "https://www.trendyol.com/samsung/galaxy-z-flip8-12gb-512gb-pembe-cep-telefonu-p-1173672300",
+        "active": true
+    },
+    {
+        "name": "Samsung Galaxy Z Fold8 Ultra 16GB/1TB Grafit Gri Cep Telefonu",
+        "url": "https://www.trendyol.com/samsung/galaxy-z-fold8-ultra-16gb-1tb-grafit-gri-cep-telefonu-p-1173671160",
+        "active": true
+    },
+    {
+        "name": "Samsung Galaxy Z Fold8 Ultra 16GB/1TB Mürdüm Cep Telefonu",
+        "url": "https://www.trendyol.com/samsung/galaxy-z-fold8-ultra-16gb-1tb-murdum-cep-telefonu-p-1173671161",
+        "active": true
+    },
+    {
+        "name": "Samsung Fold8 Ultra 5G 256 GB Gri Akıllı Telefon Fiyatı ve Özellikleri",
+        "url": "https://www.teknosa.com/samsung-fold8-ultra-5g-256-gb-gri-akilli-telefon-p-100000063668",
+        "active": true
+    },
+    {
+        "name": "Apple iPhone 15 128 GB Siyah",
+        "url": "https://www.hepsiburada.com/apple-iphone-15-128-gb-siyah-p-HBCV00004X9ZCH",
+        "active": true
+    },
+    {
+        "name": "Apple iPhone 15 128 GB Mavi",
+        "url": "https://www.hepsiburada.com/apple-iphone-15-128-gb-mavi-p-HBCV00004X9ZCK",
+        "active": true
+    },
+    {
+        "name": "Samsung Galaxy S25 Fe 256 GB 8 GB Ram (Samsung Türkiye Garantili) Buz Mavisi",
+        "url": "https://www.hepsiburada.com/samsung-galaxy-s25-fe-256-gb-8-gb-ram-samsung-turkiye-garantili-buz-mavisi-p-HBCV00009S5CRQ",
+        "active": true
+    },
+    {
+        "name": "Samsung Galaxy A17 5g 256 GB 8 GB Ram (Samsung Türkiye Garantili) Gri",
+        "url": "https://www.hepsiburada.com/samsung-galaxy-a17-5g-256-gb-8-gb-ram-samsung-turkiye-garantili-gri-p-HBCV00009S6B27",
+        "active": true
+    },
+    {
+        "name": "Samsung Galaxy A57 5g 256 GB 8 GB Ram (Samsung Türkiye Garantili) Buz Mavisi",
+        "url": "https://www.hepsiburada.com/samsung-galaxy-a57-5g-256-gb-8-gb-ram-samsung-turkiye-garantili-buz-mavisi-p-HBCV0000DU666Y",
+        "active": true
+    },
+    {
+        "name": "Samsung Galaxy A26 5G, Android Akıllı Telefon, 256GB Depolama, 8GB RAM, Siyah, 50MP Kamera, Büyük Ekran, Uzun Pil Ömrü (Samsung Türkiye Garantili)",
+        "url": "https://www.amazon.com.tr/Samsung-Android-Telefon-Depolama-Garantili/dp/B0F1FNX644/ref=sr_1_4",
+        "active": true
+    },
+    {
+        "name": "Samsung Galaxy A56 5G, Android Akıllı Telefon, 256GB Depolama, 8GB RAM, Antrasit, 6x İşletim Sistemi Yükseltmesi, Büyük Ekran, Uzun Pil Ömrü, 8GB + 256GB",
+        "url": "https://www.amazon.com.tr/Samsung-5G-Depolama-Antrasit-Y%C3%BCkseltmesi/dp/B0F1FRL5HX/ref=sr_1_5",
+        "active": true
+    },
+    {
+        "name": "Redmi 15C 8GB RAM 256GB ROM, Siyah | 7.99 mm'lik ince ve zarif tasarım,33W hızlı şarj destekli,50MP AI destekli ikili kamera",
+        "url": "https://www.amazon.com.tr/Redmi-15C-8GB-256GB-Siyah/dp/B0FMKB9H84/ref=sr_1_6",
+        "active": true
+    },
+    {
+        "name": "Samsung Galaxy A17 4/128 GB Siyah Cep Telefonu",
+        "url": "https://www.amazon.com.tr/Samsung-Galaxy-A17-Siyah-Telefonu/dp/B0FSXHBK4M/ref=sr_1_8",
+        "active": true
+    },
+    {
+        "name": "Samsung Galaxy A07 5G (4GB RAM, 128GB Depolama) | 6,7 inç HD+ 120Hz Ekran | MediaTek Dimensity 6300 | 50MP + 2MP Arka Kamera | 6000 mAh Batarya (Samsung Türkiye Garantili) (MOR)",
+        "url": "https://www.amazon.com.tr/Samsung-Depolama-MediaTek-Dimensity-Garantili/dp/B0H31J9RCG/ref=sr_1_7",
+        "active": true
+    },
+    {
+        "name": "General Mobile ERA 30 8GB (4GB + 4GB Genişletilmiş RAM) + 128GB Hafıza Çift Sim Kart",
+        "url": "https://www.trendyol.com/general-mobile/era-30-8gb-4gb-4gb-genisletilmis-ram-128gb-hafiza-cift-sim-kart-p-848806977",
+        "active": true
+    },
+    {
+        "name": "Samsung Galaxy A07 128 GB Siyah",
+        "url": "https://www.trendyol.com/samsung/galaxy-a07-128-gb-siyah-p-1090837476",
+        "active": true
+    },
+    {
+        "name": "Xiaomi Redmi 15C 8GB RAM 256GB ROM, Siyah(Xiaomi Türkiye Garantili)",
+        "url": "https://www.trendyol.com/xiaomi/redmi-15c-8gb-ram-256gb-rom-siyah-xiaomi-turkiye-garantili-p-975567289",
+        "active": true
+    },
+    {
+        "name": "Samsung Galaxy S25 12/256 Gb Akıllı Telefon Gümüş ( Türkiye Garantili)",
+        "url": "https://www.trendyol.com/samsung/galaxy-s25-12-256-gb-akilli-telefon-gumus-turkiye-garantili-p-902073915",
+        "active": true
+    },
+    {
+        "name": "Apple iPhone 17 Pro Max 256GB Kozmik Turuncu Akıllı Telefon Fiyatı ve Özellikleri",
+        "url": "https://www.teknosa.com/apple-iphone-17-pro-max-256gb-kozmik-turuncu-akilli-telefon-p-100000058776",
+        "active": true
+    },
+    {
+        "name": "Apple iPhone 17 Pro Max 256GB Gümüş Akıllı Telefon Fiyatı ve Özellikleri",
+        "url": "https://www.teknosa.com/apple-iphone-17-pro-max-256gb-gumus-akilli-telefon-p-100000058791",
+        "active": true
+    },
+    {
+        "name": "Apple iPhone 17 Pro Max 256GB Abis Akıllı Telefon Fiyatı ve Özellikleri",
+        "url": "https://www.teknosa.com/apple-iphone-17-pro-max-256gb-abis-akilli-telefon-p-100000058778",
+        "active": true
+    },
+    {
+        "name": "Apple iPhone 17 Pro 256GB Kozmik Turuncu Akıllı Telefon Fiyatı ve Özellikleri",
+        "url": "https://www.teknosa.com/apple-iphone-17-pro-256gb-kozmik-turuncu-akilli-telefon-p-100000058785",
+        "active": true
+    },
+    {
+        "name": "Apple iPhone 17 Pro 256GB Gümüş Akıllı Telefon Fiyatı ve Özellikleri",
+        "url": "https://www.teknosa.com/apple-iphone-17-pro-256gb-gumus-akilli-telefon-p-100000058764",
+        "active": true
+    },
+    {
+        "name": "Apple iPhone 16 128GB Lacivert Taş",
+        "url": "https://www.hepsiburada.com/apple-iphone-16-128gb-lacivert-tas-p-HBCV00006Y4HFN",
+        "active": true
+    },
+    {
+        "name": "Naztech 42-44 Mm Silikon Kayış Beyaz",
+        "url": "https://www.amazon.com.tr/Naztech-42-44-Silikon-Kay%C4%B1%C5%9F-Beyaz/dp/B08P23N1GM",
+        "active": true
+    },
+    {
+        "name": "Spigen Galaxy M33 ile Uyumlu Kılıf Essential Sand Blast Mat Dokulu Siyah Kapak - ACS04236 (Spigen TR Garantili)",
+        "url": "https://www.amazon.com.tr/Spigen-Samsung-Galaxy-K%C4%B1l%C4%B1f-Essential/dp/B09W99NDBS",
+        "active": true
+    },
+    {
+        "name": "Xiaomi Redmi 15 8+256GB Siyah Akıllı Telefon",
+        "url": "https://www.vatanbilgisayar.com/xiaomi-redmi-15-akilli-telefon.html",
+        "active": true
+    },
+    {
+        "name": "iPhone 16 128 GB Akıllı Telefon Beyaz",
+        "url": "https://www.vatanbilgisayar.com/iphone-16-128-gb-akilli-telefon-beyaz.html",
+        "active": true
+    },
+    {
+        "name": "GGM GİYİM & AKSESUAR iPhone 13 ile Uyumlu Arka Kısmı Mat Şeffaf Yapıya Sahip Kenarları Silikon Tpu Malzemeden Üretilmiş Renkli Tuşlara Sahip Kamera Korumalı Transparan Kılıf (Kırmızı)",
+        "url": "https://www.amazon.com.tr/GGM-AKSESUAR-Kenarlar%C4%B1-Malzemeden-Transparan/dp/B0B4K1DKGJ",
+        "active": true
+    },
+    {
+        "name": "Apple iPhone 15 Siyah 128 GB 6 GB Ram Akıllı Telefon (Apple Türkiye Garantili)",
+        "url": "https://www.pazarama.com/apple-iphone-15-128-6-gb-ram-5g-apple-turkiye-garantili-p-195949036040",
+        "active": true
+    },
+    {
+        "name": "Apple iPhone 13 Beyaz 128 GB 4 GB Ram Akıllı Telefon (Apple Türkiye Garantili)",
+        "url": "https://www.pazarama.com/apple-iphone-13-beyaz-128-gb-4-gb-ram-61-inc-12-mp-akilli-telefon-p-194252707524",
+        "active": true
+    },
+    {
+        "name": "Manyetik Mıknatıslı Araç İçi Telefon Tutucu 360 Derece",
+        "url": "https://www.amazon.com.tr/Fonemax-Manyetik-M%C4%B1knat%C4%B1sl%C4%B1-Telefon-Tutuc/dp/B07DFNNLGY",
+        "active": true
+    },
+    {
+        "name": "Minesk İphone 14-14 Plus ile Uyumlu Alüminyum Alaşım Çerçeveli Tempered Glass Kamera Lens Koruyucu Kırılmaz Cam (Siyah)",
+        "url": "https://www.amazon.com.tr/Al%C3%BCminyum-%C3%87er%C3%A7eveli-Tempered-Koruyucu-K%C4%B1r%C4%B1lmaz/dp/B0BGJ6PMZJ",
+        "active": true
+    },
+    {
+        "name": "Fibaks Alüminyum Ayarlı Laptop Macbook Uyumlu Notebook Yükseltici Tutucu Stand Standı",
+        "url": "https://www.trendyol.com/fibaks/aluminyum-ayarli-laptop-macbook-uyumlu-notebook-yukseltici-tutucu-stand-standi-p-761189459",
+        "active": true
+    },
+    {
+        "name": "Vigo Wood Katlanır Ayaklı Ayarlanabilir Laptop Sehpası Telefon Bölmeli Bilgisayar Çalışma Sehpası",
+        "url": "https://www.trendyol.com/vigo-wood/katlanir-ayakli-ayarlanabilir-laptop-sehpasi-telefon-bolmeli-bilgisayar-calisma-sehpasi-p-778290001",
+        "active": true
+    },
+    {
+        "name": "Parfois Kadın Askılı 15” Laptop Sırt Çantası",
+        "url": "https://www.trendyol.com/parfois/kadin-askili-15-laptop-sirt-cantasi-p-1124573431",
+        "active": true
+    },
+    {
+        "name": "gameagle Aero Storm V15 RGB 15 Fanlı 10 RGB Modlu 9-17.3'' Notebook Soğutucu Stand Laptop Soğutucu",
+        "url": "https://www.trendyol.com/gameagle/aero-storm-v15-rgb-15-fanli-10-rgb-modlu-9-17-3-notebook-sogutucu-stand-laptop-sogutucu-p-1124409969",
+        "active": true
+    },
+    {
+        "name": "Shule Bags 15\" Twill Dokulu Teknik Kumaş Laptop Çantası Siyah",
+        "url": "https://www.trendyol.com/shule-bags/15-twill-dokulu-teknik-kumas-laptop-cantasi-siyah-p-1147072176",
+        "active": true
+    },
+    {
+        "name": "Punchiess Puantiye Laptop Tablet Kılıfı 11 inç",
+        "url": "https://www.trendyol.com/punchiess/puantiye-laptop-tablet-kilifi-11-inc-p-1153213698",
+        "active": true
+    },
+    {
+        "name": "LENOVO LOQ E AMD Ryzen 5-7535HS 16GB 512GB SSD 15.6\" FHD 144 Hz RTX 3050 6GB GDDR6 Gaming Laptop 83S0002VTR",
+        "url": "https://www.trendyol.com/lenovo/loq-e-amd-ryzen-5-7535hs-16gb-512gb-ssd-15-6-fhd-144-hz-rtx-3050-6gb-gddr6-gaming-laptop-83s0002vtr-p-1123120617",
+        "active": true
+    },
+    {
+        "name": "Xiaomi Redmi Note 15 8 GB+256 GB Mavi (Xiaomi Türkiye Garantili )",
+        "url": "https://www.trendyol.com/xiaomi/redmi-note-15-8-gb-256-gb-mavi-xiaomi-turkiye-garantili-p-1074984375",
+        "active": true
+    },
+    {
+        "name": "Samsung Galaxy A16 4 Gb Ram 128 Gb Gri",
+        "url": "https://www.trendyol.com/samsung/galaxy-a16-4-gb-ram-128-gb-gri-p-882761835",
+        "active": true
+    },
+    {
+        "name": "Hometech Alfa 130p 4gb Ram 64gb Dahili Hafıza 128 Gb Nvm Ssd 13.3\" Win10 Home Metal Kasa (İKİNCİ EL LAPTOP)",
+        "url": "https://www.trendyol.com/hometech/alfa-130p-4gb-ram-64gb-dahili-hafiza-128-gb-nvm-ssd-13-3-win10-home-metal-kasa-ikinci-el-laptop-p-4275984",
+        "active": true
+    },
+    {
+        "name": "Apple 13\" MacBook Neo Indigo 256GB",
+        "url": "https://www.trendyol.com/apple/13-macbook-neo-indigo-256gb-p-1113964092",
+        "active": true
+    },
+    {
+        "name": "ASUS Vivobook 15 X1504VA-BQ5391 Intel Core 5 120U 8GB RAM 512GB SSD 15.6'' FHD",
+        "url": "https://www.trendyol.com/asus/vivobook-15-x1504va-bq5391-intel-core-5-120u-8gb-ram-512gb-ssd-15-6-fhd-p-1140866786",
+        "active": true
+    },
+    {
+        "name": "Hometech Alfa 600c-400c-ht14s 3 Gb Ram 32 Dahili Hafıza 128 Gb Ssd Win10home (İKİNCİ EL BİLGİSAYAR)",
+        "url": "https://www.trendyol.com/hometech/alfa-600c-400c-ht14s-3-gb-ram-32-dahili-hafiza-128-gb-ssd-win10home-ikinci-el-bilgisayar-p-7048281",
+        "active": true
+    },
+    {
+        "name": "ASUS TUF Gaming F16 FX607VU-RL142 Core 5-210H 16GB 512GB SSD RTX4050 140W 16\" WUXGA DOS Oyun Bilgisayarı",
+        "url": "https://www.trendyol.com/asus/tuf-gaming-f16-fx607vu-rl142-core-5-210h-16gb-512gb-ssd-rtx4050-140w-16-wuxga-dos-oyun-bilgisayari-p-905076392",
+        "active": true
+    },
+    {
+        "name": "ROBO 8 Başlıklı Şarjlı Isıtmalı Masaj Aleti",
+        "url": "https://www.trendyol.com/robo/8-baslikli-sarjli-isitmali-masaj-aleti-p-892755023",
+        "active": true
+    },
+    {
+        "name": "ROBO Şarjlı Ovmalı Isıtmalı Masaj Aleti Insan Eli Yoğurma Hissi",
+        "url": "https://www.trendyol.com/robo/sarjli-ovmali-isitmali-masaj-aleti-insan-eli-yogurma-hissi-p-786589297",
+        "active": true
+    },
+    {
+        "name": "ROBO Ovmalı,Isıtıcılı İnsan Eli Şeklinde şarjlı Masaj Aleti",
+        "url": "https://www.trendyol.com/robo/ovmali-isiticili-insan-eli-seklinde-sarjli-masaj-aleti-p-1097377734",
+        "active": true
+    },
+    {
+        "name": "Taşcan Aydınlatma Elora Siyah Krom Toplu Metal Ayaklı Lambader Füme Camlı Modern , Oturma Odası ,Yatak Odası , Salon L",
+        "url": "https://www.trendyol.com/tascan-aydinlatma/elora-siyah-krom-toplu-metal-ayakli-lambader-fume-camli-modern-oturma-odasi-yatak-odasi-salon-l-p-1115734195",
+        "active": true
+    },
+    {
+        "name": "Taşcan Aydınlatma Missy 5 Li Siyah Lambader Füme Camlı Modern , Oturma Odası ,Yatak Odası , Salon Lambader",
+        "url": "https://www.trendyol.com/tascan-aydinlatma/missy-5-li-siyah-lambader-fume-camli-modern-oturma-odasi-yatak-odasi-salon-lambader-p-890641920",
+        "active": true
+    },
+    {
+        "name": "Taşcan Aydınlatma Modena 5 Li Eskitme Lambader-Füme Camlı",
+        "url": "https://www.trendyol.com/tascan-aydinlatma/modena-5-li-eskitme-lambader-fume-camli-p-120927157",
+        "active": true
+    },
+    {
+        "name": "CASPER Nirvana X650 i5-13420H 16GB DDR5 1TB SSD Freedos 15.6\" Laptop X650.1342-BF00X-G-F",
+        "url": "https://www.trendyol.com/casper/nirvana-x650-i5-13420h-16gb-ddr5-1tb-ssd-freedos-15-6-laptop-x650-1342-bf00x-g-f-p-941997944",
+        "active": true
+    },
+    {
+        "name": "ACER Aspire Lite AL15-33 Core3 N355 8gb 256SSD W11P 15.6'' Full HD Taşınabilir Bilgisayar",
+        "url": "https://www.trendyol.com/acer/aspire-lite-al15-33-core3-n355-8gb-256ssd-w11p-15-6-full-hd-tasinabilir-bilgisayar-p-1173306917",
+        "active": true
+    },
+    {
+        "name": "medion Signium 14 S1 MD600002 Intel Core 5 120U 16GB RAM 512GB SSD 14\" OLED W11H Dizüstü Bilgisayar",
+        "url": "https://www.trendyol.com/medion/signium-14-s1-md600002-intel-core-5-120u-16gb-ram-512gb-ssd-14-oled-w11h-dizustu-bilgisayar-p-955430846",
+        "active": true
+    },
+    {
+        "name": "ASUS Vivobook 15 X1504VA-BQ5383W Intel Core 5-120U 8GB 512GB SSD 15.6\" Windows11 Mavi Dizüstü Bilgisayar",
+        "url": "https://www.trendyol.com/asus/vivobook-15-x1504va-bq5383w-intel-core-5-120u-8gb-512gb-ssd-15-6-windows11-mavi-dizustu-bilgisayar-p-1105373345",
+        "active": true
+    },
+    {
+        "name": "ASUS VIVOBOOK 15 X1504VA-BQ5456 INTEL CORE U-7 150U 8GB RAM 512GB SSD 15.6″ FREEDOS NOTEBOOK",
+        "url": "https://www.trendyol.com/asus/vivobook-15-x1504va-bq5456-intel-core-u-7-150u-8gb-ram-512gb-ssd-15-6-freedos-notebook-p-1107425425",
+        "active": true
+    },
+    {
+        "name": "MSI CYBORG 15 A13VE-2268XTRNN Intel Core i5 13420H 16GB 512GB SSD RTX4050 Freedos 15.6\" FHD",
+        "url": "https://www.trendyol.com/msi/cyborg-15-a13ve-2268xtrnn-intel-core-i5-13420h-16gb-512gb-ssd-rtx4050-freedos-15-6-fhd-p-1118608285",
+        "active": true
+    },
+    {
+        "name": "Perotti Snack Dish 6'lı Porselen Reçellik Sosluk 6 cm",
+        "url": "https://www.trendyol.com/perotti/snack-dish-6-li-porselen-recellik-sosluk-6-cm-p-1165235162",
+        "active": true
+    },
+    {
+        "name": "Perotti Snack Dish 6'lı Porselen Reçellik Sosluk 6 cm",
+        "url": "https://www.trendyol.com/perotti/snack-dish-6-li-porselen-recellik-sosluk-6-cm-p-1165235021",
+        "active": true
+    },
+    {
+        "name": "Perotti Snack Dish 6'lı Porselen Reçellik Sosluk 6 cm",
+        "url": "https://www.trendyol.com/perotti/snack-dish-6-li-porselen-recellik-sosluk-6-cm-p-1165234959",
+        "active": true
+    },
+    {
+        "name": "ACER Aspire Lite AL15-32P NX.J9UEY.001 Intel Celeron-N4500 4GB 128GB SSD 15.6\" FHD Windows 11 Home Dizüst",
+        "url": "https://www.trendyol.com/acer/aspire-lite-al15-32p-nx-j9uey-001-intel-celeron-n4500-4gb-128gb-ssd-15-6-fhd-windows-11-home-dizust-p-921524970",
+        "active": true
     }
 ]

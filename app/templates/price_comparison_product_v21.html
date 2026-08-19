@@ -1,0 +1,72 @@
+{% extends "public_base.html" %}
+{% block title %}{{ seo_title }}{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="/static/css/price-comparison-v211.css?v=211">
+{% endblock %}
+{% block content %}
+<section class="pc-shell">
+  <div class="pc-breadcrumb"><a href="/fiyat-karsilastirma">Fiyat Karşılaştırma</a><span>›</span><span>{{ product.brand|default('Ürün')|upper }}</span></div>
+
+  <div class="pc-product-hero">
+    <div class="pc-product-main-image">
+      {% if product.image %}<img src="{{ product.image }}" alt="{{ product.name }}">{% else %}<div class="pc-image-placeholder pc-large">FırsatAI</div>{% endif %}
+    </div>
+    <div class="pc-product-info">
+      <span class="pc-eyebrow">GLOBAL PRODUCT #{{ product.id }}</span>
+      <h1>{{ product.name }}</h1>
+      <div class="pc-spec-row pc-spec-large">
+        {% if product.brand %}<span>{{ product.brand|upper }}</span>{% endif %}
+        {% if product.family %}<span>{{ product.family|upper }}</span>{% endif %}
+        {% if product.variant %}<span>{{ product.variant|upper }}</span>{% endif %}
+        {% if product.ram_gb %}<span>{{ product.ram_gb }} GB RAM</span>{% endif %}
+        {% if product.storage_gb %}<span>{{ product.storage_gb }} GB SSD</span>{% endif %}
+      </div>
+      <div class="pc-summary-strip">
+        <div><small>En iyi fiyat</small><strong>{% if summary.best_price %}{{ "{:,.2f}".format(summary.best_price).replace(',', 'X').replace('.', ',').replace('X', '.') }} TL{% else %}—{% endif %}</strong></div>
+        <div><small>Mağaza</small><strong>{{ summary.best_store or '—' }}</strong></div>
+        <div><small>Teklif</small><strong>{{ summary.offer_count }}</strong></div>
+        <div><small>Tasarruf</small><strong>{% if summary.saving_amount %}{{ "{:,.2f}".format(summary.saving_amount).replace(',', 'X').replace('.', ',').replace('X', '.') }} TL{% else %}—{% endif %}</strong></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pc-offer-section">
+    <div class="pc-section-heading">
+      <div><span class="pc-eyebrow">MAĞAZA TEKLİFLERİ</span><h2>{{ summary.offer_count }} aktif teklif</h2></div>
+      <div class="pc-catalog-badge">Katalog verisi · canlı tarama yok</div>
+    </div>
+
+    <div class="pc-offer-list">
+      {% for offer in offers %}
+      <article class="pc-offer {% if best_offer and offer.offer_id == best_offer.offer_id %}pc-best-offer{% endif %} {% if not offer.available %}pc-unavailable{% endif %}">
+        <div class="pc-store-cell">
+          {% if best_offer and offer.offer_id == best_offer.offer_id %}<span class="pc-best-badge">EN İYİ FİYAT</span>{% endif %}
+          <strong>{{ offer.store }}</strong>
+          <small>{{ offer.seller }}</small>
+        </div>
+        <div class="pc-status-cell">
+          <span class="pc-stock {% if offer.available %}ok{% else %}no{% endif %}">{{ offer.availability }}</span>
+          <small class="pc-freshness {{ offer.freshness|lower }}">{{ offer.freshness }}{% if offer.age_minutes is not none %} · {{ offer.age_minutes }} dk{% endif %}</small>
+        </div>
+        <div class="pc-price-cell">
+          {% if offer.old_price and offer.old_price > offer.price %}<del>{{ "{:,.2f}".format(offer.old_price).replace(',', 'X').replace('.', ',').replace('X', '.') }} TL</del>{% endif %}
+          <strong>{{ "{:,.2f}".format(offer.total_price).replace(',', 'X').replace('.', ',').replace('X', '.') }} TL</strong>
+          {% if offer.shipping_price %}<small>Ürün {{ "{:,.2f}".format(offer.price).replace(',', 'X').replace('.', ',').replace('X', '.') }} + kargo {{ "{:,.2f}".format(offer.shipping_price).replace(',', 'X').replace('.', ',').replace('X', '.') }} TL</small>{% else %}<small>Kargo dahil / ek kargo yok</small>{% endif %}
+        </div>
+        <div class="pc-action-cell">
+          {% if offer.available %}<a href="{{ offer.url }}" target="_blank" rel="nofollow noopener sponsored">Mağazaya Git</a>{% else %}<span>Aktif değil</span>{% endif %}
+        </div>
+      </article>
+      {% else %}
+      <div class="pc-empty">Bu ürün için henüz aktif mağaza teklifi yok.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="pc-identity-note">
+    <strong>Kanonik ürün kimliği</strong>
+    <code>{{ product.identity_source or product.identity_key }}</code>
+    <span>Mağaza teklifleri bu global ürün altında birleştirilir. Bu sayfa açılırken scraper çalıştırılmaz.</span>
+  </div>
+</section>
+{% endblock %}

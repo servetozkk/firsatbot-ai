@@ -20,8 +20,11 @@ from app.scrapers.retail_stores import (
     MediaMarktScraper,
     N11Scraper,
     PazaramaScraper,
+    PttAVMScraper,
+    BeymenScraper,
     TeknosaScraper,
     VatanScraper,
+    TurkcellPasajScraper,
 )
 
 
@@ -115,6 +118,20 @@ STORE_SCRAPER_DEFINITIONS: tuple[
         enabled=True,
     ),
     StoreScraperDefinition(
+        code="pttavm",
+        name="PttAVM",
+        domains=("pttavm.com", "www.pttavm.com"),
+        scraper_class=PttAVMScraper,
+        enabled=True,
+    ),
+    StoreScraperDefinition(
+        code="beymen",
+        name="Beymen",
+        domains=("beymen.com", "www.beymen.com"),
+        scraper_class=BeymenScraper,
+        enabled=True,
+    ),
+    StoreScraperDefinition(
         code="idefix",
         name="İdefix",
         domains=(
@@ -182,6 +199,13 @@ STORE_SCRAPER_DEFINITIONS: tuple[
             "www.incehesap.com",
         ),
         scraper_class=IncehesapScraper,
+        enabled=True,
+    ),
+    StoreScraperDefinition(
+        code="turkcellpasaj",
+        name="Turkcell Pasaj",
+        domains=("turkcell.com.tr", "www.turkcell.com.tr"),
+        scraper_class=TurkcellPasajScraper,
         enabled=True,
     ),
     StoreScraperDefinition(

@@ -1,0 +1,17 @@
+{% extends "public_base.html" %}
+{% block title %}{{ seo_title }}{% endblock %}
+{% block extra_head %}
+<style>
+.lpd-wrap{max-width:1240px;margin:auto}.lpd-hero{padding:28px;border-radius:22px;background:#fff;border:1px solid #e2e8f0}.lpd-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:18px}.lpd-stat{padding:14px;border-radius:14px;background:#f8fafc}.lpd-stat strong{display:block;font-size:1.1rem}.lpd-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-top:22px}.lpd-card{display:flex;flex-direction:column;padding:16px;border:1px solid #e2e8f0;border-radius:18px;background:#fff;min-width:0}.lpd-card img{width:100%;height:150px;object-fit:contain}.lpd-name{font-weight:850;line-height:1.35;min-height:48px}.lpd-price{font-size:1.2rem;font-weight:950;color:#0f172a}.lpd-meta{font-size:.78rem;color:#64748b}.lpd-related{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}.lpd-related a{padding:10px 14px;border-radius:999px;background:#eef2ff;text-decoration:none;font-weight:800}@media(max-width:1000px){.lpd-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:760px){.lpd-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.lpd-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:480px){.lpd-grid{grid-template-columns:1fr}}
+</style>
+{% endblock %}
+{% block content %}
+<div class="lpd-wrap">
+  {% include "components/breadcrumbs.html" ignore missing %}
+  <section class="lpd-hero"><div class="small text-uppercase fw-bold text-primary">FırsatAI Keşfet</div><h1 class="h2 fw-bold mt-2">{{ landing['heading'] }}</h1><p class="text-secondary mb-0">{{ landing['intro'] or landing['description'] }}</p>
+    <div class="lpd-stats"><div class="lpd-stat"><strong>{{ product_count }}</strong><span>ürün</span></div><div class="lpd-stat"><strong>{{ brand_count }}</strong><span>marka</span></div><div class="lpd-stat"><strong>{% if lowest_price %}{{ "{:,.0f}".format(lowest_price).replace(",", ".") }} TL{% else %}—{% endif %}</strong><span>en düşük fiyat</span></div><div class="lpd-stat"><strong>{% if highest_price %}{{ "{:,.0f}".format(highest_price).replace(",", ".") }} TL{% else %}—{% endif %}</strong><span>en yüksek fiyat</span></div></div>
+  </section>
+  {% if cards %}<section class="lpd-grid">{% for item in cards %}<article class="lpd-card">{% if item['image'] %}<img src="{{ item['image'] }}" alt="{{ item['name'] }}" loading="lazy">{% endif %}<div class="lpd-meta mt-2">{{ item['brand'] }} · {{ item['category'] }}</div><div class="lpd-name mt-1">{{ item['name'] }}</div><div class="lpd-price mt-2">{{ "{:,.0f}".format(item['price']).replace(",", ".") }} TL</div><div class="lpd-meta">{{ item['store_count'] }} mağaza · {{ item['offer_count'] }} teklif{% if item['price_drop_percent'] %} · %{{ item['price_drop_percent']|round|int }} düşüş{% endif %}</div><a class="btn btn-primary mt-3" href="{{ item['detail_url'] }}">Fiyatları karşılaştır</a></article>{% endfor %}</section>{% else %}<div class="alert alert-light border mt-4">Bu sayfanın koşullarına uyan güncel ürün henüz bulunamadı.</div>{% endif %}
+  <section class="lpd-related">{% for item in related %}<a href="{{ item['url'] }}">{{ item['heading'] }}</a>{% endfor %}</section>
+</div>
+{% endblock %}

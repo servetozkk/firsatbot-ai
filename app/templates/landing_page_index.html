@@ -1,0 +1,16 @@
+{% extends "public_base.html" %}
+{% block title %}{{ seo_title }}{% endblock %}
+{% block extra_head %}
+<style>
+.lp-wrap{max-width:1240px;margin:auto}.lp-hero{padding:34px;border-radius:24px;background:linear-gradient(135deg,#111827,#253b80);color:#fff}.lp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:24px}.lp-card{display:block;padding:24px;border:1px solid #e2e8f0;border-radius:20px;background:#fff;color:#0f172a;text-decoration:none;box-shadow:0 8px 30px rgba(15,23,42,.05)}.lp-card:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(15,23,42,.09)}.lp-card h2{font-size:1.1rem;font-weight:900}.lp-card p{color:#64748b;margin:8px 0 0}@media(max-width:720px){.lp-grid{grid-template-columns:1fr}.lp-hero{padding:24px}}
+</style>
+{% endblock %}
+{% block content %}
+<div class="lp-wrap">
+  {% include "components/breadcrumbs.html" ignore missing %}
+  <section class="lp-hero"><div class="small text-uppercase fw-bold opacity-75">FırsatAI Keşfet</div><h1 class="display-6 fw-bold mt-2">Alışveriş rehberleri</h1><p class="mb-0 opacity-75">Bütçe ve kullanım amacına göre hazırlanmış, güncel fiyatlarla beslenen ürün listeleri.</p></section>
+  <section class="lp-grid">
+    {% for item in items %}<a class="lp-card" href="{{ item['url'] }}"><h2>{{ item['heading'] }}</h2><p>{{ item['description'] }}</p><div class="mt-3 text-primary fw-bold">Ürünleri karşılaştır →</div></a>{% endfor %}
+  </section>
+</div>
+{% endblock %}

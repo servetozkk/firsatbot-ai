@@ -1,17 +1,22 @@
-﻿import json
+import json
 from pathlib import Path
 from typing import Any, Optional
 
 from fastapi import APIRouter, Form, HTTPException, Query, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import or_
 
 from app.database.database import SessionLocal
-from app.database.models import PriceHistory, ProductDB
+from app.database.models import DeletedProduct, OfferPriceHistory, PriceHistory, ProductDB, ProductOffer
+from app.services.data_integrity_service import record_admin_action, stable_product_key
 from app.services.scan_service import (
-    scrape_and_save_product,
     validate_product_url,
+    get_cross_store_scan_task,
+)
+from app.services.production_ingestion_v220_service import (
+    start_production_ingestion,
+    get_ingestion_task,
 )
 
 
@@ -567,141 +572,225 @@ def admin_dashboard(
 )
 def admin_products(
     request: Request,
-    search: Optional[str] = Query(
-        default=None
-    ),
-    minimum_score: Optional[float] = Query(
-        default=None
-    ),
-    notified: Optional[str] = Query(
-        default=None
-    ),
-    page: int = Query(
-        default=1,
-        ge=1,
-    ),
-    page_size: int = Query(
-        default=20,
-        ge=5,
-        le=100,
-    ),
+    search: Optional[str] = Query(default=None),
+    minimum_score: Optional[float] = Query(default=None),
+    notified: Optional[str] = Query(default=None),
+    category: Optional[str] = Query(default=None),
+    seller: Optional[str] = Query(default=None),
+    sort: str = Query(default="newest"),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=5, le=100),
 ):
     db = SessionLocal()
 
     try:
-        query = db.query(ProductDB)
+        category_options = [
+            row[0]
+            for row in db.query(ProductDB.category)
+            .filter(ProductDB.category.isnot(None), ProductDB.category != "")
+            .distinct()
+            .order_by(ProductDB.category.asc())
+            .all()
+            if row[0]
+        ]
+        seller_options = [
+            row[0]
+            for row in db.query(ProductDB.seller)
+            .filter(ProductDB.seller.isnot(None), ProductDB.seller != "")
+            .distinct()
+            .order_by(ProductDB.seller.asc())
+            .limit(50)
+            .all()
+            if row[0]
+        ]
 
-        cleaned_search = (
-            search.strip()
-            if search
-            else None
-        )
+        query = db.query(ProductDB)
+        cleaned_search = search.strip() if search else None
+        cleaned_category = category.strip() if category else None
+        cleaned_seller = seller.strip() if seller else None
 
         if cleaned_search:
-            search_pattern = (
-                f"%{cleaned_search}%"
-            )
-
-            query = query.filter(
-                or_(
-                    ProductDB.name.ilike(
-                        search_pattern
-                    ),
-                    ProductDB.seller.ilike(
-                        search_pattern
-                    ),
-                    ProductDB.url.ilike(
-                        search_pattern
-                    ),
-                    ProductDB.brand.ilike(
-                        search_pattern
-                    ),
-                    ProductDB.model.ilike(
-                        search_pattern
-                    ),
-                    ProductDB.category.ilike(
-                        search_pattern
-                    ),
-                )
-            )
+            search_pattern = f"%{cleaned_search}%"
+            query = query.filter(or_(
+                ProductDB.name.ilike(search_pattern),
+                ProductDB.seller.ilike(search_pattern),
+                ProductDB.url.ilike(search_pattern),
+                ProductDB.brand.ilike(search_pattern),
+                ProductDB.model.ilike(search_pattern),
+                ProductDB.category.ilike(search_pattern),
+            ))
 
         if minimum_score is not None:
-            query = query.filter(
-                ProductDB.ai_score
-                >= minimum_score
-            )
-
+            query = query.filter(ProductDB.ai_score >= minimum_score)
         if notified == "yes":
-            query = query.filter(
-                ProductDB
-                .last_notified_price
-                .isnot(None)
-            )
-
+            query = query.filter(ProductDB.last_notified_price.isnot(None))
         elif notified == "no":
-            query = query.filter(
-                ProductDB
-                .last_notified_price
-                .is_(None)
-            )
+            query = query.filter(ProductDB.last_notified_price.is_(None))
+        if cleaned_category:
+            query = query.filter(ProductDB.category == cleaned_category)
+        if cleaned_seller:
+            query = query.filter(ProductDB.seller == cleaned_seller)
 
         total_products = query.count()
+        total_pages = max(1, (total_products + page_size - 1) // page_size)
+        page = min(page, total_pages)
+        offset = (page - 1) * page_size
 
-        total_pages = max(
-            1,
-            (
-                total_products
-                + page_size
-                - 1
-            )
-            // page_size,
-        )
+        if sort == "price_asc":
+            query = query.order_by(ProductDB.price.asc(), ProductDB.id.desc())
+        elif sort == "price_desc":
+            query = query.order_by(ProductDB.price.desc(), ProductDB.id.desc())
+        elif sort == "score_desc":
+            query = query.order_by(ProductDB.ai_score.desc(), ProductDB.id.desc())
+        elif sort == "discount":
+            query = query.order_by((ProductDB.old_price - ProductDB.price).desc(), ProductDB.id.desc())
+        else:
+            query = query.order_by(ProductDB.id.desc())
 
-        if page > total_pages:
-            page = total_pages
-
-        offset = (
-            page - 1
-        ) * page_size
-
-        products = (
-            query
-            .order_by(
-                ProductDB.id.desc()
-            )
-            .offset(offset)
-            .limit(page_size)
-            .all()
-        )
+        products = query.offset(offset).limit(page_size).all()
 
         return templates.TemplateResponse(
             request=request,
             name="products.html",
             context={
                 "products": products,
-                "search": (
-                    cleaned_search
-                    or ""
-                ),
-                "minimum_score": (
-                    minimum_score
-                    if minimum_score
-                    is not None
-                    else ""
-                ),
-                "notified": (
-                    notified
-                    or ""
-                ),
+                "search": cleaned_search or "",
+                "minimum_score": minimum_score if minimum_score is not None else "",
+                "notified": notified or "",
+                "category": cleaned_category or "",
+                "seller": cleaned_seller or "",
+                "sort": sort,
+                "category_options": category_options,
+                "seller_options": seller_options,
                 "page": page,
                 "page_size": page_size,
                 "total_pages": total_pages,
                 "total_products": total_products,
             },
         )
-
     finally:
         db.close()
+
+
+def _delete_product_records(db, product_ids: list[int]) -> int:
+    """Ürünleri soft-delete yapar ve bütün scraper girişlerinde kalıcı olarak engeller."""
+    cleaned_ids = sorted({int(value) for value in product_ids if int(value) > 0})
+    if not cleaned_ids:
+        return 0
+
+    rows = (db.query(ProductDB)
+            .execution_options(include_deleted=True)
+            .filter(ProductDB.id.in_(cleaned_ids)).all())
+    now = datetime.utcnow()
+    changed = 0
+    for item in rows:
+        offer = db.query(ProductOffer).filter(ProductOffer.product_id == item.id).first()
+        identity_key = None
+        if offer is not None:
+            try:
+                from app.database.models import ProductGroup
+                group_row = db.query(ProductGroup.group_key).filter(ProductGroup.id == offer.group_id).first()
+                identity_key = group_row[0] if group_row else None
+            except Exception:
+                pass
+        key = item.stable_key or stable_product_key(identity_key=identity_key, product_code=item.product_code, url=item.url, name=item.name)
+        block = None
+        if item.url:
+            block = db.query(DeletedProduct).filter(DeletedProduct.source_url == item.url).first()
+        if block is None:
+            block = DeletedProduct()
+            db.add(block)
+        block.source_url = item.url
+        block.product_code = item.product_code
+        block.identity_key = identity_key
+        block.stable_key = key
+        block.product_name = item.name
+        block.reason = "admin_soft_delete"
+        block.deleted_at = now
+
+        item.stable_key = key
+        item.is_deleted = True
+        item.deleted_at = now
+        item.deleted_reason = "admin_delete"
+        if offer is not None and hasattr(offer, "is_hidden"):
+            offer.is_hidden = True
+        record_admin_action(db, action="soft_delete", entity_type="product", entity_id=item.id, details={"name": item.name, "stable_key": key})
+        changed += 1
+    db.commit()
+    return changed
+
+
+@router.post(
+    "/products/{product_id}/delete",
+)
+def admin_product_delete(product_id: int):
+    db = SessionLocal()
+    try:
+        product = db.query(ProductDB.id).filter(ProductDB.id == product_id).first()
+        if product is None:
+            raise HTTPException(status_code=404, detail="Ürün bulunamadı.")
+        deleted = _delete_product_records(db, [product_id])
+        return RedirectResponse(
+            url=f"/admin/products?deleted={deleted}",
+            status_code=303,
+        )
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+@router.post(
+    "/products/bulk-delete",
+)
+def admin_products_bulk_delete(product_ids: list[int] = Form(default=[])):
+    db = SessionLocal()
+    try:
+        deleted = _delete_product_records(db, product_ids)
+        return RedirectResponse(
+            url=f"/admin/products?deleted={deleted}",
+            status_code=303,
+        )
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+@router.get("/products/scan-tasks/{task_id}")
+def admin_product_scan_task(task_id: str):
+    task = get_cross_store_scan_task(task_id)
+    if task is not None:
+        return task
+
+    v220 = get_ingestion_task(task_id)
+    if v220 is None:
+        return JSONResponse(
+            {"status": "not_found", "message": "Tarama görevi bulunamadı."},
+            status_code=404,
+        )
+
+    refresh = v220.get("refresh") or {}
+    store_results = refresh.get("store_results") or refresh.get("results") or []
+    status_value = str(v220.get("status") or "QUEUED").lower()
+    progress = 100 if status_value in ("completed", "failed") else (55 if status_value == "running" else 15)
+    return {
+        "status": status_value,
+        "progress": progress,
+        "message": (
+            "Ürün kataloğa hazırlandı."
+            if status_value == "completed"
+            else ("Ürün ekleme başarısız." if status_value == "failed" else "Mağaza teklifleri aranıyor.")
+        ),
+        "searched_store_count": refresh.get("scanned_store_count", 0),
+        "saved_offer_count": refresh.get("newly_saved_offer_count", 0),
+        "results": store_results,
+        "global_product_id": v220.get("global_product_id"),
+        "stage": v220.get("stage"),
+        "error": v220.get("error"),
+    }
 
 
 @router.get(
@@ -751,20 +840,18 @@ def admin_product_add(
             status_code=400,
         )
 
-    result = scrape_and_save_product(
-        cleaned_url
-    )
-
-    if not result.success:
+    try:
+        result = start_production_ingestion(url=cleaned_url)
+    except Exception as exc:
         return templates.TemplateResponse(
             request=request,
             name="product_add.html",
             context={
-                "error": result.message,
+                "error": f"{type(exc).__name__}: {exc}",
                 "success": None,
                 "form_data": form_data,
             },
-            status_code=500,
+            status_code=422,
         )
 
     return templates.TemplateResponse(
@@ -772,10 +859,15 @@ def admin_product_add(
         name="product_add.html",
         context={
             "error": None,
-            "success": result.message,
+            "success": (
+                f"Ürün {result.get('store_name') or result.get('store_code')} üzerinden "
+                f"kataloğa alındı. Global ürün #{result.get('global_product_id')}; "
+                "diğer mağazalar v22 üretim pipeline'ında arka planda aranıyor."
+            ),
             "form_data": {},
-            "scanned_product": result.product,
-            "store_name": result.store_name,
+            "scanned_product": result.get("product"),
+            "store_name": result.get("store_name"),
+            "cross_store_task_id": result.get("task_id"),
         },
     )
 
@@ -916,3 +1008,22 @@ def admin_product_detail(
 
     finally:
         db.close()
+
+
+# V14_7_0_MODULE_CENTER_BRIDGE
+from app.web.admin_module_center_v14_routes import discover_admin_modules
+
+
+@router.get("/module-center", response_class=HTMLResponse)
+def admin_module_center_bridge(request: Request):
+    groups = discover_admin_modules(request)
+    module_count = sum(len(items) for items in groups.values())
+    return templates.TemplateResponse(
+        request=request,
+        name="admin_module_center_v14.html",
+        context={
+            "groups": groups,
+            "module_count": module_count,
+        },
+    )
+

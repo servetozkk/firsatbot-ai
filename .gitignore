@@ -1,16 +1,84 @@
-﻿__pycache__/
+# Python
+__pycache__/
 *.py[cod]
-.env
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
 .venv/
 venv/
+env/
 
-.playwright-*/
-playwright-report/
-test-results/
+# Secrets
+.env
+.env.*
+!.env.example
 
-data/*.db
-*.sqlite
-*.sqlite3
-
+# IDE / OS
 .vscode/
 .idea/
+Thumbs.db
+.DS_Store
+
+# Runtime and local data
+*.log
+logs/
+*.tmp
+*.temp
+*.bak
+*.bak*
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+data/backups/
+products.json
+ai_product_matching_report.json
+
+# Playwright
+.playwright-hepsiburada-profile/
+.playwright-hepsiburada-profile-backup-*/
+test-results/
+playwright-report/
+
+# Build
+build/
+dist/
+*.egg-info/
+
+# Local browser/runtime state
+.playwright-*-profile/
+.playwright-*-profile-*/
+.runtime/
+
+# Local debug/session artifacts
+hb_debug.html
+hb_session_metadata.json
+
+# Local generated audit/source artifacts
+v236360-identity-core-source.txt
+
+# SQLite runtime sidecars / backups
+*.db-shm
+*.db-wal
+*.sqlite-shm
+*.sqlite-wal
+*.sqlite3-shm
+*.sqlite3-wal
+data/*.db.*
+data/products.v*-before-repair-*.db*
+data/_v*_preview.db*
+data/reports/
+
+# Generated runtime state
+data/catalog_scan_plans.json
+data/category_scan_history.json
+data/data_quality_report.json
+data/scraper_dead_letter.json
+data/scraper_health_state.json
+data/v9_catalog_schedule_state.json
+
+# Local backup launchers
+*.backup.bat

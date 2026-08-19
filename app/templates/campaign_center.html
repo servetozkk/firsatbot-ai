@@ -1,0 +1,31 @@
+{% from "components/breadcrumbs.html" import render_breadcrumbs %}
+{% extends "public_base.html" %}
+{% block title %}{{ seo_title }}{% endblock %}
+{% block content %}
+{{ render_breadcrumbs(breadcrumbs_v13) }}
+<style>
+.camp-wrap{max-width:1240px;margin:0 auto;padding:28px 18px}.camp-hero{padding:26px;border-radius:22px;background:linear-gradient(135deg,#fff7ed,#fff);border:1px solid #fed7aa}.camp-filter{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}.camp-filter a{padding:10px 14px;border:1px solid #ddd;border-radius:999px;text-decoration:none;color:inherit;background:#fff}.camp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}.camp-card{background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px}.camp-tags{display:flex;gap:6px;flex-wrap:wrap}.camp-tag{font-size:12px;padding:5px 8px;border-radius:999px;background:#fff7ed;color:#9a3412}.camp-price{font-size:24px;font-weight:800}.camp-old{text-decoration:line-through;color:#6b7280}.camp-actions{display:flex;gap:8px;margin-top:auto}.camp-actions a{flex:1;text-align:center;padding:10px;border-radius:10px;text-decoration:none}.primary{background:#f97316;color:#fff}.secondary{border:1px solid #ddd;color:#111}@media(max-width:640px){.camp-grid{grid-template-columns:1fr}.camp-wrap{padding:16px 12px}}
+</style>
+<div class="camp-wrap">
+  <div class="camp-hero"><h1>Kampanya Merkezi</h1><p>Fiyat düşüşlerini, ücretsiz kargoyu, taksit ve mağaza kampanyalarını tek yerde karşılaştır.</p></div>
+  <div class="camp-filter">
+    <a href="/kampanyalar">Tümü ({{ campaigns.items|length }})</a>
+    <a href="/kampanyalar?type=price_drop">Fiyatı düşenler ({{ campaigns.counts.price_drop }})</a>
+    <a href="/kampanyalar?type=free_shipping">Ücretsiz kargo ({{ campaigns.counts.free_shipping }})</a>
+    <a href="/kampanyalar?type=installment">Taksit ({{ campaigns.counts.installment }})</a>
+    <a href="/kampanyalar?type=store_campaign">Mağaza kampanyası ({{ campaigns.counts.store_campaign }})</a>
+  </div>
+  <div class="camp-grid">
+  {% for item in campaigns.items %}
+    <article class="camp-card">
+      <div><strong>{{ item.store_name }}</strong> · {{ item.category }}</div>
+      <h3>{{ item.name }}</h3>
+      <div class="camp-tags">{% for tag in item.tags %}<span class="camp-tag">{{ tag.label }}</span>{% endfor %}</div>
+      <div><span class="camp-price">{{ '%.2f'|format(item.price) }} TL</span>{% if item.old_price > item.price %} <span class="camp-old">{{ '%.2f'|format(item.old_price) }} TL</span>{% endif %}</div>
+      {% if item.delivery_text %}<small>{{ item.delivery_text }}</small>{% endif %}
+      <div class="camp-actions"><a class="primary" href="{{ item.product_url }}">Fiyatları karşılaştır</a><a class="secondary" href="{{ item.store_url }}" rel="nofollow">Mağazaya git</a></div>
+    </article>
+  {% else %}<p>Seçilen filtrelerde kampanya bulunamadı.</p>{% endfor %}
+  </div>
+</div>
+{% endblock %}

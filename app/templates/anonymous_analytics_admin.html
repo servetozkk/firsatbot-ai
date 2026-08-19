@@ -1,0 +1,23 @@
+{% extends "public_base.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+    <div><h1 class="h3 mb-1">Anonim Kullanıcı Analitiği</h1><p class="text-muted mb-0">IP, e-posta, kullanıcı adı veya kalıcı ziyaretçi kimliği saklanmaz.</p></div>
+    <form method="get"><select class="form-select" name="days" onchange="this.form.submit()"><option value="7" {% if selected_days==7 %}selected{% endif %}>Son 7 gün</option><option value="30" {% if selected_days==30 %}selected{% endif %}>Son 30 gün</option><option value="90" {% if selected_days==90 %}selected{% endif %}>Son 90 gün</option></select></form>
+  </div>
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body"><div class="text-muted">Toplam olay</div><div class="display-6">{{ summary.total_events }}</div></div></div></div>
+    <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body"><div class="text-muted">Arama</div><div class="display-6">{{ summary.searches }}</div></div></div></div>
+    <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body"><div class="text-muted">Sonuçsuz arama</div><div class="display-6">{{ summary.no_result_searches }}</div></div></div></div>
+    <div class="col-6 col-lg-3"><div class="card h-100"><div class="card-body"><div class="text-muted">Ort. arama süresi</div><div class="display-6">{{ summary.average_search_duration_ms }} ms</div></div></div></div>
+  </div>
+  <div class="row g-4">
+    <div class="col-lg-6"><div class="card h-100"><div class="card-header fw-semibold">Popüler aramalar</div><div class="list-group list-group-flush">{% for item in summary.top_searches %}<div class="list-group-item d-flex justify-content-between"><span>{{ item.search_query }}</span><strong>{{ item.searches }}</strong></div>{% else %}<div class="list-group-item text-muted">Henüz veri yok.</div>{% endfor %}</div></div></div>
+    <div class="col-lg-6"><div class="card h-100"><div class="card-header fw-semibold">Sonuç bulunamayanlar</div><div class="list-group list-group-flush">{% for item in summary.no_result_queries %}<div class="list-group-item d-flex justify-content-between"><span>{{ item.search_query }}</span><strong>{{ item.searches }}</strong></div>{% else %}<div class="list-group-item text-muted">Henüz veri yok.</div>{% endfor %}</div></div></div>
+    <div class="col-lg-6"><div class="card h-100"><div class="card-header fw-semibold">Popüler ürünler</div><div class="list-group list-group-flush">{% for item in summary.top_products %}<div class="list-group-item d-flex justify-content-between"><span class="text-truncate">{{ item.product_key }}</span><strong>{{ item.views }}</strong></div>{% else %}<div class="list-group-item text-muted">Henüz veri yok.</div>{% endfor %}</div></div></div>
+    <div class="col-lg-6"><div class="card h-100"><div class="card-header fw-semibold">En çok tıklanan mağazalar</div><div class="list-group list-group-flush">{% for item in summary.top_stores %}<div class="list-group-item d-flex justify-content-between"><span>{{ item.store_code }}</span><strong>{{ item.clicks }}</strong></div>{% else %}<div class="list-group-item text-muted">Henüz veri yok.</div>{% endfor %}</div></div></div>
+  </div>
+  <div class="alert alert-success mt-4 mb-0"><strong>Gizlilik:</strong> Analitik anonim sayaçlarla çalışır; IP, e-posta, kullanıcı adı ve zorunlu çerez kimliği tutulmaz.</div>
+</div>
+{% endblock %}

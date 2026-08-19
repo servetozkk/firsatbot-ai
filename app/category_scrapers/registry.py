@@ -4,6 +4,13 @@ from app.category_scrapers.base import BaseCategoryScraper
 from app.category_scrapers.hepsiburada import HepsiburadaCategoryScraper
 from app.category_scrapers.teknosa import TeknosaCategoryScraper
 from app.category_scrapers.trendyol import TrendyolCategoryScraper
+from app.category_scrapers.marketplaces import (
+    AmazonCategoryScraper,
+    MediaMarktCategoryScraper,
+    N11CategoryScraper,
+    PazaramaCategoryScraper,
+    VatanCategoryScraper,
+)
 
 
 class UnsupportedCategoryStoreError(ValueError):
@@ -16,6 +23,11 @@ class CategoryScraperRegistry:
             TrendyolCategoryScraper(),
             TeknosaCategoryScraper(),
             HepsiburadaCategoryScraper(),
+            AmazonCategoryScraper(),
+            N11CategoryScraper(),
+            MediaMarktCategoryScraper(),
+            VatanCategoryScraper(),
+            PazaramaCategoryScraper(),
         )
 
     def get_scraper(self, category_url: str) -> BaseCategoryScraper:
@@ -24,7 +36,7 @@ class CategoryScraperRegistry:
                 return scraper
         raise UnsupportedCategoryStoreError(
             "Bu kategori mağazası henüz desteklenmiyor. "
-            "Şu anda Trendyol, Teknosa ve Hepsiburada kategori bağlantıları kullanılabilir."
+            "Desteklenen mağazalar: Trendyol, Hepsiburada, Teknosa, Amazon Türkiye, N11, MediaMarkt, Vatan Bilgisayar ve Pazarama."
         )
 
     def detect_store_code(self, category_url: str) -> str:

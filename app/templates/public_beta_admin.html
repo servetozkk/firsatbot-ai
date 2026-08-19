@@ -1,0 +1,16 @@
+{% extends "public_base.html" %}
+{% block title %}Public Beta Yönetimi | FırsatAI{% endblock %}
+{% block content %}
+<div class="container-fluid py-3">
+ <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4"><div><h1 class="h3 fw-bold mb-1">Public Beta Yönetimi</h1><div class="text-secondary">Sürüm {{ engine_version }}</div></div><span class="badge fs-6 {{ 'text-bg-success' if report.status == 'PUBLIC_BETA_READY' else 'text-bg-danger' }}">{{ report.status }}</span></div>
+ <div class="row g-3 mb-4">
+  <div class="col-md-2"><div class="card h-100"><div class="card-body"><div class="text-secondary small">Modül</div><div class="h4 mb-0">{{ report.module_summary.healthy_modules }}/{{ report.module_summary.total_modules }}</div></div></div></div>
+  <div class="col-md-2"><div class="card h-100"><div class="card-body"><div class="text-secondary small">Route</div><div class="h4 mb-0">{{ report.source_metrics.routes }}</div></div></div></div>
+  <div class="col-md-2"><div class="card h-100"><div class="card-body"><div class="text-secondary small">API</div><div class="h4 mb-0">{{ report.source_metrics.api_routes }}</div></div></div></div>
+  <div class="col-md-2"><div class="card h-100"><div class="card-body"><div class="text-secondary small">Analitik olay</div><div class="h4 mb-0">{{ report.statistics.analytics_events }}</div></div></div></div>
+  <div class="col-md-2"><div class="card h-100"><div class="card-body"><div class="text-secondary small">Aktif alarm</div><div class="h4 mb-0">{{ report.statistics.active_alerts }}</div></div></div></div>
+  <div class="col-md-2"><div class="card h-100"><div class="card-body"><div class="text-secondary small">Açık bildirim</div><div class="h4 mb-0">{{ report.statistics.feedback_open }}</div></div></div></div>
+ </div>
+ <div class="card"><div class="card-header fw-bold">Son geri bildirimler</div><div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>#</th><th>Tür</th><th>Mesaj</th><th>Sayfa / ürün</th><th>Durum</th><th>Tarih</th></tr></thead><tbody>{% for item in feedback_items %}<tr><td>{{ item.id }}</td><td>{{ item.feedback_type }}</td><td style="min-width:280px">{{ item.message }}</td><td>{{ item.page_path or '—' }}<br><small>{{ item.product_key or '' }}</small></td><td><span class="badge text-bg-secondary">{{ item.status }}</span></td><td>{{ item.created_at }}</td></tr>{% else %}<tr><td colspan="6" class="text-center text-secondary py-4">Henüz geri bildirim yok.</td></tr>{% endfor %}</tbody></table></div></div>
+</div>
+{% endblock %}

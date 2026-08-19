@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Canlı Fiyat Motoru{% endblock %}
+{% block content %}
+<div style="max-width:1250px;margin:30px auto;padding:0 20px">
+<h1 style="font-weight:900">Canlı Fiyat Motoru v14.6</h1>
+<p>Aktif global teklifleri mağaza scraper'larıyla yeniden kontrol eder; yalnızca fiyat veya stok değiştiğinde geçmiş kaydı oluşturur.</p>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:20px 0">
+<div class="card p-3"><small>Aktif teklif</small><div style="font-size:28px;font-weight:900">{{ summary.active_offer_count }}</div></div>
+<div class="card p-3"><small>Motor durumu</small><div style="font-weight:900">{{ summary.status }}</div></div>
+<div class="card p-3"><small>Mağaza sayısı</small><div style="font-size:28px;font-weight:900">{{ summary.store_counts|length }}</div></div>
+</div>
+
+<div class="card p-4">
+<h2>Toplu fiyat kontrolü</h2>
+<div style="display:grid;grid-template-columns:160px 150px 150px 1fr;gap:10px;align-items:end">
+<label>Teklif limiti<input id="limit" class="form-control" type="number" value="50" min="1" max="2000"></label>
+<label>Worker<input id="workers" class="form-control" type="number" value="2" min="1" max="4"></label>
+<label>Retry<input id="retry" class="form-control" type="number" value="2" min="1" max="3"></label>
+<button id="startBtn" class="btn btn-primary">Fiyat kontrolünü başlat</button>
+</div>
+</div>
+
+<div class="card p-4 mt-3">
+<h2>Görev durumu</h2>
+<div id="statusText">Hazır</div>
+<div style="height:18px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin:12px 0">
+<div id="bar" style="height:100%;width:0;background:#4f46e5"></div>
+</div>
+<div id="stats"></div>
+<div id="items" style="margin-top:15px;max-height:420px;overflow:auto"></div>
+</div>
+</div>
+
+<script>
+let taskId = null;
+const statusText = document.getElementById("statusText");
+const bar = document.getElementById("bar");
+const stats = document.getElementById("stats");
+const items = document.getElementById("items");
+
+async function poll(){
+  if(!taskId) return;
+  const res = await fetch(`/api/live-prices/v14/status?task_id=${encodeURIComponent(taskId)}`);
+  const data = await res.json();
+  const task = data.task;
+  if(!task) return;
+  statusText.textContent = `${task.status} · ${task.message}`;
+  bar.style.width = `${task.progress_percent || 0}%`;
+  stats.textContent = `İşlenen: ${task.processed}/${task.total} · Değişen: ${task.changed} · Aynı: ${task.unchanged} · Başarısız: ${task.failed}`;
+  items.innerHTML = (task.items || []).slice().reverse().map(x => `
+    <div style="padding:9px;border-bottom:1px solid #e5e7eb">
+      <strong>#${x.offer_id} · ${x.store_code || ""} · ${x.status}</strong>
+      ${x.old_price != null ? `<span> · ${x.old_price} → ${x.new_price}</span>` : ""}
+      ${x.message ? `<div style="color:#b91c1c">${x.message}</div>` : ""}
+    </div>`).join("");
+  if(["QUEUED","RUNNING"].includes(task.status)){
+    setTimeout(poll, 1200);
+  }
+}
+
+document.getElementById("startBtn").addEventListener("click", async () => {
+  const limit = document.getElementById("limit").value;
+  const workers = document.getElementById("workers").value;
+  const retry = document.getElementById("retry").value;
+  const res = await fetch(`/api/live-prices/v14/refresh?limit=${limit}&workers=${workers}&retry_count=${retry}`, {method:"POST"});
+  const data = await res.json();
+  taskId = data.task?.id;
+  if(taskId) poll();
+});
+</script>
+{% endblock %}

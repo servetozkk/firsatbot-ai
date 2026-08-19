@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Veri Kalitesi Merkezi 2.0 - Fırsat AI<script>
+(() => {
+  const all = document.getElementById('dq72SelectAll');
+  const rows = [...document.querySelectorAll('.dq72-row-check')];
+  const count = document.getElementById('dq72SelectedCount');
+  const update = () => { const n = rows.filter(x => x.checked).length; count.textContent = `${n} ürün seçildi`; if (all) all.checked = n > 0 && n === rows.length; };
+  all?.addEventListener('change', () => { rows.forEach(x => x.checked = all.checked); update(); });
+  rows.forEach(x => x.addEventListener('change', update));
+  document.getElementById('dq72FixForm')?.addEventListener('submit', (event) => {
+    if (!rows.some(x => x.checked)) { event.preventDefault(); alert('Önce en az bir ürün seç.'); }
+  });
+})();
+</script>
+{% endblock %}
+{% block page_title %}Veri Kalitesi Merkezi 2.0{% endblock %}
+{% block page_subtitle %}Katalog, galeri, fiyat ve eşleştirme sorunlarını tek ekrandan izleyin{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/admin_data_quality_v72.css?v=72">{% endblock %}
+{% block content %}
+<div class="dq72-page">
+  {% if fixed %}<div class="dq72-flash">✓ {{ fixed }} ürün güncellendi, {{ fields }} alan güvenli şekilde dolduruldu.</div>{% endif %}
+  <section class="dq72-hero">
+    <div class="dq72-hero-copy">
+      <span class="eyebrow">AKILLI KATALOG DENETİMİ</span>
+      <h2>Veri kalitesini ölç, sorunları önceliklendir</h2>
+      <p>Görseller, teknik özellikler, kategori, marka, fiyat ve tekrar kayıtları tek kalite puanında birleştirilir.</p>
+      <div class="dq72-hero-actions">
+        <a class="primary" href="/admin/data-quality/export">Raporu indir</a>
+        <a href="/admin/matching">Eşleştirme merkezi</a>
+        <a href="/admin/scrapers">Tarama merkezi</a>
+      </div>
+      <p class="dq72-safe-note">Güvenli düzeltme yalnızca boş marka, model ve kategori alanlarını doldurur; fiyat, görsel ve mevcut dolu alanlara dokunmaz.</p>
+    </div>
+    <div class="dq72-score-ring" style="--score: {{ report.summary.average_quality_score }}">
+      <div><strong>{{ report.summary.average_quality_score }}</strong><span>/100</span><small>Genel kalite</small></div>
+    </div>
+  </section>
+
+  <section class="dq72-overview">
+    <article><i>✓</i><div><span>Sağlıklı ürün</span><strong>{{ report.summary.high_quality_count }}</strong><small>85 puan ve üzeri</small></div></article>
+    <article><i>!</i><div><span>İncelenecek</span><strong>{{ report.summary.needs_attention_count }}</strong><small>65 puanın altında</small></div></article>
+    <article><i>×</i><div><span>Kritik kayıt</span><strong>{{ report.summary.critical_count }}</strong><small>45 puanın altında</small></div></article>
+    <article><i>⛓</i><div><span>Olası tekrar</span><strong>{{ report.summary.possible_duplicate_count }}</strong><small>Eşleştirme adayı</small></div></article>
+  </section>
+
+  <section class="dq72-issues">
+    {% set cards = [
+      ('missing_image','📷','Eksik görsel',report.summary.missing_image_count,'Ana görsel bulunmuyor'),
+      ('thin_gallery','🖼️','Zayıf galeri',report.summary.thin_gallery_count,'2 görselden az'),
+      ('broken_image','🧩','Bozuk galeri',report.summary.broken_image_count,'Logo / placeholder şüphesi'),
+      ('missing_specs','⚙️','Eksik özellik',report.summary.missing_specs_count,'Teknik veri yetersiz'),
+      ('missing_brand','🏷️','Marka / model',report.summary.missing_brand_count + report.summary.missing_model_count,'Kimlik bilgisi eksik'),
+      ('missing_category','🗂️','Kategori',report.summary.missing_category_count,'Kategori atanmadı'),
+      ('suspicious_price','₺','Anormal fiyat',report.summary.suspicious_price_count,'Fiyat kontrol edilmeli'),
+      ('low_ai_score','✦','Düşük AI skoru',report.summary.low_ai_score_count,'40 puanın altında')
+    ] %}
+    {% for code,icon,label,count,desc in cards %}
+    <a class="{% if selected_issue == code %}active{% endif %}" href="?issue={{ code }}&level={{ selected_level }}&sort={{ selected_sort }}">
+      <i>{{ icon }}</i><div><span>{{ label }}</span><strong>{{ count }}</strong><small>{{ desc }}</small></div>
+    </a>
+    {% endfor %}
+  </section>
+
+  <section class="dq72-toolbar">
+    <form method="get">
+      <input type="hidden" name="issue" value="{{ selected_issue }}">
+      <span>⌕</span><input name="search" value="{{ search }}" placeholder="Ürün, marka veya kategori ara...">
+      <select name="level">
+        <option value="all" {% if selected_level == 'all' %}selected{% endif %}>Tüm seviyeler</option>
+        <option value="critical" {% if selected_level == 'critical' %}selected{% endif %}>Kritik</option>
+        <option value="attention" {% if selected_level == 'attention' %}selected{% endif %}>İncelenecek</option>
+        <option value="good" {% if selected_level == 'good' %}selected{% endif %}>Sağlıklı</option>
+      </select>
+      <select name="sort">
+        <option value="score_asc" {% if selected_sort == 'score_asc' %}selected{% endif %}>Kalite: düşükten</option>
+        <option value="score_desc" {% if selected_sort == 'score_desc' %}selected{% endif %}>Kalite: yüksekten</option>
+        <option value="price_asc" {% if selected_sort == 'price_asc' %}selected{% endif %}>Fiyat: düşükten</option>
+        <option value="price_desc" {% if selected_sort == 'price_desc' %}selected{% endif %}>Fiyat: yüksekten</option>
+      </select>
+      <button>Filtrele</button>
+    </form>
+    <div class="dq72-tabs">
+      {% for code,label in [('all','Tümü'),('missing_image','Görsel'),('thin_gallery','Galeri'),('broken_image','Bozuk'),('missing_specs','Özellik'),('missing_category','Kategori'),('suspicious_price','Fiyat'),('duplicates','Tekrarlar')] %}
+      <a class="{% if selected_issue == code %}active{% endif %}" href="?issue={{ code }}&level={{ selected_level }}&sort={{ selected_sort }}">{{ label }}</a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <div class="dq72-layout">
+    <section class="dq72-card dq72-products">
+      <header><div><h3>İncelenmesi gereken ürünler</h3><p>{{ products|length }} kayıt gösteriliyor</p></div><a href="/admin/products">Ürün yönetimi →</a></header>
+      <form method="post" action="/admin/data-quality/fix-safe" id="dq72FixForm">
+        <input type="hidden" name="return_issue" value="{{ selected_issue }}">
+        <input type="hidden" name="return_level" value="{{ selected_level }}">
+        <input type="hidden" name="return_sort" value="{{ selected_sort }}">
+        <input type="hidden" name="return_search" value="{{ search }}">
+        <div class="dq72-bulkbar">
+          <label><input type="checkbox" id="dq72SelectAll"> Tümünü seç</label>
+          <span id="dq72SelectedCount">0 ürün seçildi</span>
+          <select name="issue">
+            <option value="safe">Güvenli tüm öneriler</option>
+            <option value="missing_brand">Marka + model</option>
+            <option value="missing_model">Yalnız model</option>
+            <option value="missing_category">Yalnız kategori</option>
+            <option value="name">Ürün adını temizle</option>
+          </select>
+          <button type="submit" onclick="return confirm('Seçili ürünlere güvenli öneriler uygulansın mı? Dolu alanlar değiştirilmeyecek.')">Seçilileri düzelt</button>
+        </div>
+        <div class="dq72-table-wrap"><table>
+          <thead><tr><th class="select-col"></th><th>Ürün</th><th>Kalite</th><th>Fiyat</th><th>Galeri</th><th>AI</th><th>Sorunlar / öneriler</th><th></th></tr></thead>
+          <tbody>
+            {% for item in products %}
+            <tr>
+              <td class="select-col"><input class="dq72-row-check" type="checkbox" name="product_ids" value="{{ item.product_id }}"></td>
+              <td><strong>{{ item.name }}</strong><span>{{ item.brand or 'Marka yok' }} · {{ item.category or 'Kategori yok' }}</span></td>
+              <td><b class="quality quality-{{ 'good' if item.score >= 85 else 'mid' if item.score >= 65 else 'warn' if item.score >= 45 else 'bad' }}">{{ item.score }}</b></td>
+              <td><b>{{ '{:,.2f}'.format(item.price).replace(',', 'X').replace('.', ',').replace('X', '.') }} TL</b></td>
+              <td><b>{{ item.image_count }}</b><span>görsel</span></td>
+              <td><b>{{ item.ai_score }}</b></td>
+              <td>
+                <div class="dq72-badges">{% for problem in item.issues[:3] %}<span>{{ problem }}</span>{% endfor %}{% if item.possible_duplicate %}<span class="duplicate">Olası tekrar</span>{% endif %}</div>
+                {% if item.suggestions %}<div class="dq72-suggestions">{% for key,value in item.suggestions.items() %}<span><b>{{ 'Ad' if key == 'normalized_name' else 'Marka' if key == 'brand' else 'Model' if key == 'model' else 'Kategori' }}:</b> {{ value }}</span>{% endfor %}</div>{% endif %}
+              </td>
+              <td><a class="row-action" href="/admin/products?search={{ item.name|urlencode }}">İncele</a></td>
+            </tr>
+            {% else %}<tr><td colspan="8" class="empty">Bu filtrede sorunlu ürün bulunamadı.</td></tr>{% endfor %}
+          </tbody>
+        </table></div>
+      </form>
+    </section>
+
+    <aside class="dq72-side">
+      <section class="dq72-card"><header><div><h3>En sık sorunlar</h3><p>Katalog genelindeki dağılım</p></div></header><div class="dq72-rank">{% for item in report.top_issues %}<div><span>{{ item.name }}</span><b>{{ item.count }}</b></div>{% else %}<p>Sorun bulunamadı.</p>{% endfor %}</div></section>
+      <section class="dq72-card"><header><div><h3>Mağaza sağlığı</h3><p>Tarama başarı oranları</p></div><a href="/admin/scrapers">Tümünü gör →</a></header><div class="dq72-stores">{% for store in report.stores %}<div><i class="{{ store.status }}"></i><span><b>{{ store.name }}</b><small>{{ store.offer_count }} teklif</small></span><strong>{% if store.success_rate is not none %}%{{ store.success_rate }}{% else %}—{% endif %}</strong></div>{% else %}<p>Mağaza verisi yok.</p>{% endfor %}</div></section>
+      <section class="dq72-card dq72-maintenance"><header><div><h3>Hızlı bakım</h3><p>Doğru merkeze tek tıkla geç</p></div></header><div><a href="/admin/products?quality=missing_image">📷 Görselleri incele</a><a href="/admin/matching">⛓ Tekrarları birleştir</a><a href="/admin/scrapers">↻ Tarama başlat</a><a href="/admin/data-quality/export">↓ JSON raporu indir</a></div></section>
+    </aside>
+  </div>
+
+  {% if report.duplicate_groups %}
+  <section class="dq72-card dq72-duplicates"><header><div><h3>Olası tekrar ürün grupları</h3><p>Benzer isimli kayıtlar</p></div><a href="/admin/matching">Eşleştirme merkezine git →</a></header><div class="dq72-duplicate-grid">{% for group in report.duplicate_groups[:8] %}<article><span>{{ group.count }} kayıt</span>{% for product in group.products %}<a href="/admin/products?search={{ product.name|urlencode }}"><em>{{ product.name }}</em><b>{{ '{:,.2f}'.format(product.price).replace(',', 'X').replace('.', ',').replace('X', '.') }} TL</b></a>{% endfor %}</article>{% endfor %}</div></section>
+  {% endif %}
+</div>
+{% endblock %}

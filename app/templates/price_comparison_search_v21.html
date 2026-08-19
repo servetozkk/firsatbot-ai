@@ -1,0 +1,52 @@
+{% extends "public_base.html" %}
+{% block title %}{{ seo_title }}{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="/static/css/price-comparison-v211.css?v=211">
+{% endblock %}
+{% block content %}
+<section class="pc-shell">
+  <div class="pc-search-hero">
+    <div>
+      <span class="pc-eyebrow">FırsatAI Price Comparison</span>
+      <h1>Ürünü bul, mağaza fiyatlarını karşılaştır.</h1>
+      <p>Arama sonuçları hazır global katalogdan gelir; sayfa açılırken mağazalara canlı tarama yapılmaz.</p>
+    </div>
+    <form class="pc-search-form" method="get" action="/fiyat-karsilastirma">
+      <input name="q" value="{{ query }}" placeholder="Örn. ASUS X1504VA BQ5391" autocomplete="off">
+      <button type="submit">Fiyatları Bul</button>
+    </form>
+  </div>
+
+  {% if query %}
+  <div class="pc-result-header">
+    <div><strong>“{{ query }}”</strong> için {{ result_count }} ürün</div>
+    <span>Canlı scraping yok · katalogdan anlık okuma</span>
+  </div>
+  {% endif %}
+
+  <div class="pc-product-grid">
+    {% for item in items %}
+    <a class="pc-product-card" href="{{ item.detail_url }}">
+      <div class="pc-product-image-wrap">
+        {% if item.image %}<img src="{{ item.image }}" alt="{{ item.name }}" loading="lazy">{% else %}<div class="pc-image-placeholder">FırsatAI</div>{% endif %}
+      </div>
+      <div class="pc-product-body">
+        <div class="pc-brand">{{ item.brand or 'Ürün' }}</div>
+        <h2>{{ item.name }}</h2>
+        <div class="pc-spec-row">
+          {% if item.ram_gb %}<span>{{ item.ram_gb }} GB RAM</span>{% endif %}
+          {% if item.storage_gb %}<span>{{ item.storage_gb }} GB Depolama</span>{% endif %}
+          {% if item.variant %}<span>{{ item.variant|upper }}</span>{% endif %}
+        </div>
+        <div class="pc-card-footer">
+          <div>{% if item.best_price %}<small>En düşük</small><strong>{{ "{:,.2f}".format(item.best_price).replace(',', 'X').replace('.', ',').replace('X', '.') }} TL</strong>{% else %}<strong>Fiyat bekleniyor</strong>{% endif %}</div>
+          <span>{{ item.offer_count }} teklif →</span>
+        </div>
+      </div>
+    </a>
+    {% else %}
+      {% if query %}<div class="pc-empty">Bu arama için global katalogda eşleşen ürün bulunamadı.</div>{% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

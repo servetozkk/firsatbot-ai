@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Ürün Kimlik Merkezi - Fırsat AI{% endblock %}
+{% block page_title %}Ürün Kimlik Merkezi{% endblock %}
+{% block page_subtitle %}Aynı ürünü farklı mağaza adlarından güvenli biçimde tanıyın{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/identity-center.css?v=8201">{% endblock %}
+{% block content %}
+<div class="idc-page">
+  {% if request.query_params.get('updated') %}<div class="idc-toast">✓ {{request.query_params.get('updated')}} ürünün kimliği güncellendi.</div>{% endif %}
+  <section class="idc-hero">
+    <div><span>PRODUCT IDENTITY ENGINE</span><h2>Ürün kayıtlarını tek ve güvenilir kimlik altında toplayın</h2><p>Marka, model, varyant, RAM, depolama ve model kodu analiz edilir. Düşük güvenli kayıtlar otomatik değiştirilmeden incelemeye ayrılır.</p></div>
+    <div class="idc-score"><strong>%{{stats.average}}</strong><span>ortalama güven</span></div>
+  </section>
+  <section class="idc-stats">
+    <a href="/admin/identity"><span>Toplam</span><strong>{{stats.total}}</strong></a>
+    <a href="/admin/identity?status=strong"><span>Güçlü kimlik</span><strong>{{stats.strong}}</strong></a>
+    <a href="/admin/identity?status=review"><span>İncelenecek</span><strong>{{stats.review}}</strong></a>
+    <a href="/admin/identity?status=weak"><span>Zayıf kimlik</span><strong>{{stats.weak}}</strong></a>
+    <a href="/admin/identity?duplicate=yes"><span>Tekrar kümeleri</span><strong>{{stats.duplicates}}</strong></a>
+    <a href="/admin/matching?quality=conflict"><span>Farklı grupta aynı kimlik</span><strong>{{stats.cross_group_duplicates}}</strong></a>
+  </section>
+  <form class="idc-filter" method="get"><input name="q" value="{{q}}" placeholder="Ürün, marka, model veya kod ara"><select name="status"><option value="">Tüm güven seviyeleri</option><option value="strong" {% if status=='strong' %}selected{% endif %}>Güçlü</option><option value="review" {% if status=='review' %}selected{% endif %}>İncelenecek</option><option value="weak" {% if status=='weak' %}selected{% endif %}>Zayıf</option></select><label><input type="checkbox" name="duplicate" value="yes" {% if duplicate=='yes' %}checked{% endif %}> Yalnız tekrarlar</label><button>Ara ve filtrele</button></form>
+  <form method="post" action="/admin/identity/apply" id="identityForm">
+    <input type="hidden" name="return_q" value="{{q}}"><input type="hidden" name="return_status" value="{{status}}">
+    <div class="idc-bulk"><label><input type="checkbox" id="selectAllIdentity"> Görünenleri seç</label><span id="identitySelected">0 ürün seçildi</span><button type="submit" onclick="return confirm('Seçilen ürünlerin eksik marka/model ve kalıcı kimlik alanları güvenli biçimde güncellensin mi?')">Seçilen kimlikleri hesapla</button></div>
+    <section class="idc-table-wrap"><table class="idc-table"><thead><tr><th></th><th>Ürün</th><th>Çıkarılan kimlik</th><th>Varyantlar</th><th>Güven</th><th>Grup</th></tr></thead><tbody>
+    {% for row in rows %}<tr class="status-{{row.status}}"><td><input class="identity-check" type="checkbox" name="product_ids" value="{{row.product_id}}"></td><td><div class="idc-product"><img src="{{row.image or '/static/img/product-placeholder.svg'}}" onerror="this.src='/static/img/product-placeholder.svg'"><div><strong>{{row.name}}</strong><span>#{{row.product_id}} · {{row.category or 'Kategori yok'}}</span>{% for warning in row.warnings %}<em>{{warning}}</em>{% endfor %}</div></div></td><td><b>{{row.brand or '—'}} {{row.model or ''}}</b><code>{{row.identity_key[:14]}}…</code></td><td><div class="idc-chips">{% if row.attributes.storage_gb %}<span>{{row.attributes.storage_gb}} GB</span>{% endif %}{% if row.attributes.ram_gb %}<span>{{row.attributes.ram_gb}} GB RAM</span>{% endif %}{% if row.attributes.variant %}<span>{{row.attributes.variant}}</span>{% endif %}{% if row.attributes.model_code %}<span>{{row.attributes.model_code}}</span>{% endif %}{% if row.attributes.color %}<span>{{row.attributes.color}}</span>{% endif %}</div></td><td><div class="idc-confidence"><b>%{{row.confidence}}</b><span><i style="width:{{row.confidence}}%"></i></span><small>{% if row.status=='strong' %}Güçlü{% elif row.status=='review' %}İncele{% else %}Zayıf{% endif %}</small></div></td><td>{% if row.group_id %}<a href="/admin/matching?selected_group={{row.group_id}}">#{{row.group_id}} · {{row.store_count}} mağaza</a><small>{{row.group_name}}</small>{% else %}<em>Gruba bağlı değil</em>{% endif %}</td></tr>{% else %}<tr><td colspan="6" class="idc-empty">Filtreye uygun ürün bulunamadı.</td></tr>{% endfor %}
+    </tbody></table></section>
+  </form>
+  <section class="idc-duplicates"><header><div><span>AYNI KİMLİK KÜMELERİ</span><h2>Birleştirme adayları</h2></div><a href="/admin/matching">Eşleştirme merkezine git →</a></header><div class="idc-cluster-grid">{% for cluster in duplicate_clusters %}<article class="{% if cluster.needs_merge %}needs-merge{% endif %}"><div><strong>%{{cluster.average_confidence}}</strong><span>{{cluster.count}} kayıt · {{cluster.group_count}} grup</span></div>{% for item in cluster.items[:4] %}<p><b>{{item.name}}</b><small>{% if item.group_id %}Grup #{{item.group_id}}{% else %}Grupsuz{% endif %}</small></p>{% endfor %}{% if cluster.needs_merge %}<a href="/admin/matching?q={{cluster.items[0].model|urlencode}}">Grupları incele</a>{% else %}<em>Aynı grupta toplanmış</em>{% endif %}</article>{% else %}<div class="idc-empty">Aynı kimliğe sahip tekrar kayıt bulunamadı.</div>{% endfor %}</div></section>
+</div>
+{% endblock %}
+{% block extra_scripts %}<script>(function(){const all=document.getElementById('selectAllIdentity'),items=[...document.querySelectorAll('.identity-check')],label=document.getElementById('identitySelected');function update(){const n=items.filter(x=>x.checked).length;label.textContent=n+' ürün seçildi';if(all)all.checked=n===items.length&&n>0;}all?.addEventListener('change',()=>{items.forEach(x=>x.checked=all.checked);update();});items.forEach(x=>x.addEventListener('change',update));update();})();</script>{% endblock %}

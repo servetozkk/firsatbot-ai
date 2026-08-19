@@ -3,13 +3,16 @@ from __future__ import annotations
 import time
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from dataclasses import asdict, dataclass, field
-from typing import Any
+from typing import Any, Callable
 
 from app.category_scrapers.registry import CategoryScraperRegistry
 from app.models.product import Product
 from app.services.product_config_service import add_product
 from app.services.product_service import save_product
 from app.services.scraper_registry import ScraperRegistry
+from app.services.cross_store_search_service import CrossStoreSearchService
+from app.services.product_identity_service import ProductIdentityService
+from app.services.scraper_resilience_service import resilient_call, store_code_from_url
 from app.services.scraper_runtime_config import (
     SCRAPER_REQUEST_DELAY,
     SCRAPER_RETRY_COUNT,
@@ -33,6 +36,9 @@ class CategoryDiscoveryResult:
     list_offer_count: int = 0
     detail_queue_count: int = 0
     skipped_incomplete_count: int = 0
+    reconciled_product_count: int = 0
+    cross_store_saved_offer_count: int = 0
+    reconciliation_errors: list[str] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
 
@@ -60,17 +66,9 @@ class CategoryDiscoveryService:
 
     @staticmethod
     def _scrape_one(url: str, retry_count: int) -> Any:
-        last_error: Exception | None = None
-        for attempt in range(retry_count + 1):
-            try:
-                registry = ScraperRegistry()
-                return registry.scrape(url)
-            except Exception as error:  # noqa: BLE001 - hata sonuçta raporlanır
-                last_error = error
-                if attempt < retry_count:
-                    time.sleep(1.0 + attempt)
-        assert last_error is not None
-        raise last_error
+        def operation() -> Any:
+            return ScraperRegistry().scrape(url)
+        return resilient_call(store_code=store_code_from_url(url),url=url,operation=operation,requested_retries=retry_count,context="category_product_detail")
 
     def _save_scraped_product(
         self,
@@ -79,7 +77,8 @@ class CategoryDiscoveryService:
         url: str,
         store_name: str,
         result: CategoryDiscoveryResult,
-    ) -> None:
+        collected_products: list[Any] | None = None,
+    ) -> Any:
         if product is None:
             raise RuntimeError("Ürün scraper'ı veri döndürmedi.")
 
@@ -103,6 +102,11 @@ class CategoryDiscoveryService:
             result.already_tracked_count += 1
         else:
             result.warnings.append(f"{product_name}: {add_message}")
+
+        if collected_products is not None:
+            collected_products.append(product)
+
+        return product
 
     @staticmethod
     def _product_from_list_offer(link: Any, store_name: str) -> Product:
@@ -131,6 +135,7 @@ class CategoryDiscoveryService:
         links: list[Any],
         store_name: str,
         result: CategoryDiscoveryResult,
+        collected_products: list[Any] | None = None,
     ) -> None:
         for index, link in enumerate(links, start=1):
             print(f"LISTE TEKLİFİ [{index}/{len(links)}] {link.url}")
@@ -141,6 +146,7 @@ class CategoryDiscoveryService:
                     url=link.url,
                     store_name=store_name,
                     result=result,
+                    collected_products=collected_products,
                 )
                 result.list_offer_count += 1
             except Exception as error:  # noqa: BLE001
@@ -149,20 +155,144 @@ class CategoryDiscoveryService:
                     f"{link.url}: {type(error).__name__}: {error}"
                 )
 
+    @staticmethod
+    def _unique_reconciliation_products(
+        products: list[Any],
+        maximum: int,
+    ) -> list[Any]:
+        unique: list[Any] = []
+        seen: set[str] = set()
+
+        for product in products:
+            try:
+                identity = ProductIdentityService.explain(product)
+                key = str(identity.get("identity_key") or "").strip()
+            except Exception:
+                key = ""
+
+            if not key:
+                key = str(getattr(product, "name", "") or "").casefold().strip()
+
+            if not key or key in seen:
+                continue
+
+            seen.add(key)
+            unique.append(product)
+
+            if len(unique) >= maximum:
+                break
+
+        return unique
+
+    def _reconcile_across_stores(
+        self,
+        *,
+        products: list[Any],
+        result: CategoryDiscoveryResult,
+        maximum_products: int,
+        progress_callback: Callable[[str, float, str], None] | None = None,
+    ) -> None:
+        candidates = self._unique_reconciliation_products(
+            products,
+            maximum=max(0, maximum_products),
+        )
+        if not candidates:
+            return
+
+        print()
+        print("=" * 70)
+        print("KATALOG UZLAŞTIRMA MOTORU")
+        print("=" * 70)
+        print("Hedefli aranacak benzersiz ürün:", len(candidates))
+
+        def report_store_progress(
+            product_index: int,
+            store_current: int,
+            store_total: int,
+            message: str,
+        ) -> None:
+            if progress_callback is None:
+                return
+            product_fraction = (
+                (product_index - 1) + (store_current / max(1, store_total))
+            ) / max(1, len(candidates))
+            progress_callback(
+                "reconciliation",
+                min(1.0, max(0.0, product_fraction)),
+                f"Mağazalar arası eşleştirme {product_index}/{len(candidates)} — {message}",
+            )
+
+        for index, product in enumerate(candidates, start=1):
+            print()
+            print(
+                f"UZLAŞTIRMA [{index}/{len(candidates)}]: "
+                f"{getattr(product, 'name', '')}"
+            )
+            service = CrossStoreSearchService(
+                registry=ScraperRegistry(),
+                candidate_limit=3,
+                minimum_match_score=0.82,
+                parallel_workers=3,
+                max_store_count=5,
+                fast_mode=True,
+                progress_callback=lambda current, total, message, idx=index: (
+                    report_store_progress(idx, current, total, message)
+                ),
+            )
+            if progress_callback is not None:
+                progress_callback(
+                    "reconciliation",
+                    (index - 1) / max(1, len(candidates)),
+                    f"Mağazalar arası eşleştirme {index}/{len(candidates)} başladı",
+                )
+            try:
+                scan = service.scan_other_stores(product)
+                result.reconciled_product_count += 1
+                result.cross_store_saved_offer_count += int(
+                    scan.saved_offer_count or 0
+                )
+                for store_result in scan.results:
+                    if not store_result.success:
+                        result.reconciliation_errors.append(
+                            f"{getattr(product, 'name', '')} / "
+                            f"{store_result.store_name}: "
+                            f"{store_result.message}"
+                        )
+            except Exception as error:
+                result.reconciliation_errors.append(
+                    f"{getattr(product, 'name', '')}: "
+                    f"{type(error).__name__}: {error}"
+                )
+
     def scan_and_save(
         self,
         category_url: str,
         limit: int = 100,
         max_pages: int = 10,
+        reconcile_across_stores: bool = True,
+        reconciliation_product_limit: int = 10,
+        progress_callback: Callable[[str, float, str], None] | None = None,
     ) -> CategoryDiscoveryResult:
+        if progress_callback is not None:
+            progress_callback("category", 0.0, "Kategori ürün bağlantıları toplanıyor")
         category_scraper = self.category_registry.get_scraper(category_url)
         link_result = category_scraper.collect_product_links(
             category_url=category_url,
             limit=limit,
             max_pages=max_pages,
         )
+        if progress_callback is not None:
+            progress_callback(
+                "category",
+                1.0,
+                f"{link_result.found_count} ürün bağlantısı bulundu",
+            )
 
         worker_count = min(SCRAPER_WORKERS, max(1, len(link_result.links)))
+        # N11 kalıcı Chrome profilini kullanır. Aynı profil birden fazla
+        # process/context tarafından eş zamanlı açılırsa TargetClosedError oluşur.
+        if link_result.store_code == "n11":
+            worker_count = 1
         result = CategoryDiscoveryResult(
             success=True,
             store_code=link_result.store_code,
@@ -173,6 +303,8 @@ class CategoryDiscoveryService:
             worker_count=worker_count,
             warnings=list(link_result.warnings),
         )
+
+        collected_products: list[Any] = []
 
         if not link_result.links:
             return result
@@ -200,7 +332,15 @@ class CategoryDiscoveryService:
                 links=list_links,
                 store_name=link_result.store_name,
                 result=result,
+                collected_products=collected_products,
             )
+            if reconcile_across_stores:
+                self._reconcile_across_stores(
+                    products=collected_products,
+                    result=result,
+                    maximum_products=reconciliation_product_limit,
+                    progress_callback=progress_callback,
+                )
             if result.found_count > 0 and result.saved_count == 0:
                 result.success = False
             return result
@@ -233,6 +373,12 @@ class CategoryDiscoveryService:
             for future in as_completed(future_map):
                 completed += 1
                 index, link = future_map[future]
+                if progress_callback is not None:
+                    progress_callback(
+                        "detail",
+                        completed / max(1, len(future_map)),
+                        f"Ürün detayları işleniyor {completed}/{len(future_map)}",
+                    )
                 print()
                 print("-" * 70)
                 print(
@@ -248,6 +394,7 @@ class CategoryDiscoveryService:
                         url=link.url,
                         store_name=link_result.store_name,
                         result=result,
+                        collected_products=collected_products,
                     )
                 except Exception as error:  # noqa: BLE001
                     result.failed_count += 1
@@ -259,6 +406,13 @@ class CategoryDiscoveryService:
                         type(error).__name__,
                         error,
                     )
+
+        if reconcile_across_stores:
+            self._reconcile_across_stores(
+                products=collected_products,
+                result=result,
+                maximum_products=reconciliation_product_limit,
+            )
 
         if result.found_count > 0 and result.saved_count == 0:
             result.success = False

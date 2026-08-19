@@ -1,0 +1,126 @@
+/* v2.2.4 — Ferah ve premium ana sayfa */
+:root{
+  --v224-shell:1520px;
+  --v224-line:#e4e9f3;
+  --v224-shadow:0 24px 70px rgba(39,51,112,.13);
+  --v224-shadow-soft:0 12px 34px rgba(28,42,82,.08);
+}
+
+.home-shell,.site-header-inner,.category-strip-inner{max-width:var(--v224-shell)!important}
+.homepage-v2{max-width:var(--v224-shell)!important;padding:24px 24px 68px!important}
+
+/* Header: daha ferah ve okunaklı */
+.site-header-inner{min-height:74px!important;padding:10px 24px!important;gap:12px!important}
+.brand{min-width:168px!important}
+.brand-title{font-size:1.12rem!important}
+.brand-subtitle{font-size:.65rem!important}
+.header-search{min-width:310px!important;min-height:48px!important;border-radius:15px!important}
+.header-search input{font-size:.82rem!important}
+.header-link,.mega-menu>summary,.account-entry{min-height:44px!important;padding:0 15px!important;font-size:.73rem!important}
+.category-strip-inner{padding:10px 24px 12px!important;gap:10px!important}
+.category-pill{min-height:42px!important;padding:0 15px!important;border-radius:13px!important;font-size:.72rem!important}
+
+/* Üst bilgi şeridi */
+.enterprise-topline{min-height:48px!important;margin-bottom:22px!important;padding:0 20px!important;border-radius:15px!important}
+.enterprise-topline span{font-size:.73rem!important}
+.enterprise-topline-links{gap:18px!important}
+.enterprise-topline-links a{font-size:.7rem!important}
+
+/* Hero */
+.hero.hero-marketplace{
+  grid-template-columns:minmax(0,.92fr) minmax(520px,1.08fr)!important;
+  gap:56px!important;
+  min-height:438px!important;
+  padding:54px 58px 0!important;
+  border-radius:32px!important;
+  background:
+    radial-gradient(circle at 79% 22%,rgba(255,255,255,.20),transparent 24%),
+    radial-gradient(circle at 100% 95%,rgba(135,146,255,.48),transparent 31%),
+    linear-gradient(125deg,#4056f4 0%,#3a43d6 52%,#4138c8 100%)!important;
+  box-shadow:0 34px 85px rgba(56,64,188,.25)!important;
+}
+.hero.hero-marketplace:after{width:600px!important;height:480px!important;right:-130px!important;bottom:-260px!important;background:rgba(255,255,255,.075)!important;box-shadow:-150px -90px 0 rgba(255,255,255,.045)!important}
+.marketplace-hero-copy{padding-bottom:44px!important}
+.hero.hero-marketplace .hero-badge{display:inline-flex!important;align-items:center!important;min-height:30px!important;padding:0 13px!important;border:1px solid rgba(255,255,255,.22)!important;border-radius:999px!important;background:rgba(255,255,255,.10)!important;font-size:.72rem!important;font-weight:850!important;backdrop-filter:blur(8px)}
+.hero.hero-marketplace h1{max-width:650px!important;margin:18px 0 18px!important;font-size:clamp(2.65rem,3.65vw,4.2rem)!important;line-height:.98!important;letter-spacing:-.06em!important}
+.hero.hero-marketplace .hero-copy{max-width:610px!important;font-size:1rem!important;line-height:1.65!important}
+.marketplace-search-card{padding:18px!important;border-radius:26px!important;box-shadow:0 26px 65px rgba(15,23,80,.24)!important}
+.hero-search{min-height:64px!important;padding:7px!important;border-radius:18px!important;background:#f8faff!important}
+.hero-search-icon{font-size:1.1rem!important;margin-left:10px!important}
+.hero-search input{min-height:48px!important;font-size:.92rem!important;padding:0 12px!important}
+.hero-search button{min-width:92px!important;min-height:48px!important;border-radius:14px!important;font-size:.82rem!important;box-shadow:0 10px 22px rgba(65,80,235,.28)!important}
+.hero-search-links{display:flex!important;align-items:center!important;flex-wrap:wrap!important;gap:8px!important;padding:14px 5px 2px!important}
+.hero-search-links>span{margin-right:2px!important;font-size:.68rem!important;font-weight:800!important}
+.hero-search-links a{min-height:30px!important;padding:0 12px!important;display:inline-flex!important;align-items:center!important;border-radius:999px!important;font-size:.65rem!important}
+.marketplace-hero-stats{margin:0 -58px!important;padding:18px 58px!important;background:rgba(20,27,105,.30)!important}
+.marketplace-hero-stats>div{min-height:62px!important;padding:7px 28px!important}
+.marketplace-hero-stats span{font-size:1.65rem!important}
+.marketplace-hero-stats strong{font-size:1.38rem!important}
+.marketplace-hero-stats small{font-size:.72rem!important}
+
+/* Özet ve bölüm navigasyonu */
+.market-summary{gap:14px!important;margin-top:20px!important}
+.market-summary-card{min-height:84px!important;padding:16px 20px!important;border-radius:18px!important;box-shadow:var(--v224-shadow-soft)!important}
+.market-summary-icon{width:44px!important;height:44px!important;border-radius:13px!important;font-size:1.1rem!important}
+.market-summary-card strong{font-size:.95rem!important}
+.market-summary-card small{font-size:.66rem!important;line-height:1.4!important}
+.marketplace-jump-nav{gap:9px!important;margin:20px 0 16px!important}
+.section-jump-link{min-height:36px!important;padding:0 14px!important;font-size:.68rem!important}
+
+/* Kategoriler */
+.featured-category-rail{gap:13px!important;margin:16px 0 8px!important;padding:4px 2px 13px!important}
+.featured-category-compact{min-width:174px!important;min-height:100px!important;padding:16px 18px!important;border-radius:19px!important;box-shadow:0 8px 24px rgba(30,45,90,.055)!important}
+.featured-category-compact>span{font-size:1.35rem!important}
+.featured-category-compact strong{font-size:.8rem!important}
+.featured-category-compact small{font-size:.65rem!important}
+
+/* İçerik alanı */
+.marketplace-content-grid{grid-template-columns:minmax(0,1fr) 330px!important;gap:30px!important;margin-top:28px!important}
+.market-product-section{margin-bottom:42px!important}
+.market-section-heading{margin-bottom:15px!important}
+.market-section-heading h2{font-size:1.28rem!important;letter-spacing:-.035em!important}
+.market-section-heading a{font-size:.72rem!important}
+.market-product-rail{gap:16px!important;padding:4px 4px 16px!important}
+.market-product-card{
+  grid-template-columns:122px minmax(0,1fr)!important;
+  flex-basis:318px!important;width:318px!important;min-width:318px!important;max-width:318px!important;
+  height:190px!important;min-height:190px!important;max-height:190px!important;
+  border-radius:19px!important;box-shadow:0 10px 28px rgba(25,39,84,.07)!important
+}
+.market-product-card:hover{transform:translateY(-5px)!important;box-shadow:0 20px 46px rgba(25,39,84,.14)!important}
+.market-product-image{width:122px!important;height:190px!important;min-height:190px!important;max-height:190px!important;background:linear-gradient(180deg,#fff,#f8faff)!important}
+.market-product-image img{max-width:110px!important;max-height:162px!important;padding:10px!important}
+.market-product-copy{grid-template-rows:66px 18px 34px 30px!important;height:190px!important;min-height:190px!important;max-height:190px!important;padding:16px 15px 12px!important}
+.market-product-name{min-height:66px!important;max-height:66px!important;font-size:.78rem!important;line-height:1.4!important}
+.market-current-price{height:34px!important;line-height:34px!important;font-size:1.06rem!important}
+.market-card-meta{height:30px!important;min-height:30px!important;font-size:.58rem!important}
+.sidebar-card{padding:20px!important;border-radius:22px!important;box-shadow:var(--v224-shadow-soft)!important}
+.sidebar-card-heading h3{font-size:.95rem!important}
+.sidebar-store-row{min-height:52px!important;border-radius:13px!important}
+
+/* Arka plan ve genel denge */
+body{background:radial-gradient(circle at 8% 2%,rgba(84,96,245,.10),transparent 28%),linear-gradient(180deg,#f7f9fe 0,#f3f6fb 48%,#f7f9fc 100%)!important}
+.homepage-v2:before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(circle at 93% 24%,rgba(99,102,241,.055),transparent 25%);z-index:-1}
+
+@media(max-width:1200px){
+  .hero.hero-marketplace{grid-template-columns:1fr!important;gap:28px!important;padding-top:42px!important}
+  .marketplace-hero-copy{text-align:center!important;padding-bottom:0!important}
+  .hero.hero-marketplace h1,.hero.hero-marketplace .hero-copy{margin-left:auto!important;margin-right:auto!important}
+  .marketplace-content-grid{grid-template-columns:1fr!important}
+  .marketplace-sidebar{position:static!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:760px){
+  .homepage-v2{padding:10px 12px 48px!important}
+  .site-header-inner{padding:8px 12px!important}
+  .hero.hero-marketplace{min-height:auto!important;padding:30px 18px 0!important;border-radius:23px!important}
+  .hero.hero-marketplace h1{font-size:2.35rem!important}
+  .marketplace-hero-stats{margin:0 -18px!important;padding:12px 18px!important}
+  .marketplace-hero-stats>div{padding:6px 10px!important}
+  .market-summary-card{min-height:74px!important;padding:13px!important}
+  .featured-category-compact{min-width:150px!important;min-height:88px!important}
+  .market-product-card{grid-template-columns:94px minmax(0,1fr)!important;flex-basis:260px!important;width:260px!important;min-width:260px!important;max-width:260px!important;height:156px!important;min-height:156px!important;max-height:156px!important}
+  .market-product-image{width:94px!important;height:156px!important;min-height:156px!important;max-height:156px!important}
+  .market-product-copy{grid-template-rows:48px 15px 28px 25px!important;height:156px!important;min-height:156px!important;max-height:156px!important;padding:11px 10px 9px!important}
+  .market-product-name{min-height:48px!important;max-height:48px!important;font-size:.68rem!important}
+  .marketplace-sidebar{grid-template-columns:1fr!important}
+}

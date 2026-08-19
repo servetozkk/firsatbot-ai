@@ -1,0 +1,38 @@
+{% extends "admin_base.html" %}
+{% block title %}Toplu Katalog Motoru{% endblock %}
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div><h1 class="h3 mb-1">Toplu Katalog Motoru</h1><p class="text-muted mb-0">Mağaza kataloglarını bağımsız toplar; çapraz mağaza araması yapmadan staging ve eşleştirme kuyruğu oluşturur.</p></div>
+    <span class="badge bg-success">v14.2.0</span>
+  </div>
+  <div class="row g-3 mb-4">
+    <div class="col-md-4"><div class="card"><div class="card-body"><div class="text-muted">Staging ürünü</div><div class="display-6">{{ status.staged_item_count }}</div></div></div></div>
+    <div class="col-md-4"><div class="card"><div class="card-body"><div class="text-muted">Eşleştirme kuyruğu</div><div class="display-6">{{ status.pending_match_count }}</div></div></div></div>
+    <div class="col-md-4"><div class="card"><div class="card-body"><div class="text-muted">Çapraz arama</div><div class="h4 mt-2 text-success">Tarama sırasında kapalı</div></div></div></div>
+  </div>
+  <div class="card mb-4"><div class="card-header">Katalog planları</div><div class="card-body">
+    {% for plan in plans %}
+    <div class="border rounded p-3 mb-3 d-flex justify-content-between align-items-center">
+      <div><strong>{{ plan.name }}</strong><div class="text-muted small">{{ plan.sources|length }} mağaza · limit {{ plan.limit }}</div></div>
+      <button class="btn btn-primary" onclick="runPlan('{{ plan.id }}', this)">Toplu tara</button>
+    </div>
+    {% else %}<div class="text-muted">Katalog planı bulunamadı.</div>{% endfor %}
+  </div></div>
+  <div id="taskBox" class="card d-none"><div class="card-body"><div id="taskMsg">Hazırlanıyor…</div><div class="progress mt-3"><div id="taskBar" class="progress-bar" style="width:0%">0%</div></div></div></div>
+</div>
+<script>
+async function runPlan(id, button){
+ button.disabled=true;
+ const r=await fetch(`/api/bulk-catalog/v14/plans/${id}/run`,{method:'POST'}); const j=await r.json();
+ document.getElementById('taskBox').classList.remove('d-none'); poll(j.task.id,button);
+}
+async function poll(id,button){
+ const r=await fetch(`/api/bulk-catalog/v14/tasks/${id}`); const j=await r.json(); const t=j.task;
+ document.getElementById('taskMsg').textContent=t.message+(t.current_store?` — ${t.current_store}`:'');
+ const bar=document.getElementById('taskBar'); bar.style.width=`${t.progress}%`; bar.textContent=`${t.progress}%`;
+ if(['completed','completed_with_errors','failed'].includes(t.status)){button.disabled=false; setTimeout(()=>location.reload(),1200); return;}
+ setTimeout(()=>poll(id,button),1200);
+}
+</script>
+{% endblock %}

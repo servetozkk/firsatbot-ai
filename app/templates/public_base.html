@@ -8,12 +8,25 @@
         content="width=device-width, initial-scale=1"
     >
 
-    <meta
-        name="description"
-        content="Fırsat AI ile ürün fiyatlarını karşılaştırın, fırsatları ve fiyat düşüşlerini keşfedin."
-    >
+    <meta name="description" content="{% block meta_description %}{{ seo_description|default('Fırsat AI ile ürün fiyatlarını karşılaştırın, fiyat geçmişini inceleyin ve fırsatları kaçırmayın.') }}{% endblock %}">
+    <meta name="theme-color" content="#5146f7">
+    <meta name="robots" content="{% block meta_robots %}index,follow,max-image-preview:large{% endblock %}">
+    <meta property="og:site_name" content="Fırsat AI">
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}{{ seo_title|default('Fırsat AI · Akıllı Fiyat Karşılaştırma') }}{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}{{ seo_description|default('Fiyatları karşılaştırın, geçmişi görün ve doğru zamanda satın alın.') }}{% endblock %}">
+    <meta property="og:url" content="{{ canonical_url|default(request.url if request is defined else '') }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="canonical" href="{{ canonical_url|default(request.url if request is defined else '') }}">
+    <link rel="manifest" href="/static/manifest.webmanifest">
+    <link rel="icon" href="/static/icons/icon-192.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.svg">
 
-    <title>{% block title %}Fırsat AI{% endblock %}</title>
+    <title>{% block title %}{{ seo_title|default('Fırsat AI') }}{% endblock %}</title>
+
+    {% if website_schema_json %}<script type="application/ld+json">{{ website_schema_json|safe }}</script>{% endif %}
+    {% if breadcrumb_schema_json %}<script type="application/ld+json">{{ breadcrumb_schema_json|safe }}</script>{% endif %}
+    {% if product_schema_json %}<script type="application/ld+json">{{ product_schema_json|safe }}</script>{% endif %}
 
     <link
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
@@ -68,6 +81,8 @@
             color: #fff !important;
         }
 
+        .pwa-install-button{display:none;border:1px solid #dfe4ef;background:#fff;color:#3f46c8;border-radius:11px;padding:8px 12px;font-size:.78rem;font-weight:850;cursor:pointer}.pwa-install-button.ready{display:inline-flex;align-items:center;gap:6px}
+
         .public-footer {
             margin-top: 42px;
             padding: 32px 0;
@@ -78,10 +93,16 @@
         }
     </style>
 
+    <link rel="stylesheet" href="/static/css/image-optimization-v13.css?v=1372">
+    <link rel="stylesheet" href="/static/css/public-beta-v13.css?v=1390">
     {% block extra_head %}{% endblock %}
+    <link rel="stylesheet" href="/static/css/enterprise-v21.css?v=21">
+    <link rel="stylesheet" href="/static/css/enterprise-v223-light.css?v=223">
+<style id="v13-6-3-breadcrumb-style">.firsatai-breadcrumb{max-width:1240px;margin:14px auto 8px;padding:0 18px;font-size:.82rem;color:#64748b}.firsatai-breadcrumb ol{display:flex;align-items:center;gap:7px;list-style:none;margin:0;padding:0;flex-wrap:wrap}.firsatai-breadcrumb li{display:flex;align-items:center;gap:7px}.firsatai-breadcrumb li:not(:last-child)::after{content:"›";color:#94a3b8}.firsatai-breadcrumb a{color:#2563eb;text-decoration:none}.firsatai-breadcrumb a:hover{text-decoration:underline}.firsatai-breadcrumb [aria-current="page"] span{color:#475569;font-weight:700}@media(max-width:640px){.firsatai-breadcrumb{padding:0 12px;font-size:.76rem}}</style>
 </head>
 
 <body>
+<div class="public-beta-banner">FırsatAI Public Beta · Sürüm 21.9.0 <a href="/geri-bildirim">Geri bildirim gönder</a></div>
 
 <nav class="navbar navbar-expand-lg public-navbar sticky-top">
     <div class="container-fluid px-3 px-lg-4">
@@ -106,13 +127,20 @@
             id="publicNavbar"
         >
             <div class="navbar-nav ms-auto align-items-lg-center gap-lg-1">
+                <button id="pwaInstallButton" class="pwa-install-button" type="button">⬇ Uygulamayı yükle</button>
                 <a class="nav-link" href="/">
                     Ana sayfa
                 </a>
 
-                <a class="nav-link" href="/kategoriler">
-                    Kategoriler
-                </a>
+                <details class="mega-menu">
+                    <summary class="nav-link">Kategoriler ▾</summary>
+                    <div class="mega-menu-panel">
+                        <div class="mega-menu-group"><strong>📱 Elektronik</strong><a href="/arama?q=telefon">Telefon</a><a href="/arama?q=laptop">Laptop</a><a href="/arama?q=tablet">Tablet</a><a href="/arama?q=televizyon">Televizyon</a></div>
+                        <div class="mega-menu-group"><strong>🎮 Oyun & Donanım</strong><a href="/arama?q=monitor">Monitör</a><a href="/arama?q=ekran+karti">Ekran kartı</a><a href="/arama?q=klavye">Klavye</a><a href="/arama?q=mouse">Mouse</a></div>
+                        <div class="mega-menu-group"><strong>🏠 Ev & Yaşam</strong><a href="/arama?q=robot+supurge">Robot süpürge</a><a href="/arama?q=kahve+makinesi">Kahve makinesi</a><a href="/arama?q=klima">Klima</a><a href="/kategoriler">Tüm kategoriler</a></div>
+                        <div class="mega-menu-group mega-menu-feature"><strong>🤖 AI ile doğru ürünü bul</strong><p>Akıllı filtrelerle ihtiyaçlarına uygun ürünleri saniyeler içinde daralt.</p><a href="/arama">Akıllı aramayı aç →</a></div>
+                    </div>
+                </details>
 
                 <a class="nav-link" href="/firsatlar">
                     Fırsatlar
@@ -125,6 +153,8 @@
                 <a class="nav-link" href="/ai-tavsiyeleri">
                     AI tavsiyeleri
                 </a>
+
+                <a class="nav-link" href="/hesabim">Hesabım</a>
 
                 <a class="nav-link public-search-button" href="/arama">
                     Ürün karşılaştır
@@ -141,7 +171,7 @@
 <footer class="public-footer">
     <div class="container-fluid px-3 px-lg-4">
         <div class="d-flex flex-wrap justify-content-between gap-2">
-            <span>© Fırsat AI</span>
+            <span>© Fırsat AI · FırsatAI Public Beta · Version 21.6.0</span>
             <span>Fiyatları karşılaştır, en iyi fırsatı bul.</span>
         </div>
     </div>
@@ -152,6 +182,33 @@
 ></script>
 
 {% block extra_scripts %}{% endblock %}
+<script>document.documentElement.removeAttribute("data-theme");try{localStorage.removeItem("firsat-ai-theme");localStorage.removeItem("theme");}catch(e){}</script>
+<script>
+(function(){if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('/service-worker.js').catch(()=>null));let promptEvent=null;const button=document.getElementById('pwaInstallButton');window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();promptEvent=event;button?.classList.add('ready')});button?.addEventListener('click',async()=>{if(!promptEvent)return;promptEvent.prompt();await promptEvent.userChoice;promptEvent=null;button.classList.remove('ready')});window.addEventListener('appinstalled',()=>button?.classList.remove('ready'))})();
+</script>
 
+
+
+<script>
+(function(){
+  if (!("Notification" in window) || Notification.permission !== "granted") return;
+  async function deliverBrowserNotifications(){
+    try{
+      const response=await fetch('/api/bildirimler/tarayici-bekleyen',{credentials:'same-origin'});
+      if(!response.ok)return;
+      const data=await response.json();
+      for(const item of (data.items||[])){
+        const notification=new Notification(item.title,{body:item.body,tag:item.tag,icon:'/static/favicon.ico'});
+        notification.onclick=()=>{window.focus();window.location.href=item.url||'/bildirimler';notification.close();};
+        await fetch('/api/bildirimler/tarayici/'+item.delivery_id+'/teslim-edildi',{method:'POST',credentials:'same-origin'});
+      }
+    }catch(error){console.debug('Tarayıcı bildirimleri alınamadı',error);}
+  }
+  deliverBrowserNotifications();
+  setInterval(deliverBrowserNotifications,60000);
+})();
+</script>
+<script src="/static/js/image-optimization-v13.js?v=1372" defer></script>
+<script src="/static/js/anonymous-analytics-v13.js" defer></script>
 </body>
 </html>

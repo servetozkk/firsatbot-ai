@@ -1,0 +1,87 @@
+{% extends "public_base.html" %}
+{% block title %}{{ seo_title }}
+<script>
+(function(){
+ const productId=String({{ product.id }}), key='firsatai_global_favorites_v1';
+ const btn=document.getElementById('globalFavoriteBtn');
+ function load(){try{return JSON.parse(localStorage.getItem(key)||'[]')}catch(e){return []}}
+ function paint(){const active=load().some(x=>String(x.id)===productId);btn.textContent=active?'♥ Favorilerde':'♡ Favoriye ekle';btn.classList.toggle('action-primary',active);btn.classList.toggle('action-soft',!active)}
+ btn?.addEventListener('click',()=>{let items=load();const i=items.findIndex(x=>String(x.id)===productId);if(i>=0)items.splice(i,1);else items.push({id:productId,title:btn.dataset.title,url:location.pathname,created_at:new Date().toISOString()});localStorage.setItem(key,JSON.stringify(items));paint()});paint();
+ const raw={{ product.price_history.points|tojson }}; const canvas=document.getElementById('priceHistoryChart'); if(!canvas||!raw.length)return;
+ const ctx=canvas.getContext('2d'); function draw(){const dpr=window.devicePixelRatio||1,w=canvas.clientWidth,h=canvas.clientHeight;canvas.width=w*dpr;canvas.height=h*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);const vals=raw.map(x=>Number(x.price)),min=Math.min(...vals),max=Math.max(...vals),pad=34,span=Math.max(1,max-min);ctx.strokeStyle='#e2e8f0';ctx.lineWidth=1;for(let i=0;i<5;i++){const y=pad+(h-pad*2)*i/4;ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(w-pad,y);ctx.stroke()}ctx.strokeStyle='#4f46e5';ctx.lineWidth=3;ctx.beginPath();raw.forEach((p,i)=>{const x=pad+(w-pad*2)*(raw.length===1?.5:i/(raw.length-1));const y=h-pad-(Number(p.price)-min)/span*(h-pad*2);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke();ctx.fillStyle='#475569';ctx.font='12px sans-serif';ctx.fillText(min.toLocaleString('tr-TR')+' TL',4,h-pad);ctx.fillText(max.toLocaleString('tr-TR')+' TL',4,pad)} draw();addEventListener('resize',draw);
+})();
+</script>
+
+{% endblock %}
+{% block extra_head %}
+<style>
+.gp-wrap{max-width:1260px;margin:auto}.gp-hero{display:grid;grid-template-columns:300px 1fr;gap:28px;background:#fff;border:1px solid #e5e7eb;border-radius:24px;padding:25px}.gp-image{height:280px;display:flex;align-items:center;justify-content:center}.gp-image img{max-height:260px;max-width:100%;object-fit:contain}.gp-title{font-size:clamp(1.7rem,4vw,2.7rem);font-weight:950;letter-spacing:-.045em}.gp-price{font-size:2.1rem;font-weight:950;color:#111827}.gp-summary{display:flex;gap:9px;flex-wrap:wrap;margin:14px 0}.gp-chip{padding:8px 11px;border-radius:999px;background:#eef2ff;color:#4338ca;font-weight:850;font-size:.8rem}.gp-chip.green{background:#dcfce7;color:#166534}.offer-section{margin-top:22px}.offer-section h2{font-weight:950}.offer-list{display:grid;gap:12px}.offer{display:grid;grid-template-columns:1fr 170px 130px 160px;gap:15px;align-items:center;background:#fff;border:1px solid #e5e7eb;border-radius:17px;padding:17px}.offer.best{border:2px solid #22c55e;background:#f7fff9}.offer-store{font-size:1rem;font-weight:950;text-transform:capitalize}.offer-title{font-size:.78rem;color:#64748b;margin-top:4px}.offer-price{font-size:1.25rem;font-weight:950;text-align:right}.offer-stock{font-size:.78rem;font-weight:850;color:#166534}.offer-go{background:#4f46e5;color:#fff;text-decoration:none;padding:11px 14px;border-radius:11px;text-align:center;font-weight:900}.best-label{display:inline-block;background:#16a34a;color:#fff;border-radius:999px;padding:4px 8px;font-size:.68rem;font-weight:900}.variants{background:#fff;border:1px solid #e5e7eb;border-radius:18px;padding:17px;margin-top:18px}.variant-list{display:flex;gap:8px;flex-wrap:wrap}.variant{border:1px solid #dbe2ea;border-radius:10px;padding:8px 10px;font-size:.78rem}.ai-panel{margin-top:18px;background:linear-gradient(135deg,#111827,#312e81);color:#fff;border-radius:22px;padding:21px}.ai-head{display:flex;justify-content:space-between;gap:18px;align-items:center}.ai-score{font-size:2rem;font-weight:950}.ai-level{color:#c4b5fd;font-weight:850}.ai-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}.ai-card{background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.13);border-radius:14px;padding:14px}.ai-card h3{font-size:.9rem;font-weight:900}.ai-card ul{padding-left:18px;margin-bottom:0}.ai-card li{margin:5px 0;font-size:.8rem}.ai-warning{color:#fde68a}.ai-good{color:#bbf7d0}@media(max-width:800px){.gp-hero{grid-template-columns:1fr}.offer{grid-template-columns:1fr}.offer-price{text-align:left}.ai-grid{grid-template-columns:1fr}}
+.action-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.action-btn{border:0;border-radius:12px;padding:11px 15px;font-weight:900;cursor:pointer;text-decoration:none}.action-primary{background:#4f46e5;color:#fff}.action-soft{background:#eef2ff;color:#4338ca}.history-panel{margin-top:18px;background:#fff;border:1px solid #e5e7eb;border-radius:20px;padding:20px}.history-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}.history-kpi{background:#f8fafc;border-radius:13px;padding:12px}.history-kpi small{display:block;color:#64748b}.history-kpi strong{font-size:1.05rem}.chart-wrap{height:270px;position:relative}.chart-wrap canvas{width:100%;height:100%}.trend-down{color:#15803d}.trend-up{color:#b91c1c}@media(max-width:700px){.history-kpis{grid-template-columns:repeat(2,1fr)}}</style>
+{% endblock %}
+{% block content %}
+<div class="gp-wrap">
+<div style="margin-bottom:12px"><a href="/fiyat-karsilastirma">← Global kataloğa dön</a></div>
+<section class="gp-hero">
+<div class="gp-image">{% if product.primary_image %}<img src="{{ product.primary_image }}" alt="{{ product.canonical_name }}" fetchpriority="high">{% else %}<div style="font-size:5rem">📦</div>{% endif %}</div>
+<div>
+<div style="font-size:.78rem;color:#6366f1;font-weight:900;text-transform:uppercase">{{ product.normalized_brand or 'Global ürün' }}</div>
+<h1 class="gp-title">{{ product.canonical_name }}</h1>
+<div class="gp-price">{{ product.best_price_text }}</div>
+<div style="color:#64748b">En düşük güncel mağaza fiyatı</div>
+<div class="gp-summary"><span class="gp-chip">{{ product.store_count }} mağaza</span><span class="gp-chip">{{ product.offer_count }} teklif</span><span class="gp-chip">{{ product.variants|length }} varyant</span>{% if product.saving_amount>0 %}<span class="gp-chip green">{{ product.saving_amount_text }} tasarruf · %{{ product.saving_percent }}</span>{% endif %}</div>
+{% if product.ram_gb or product.storage_gb or product.model_code %}<div style="color:#475569">{% if product.ram_gb %}<strong>{{ product.ram_gb }} GB RAM</strong>{% endif %}{% if product.storage_gb %} · <strong>{{ product.storage_gb }} GB depolama</strong>{% endif %}{% if product.model_code %} · Model: {{ product.model_code }}{% endif %}</div>{% endif %}
+
+<div class="action-row">
+<button id="globalFavoriteBtn" class="action-btn action-soft" data-product-id="{{ product.id }}" data-title="{{ product.canonical_name|e }}">♡ Favoriye ekle</button>
+<a class="action-btn action-primary" href="/alarmlar?global_product_id={{ product.id }}&target={{ product.best_price }}">🔔 Fiyat alarmı kur</a>
+<a class="action-btn action-soft" href="#price-history">📉 Fiyat geçmişi</a>
+</div>
+</div>
+</section>
+
+{% set ai = product.ai_insight %}
+{% if ai and ai.available %}
+<section class="ai-panel">
+<div class="ai-head">
+<div>
+<div style="font-size:.75rem;color:#c4b5fd;font-weight:900">FIRSATAI VERİ GÜVENİ VE AKILLI ÖZET</div>
+<h2 style="margin:4px 0;font-weight:950">Karşılaştırma güveni</h2>
+<div style="font-size:.78rem;color:#cbd5e1">Puan; kimlik alanları, mağaza kanıtları, fiyat tutarlılığı ve varyant verilerinden hesaplanır.</div>
+</div>
+<div style="text-align:right"><div class="ai-score">{{ ai.quality_score }}/100</div><div class="ai-level">{{ ai.quality_level }}</div></div>
+</div>
+<div class="ai-grid">
+<div class="ai-card"><h3>Teknik özet</h3><ul>{% for item in ai.technical_summary %}<li>{{ item }}</li>{% else %}<li>Teknik alanlar henüz yetersiz.</li>{% endfor %}</ul></div>
+<div class="ai-card"><h3>Avantajlar</h3><ul class="ai-good">{% for item in ai.advantages %}<li>{{ item }}</li>{% else %}<li>Belirgin ek avantaj tespit edilmedi.</li>{% endfor %}</ul></div>
+<div class="ai-card"><h3>Kontrol uyarıları</h3><ul class="ai-warning">{% for item in ai.warnings %}<li>{{ item }}</li>{% else %}<li>Belirgin veri kalitesi uyarısı yok.</li>{% endfor %}</ul></div>
+</div>
+</section>
+{% endif %}
+
+
+<section id="price-history" class="history-panel">
+<div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap"><div><h2 style="font-weight:950;margin:0">Fiyat geçmişi</h2><p style="color:#64748b;margin:4px 0">Son 90 gündeki kayıtlı mağaza fiyatları</p></div><span class="gp-chip {% if product.price_history.summary.trend=='down' %}green{% endif %}">{% if product.price_history.summary.trend=='down' %}↓ Fiyat düştü{% elif product.price_history.summary.trend=='up' %}↑ Fiyat yükseldi{% else %}→ Fiyat stabil{% endif %} · %{{ product.price_history.summary.change_percent }}</span></div>
+<div class="history-kpis"><div class="history-kpi"><small>Güncel en iyi</small><strong>{{ product.price_history.summary.current_best_text }}</strong></div><div class="history-kpi"><small>90 gün en düşük</small><strong>{{ product.price_history.summary.lowest_text }}</strong></div><div class="history-kpi"><small>90 gün en yüksek</small><strong>{{ product.price_history.summary.highest_text }}</strong></div><div class="history-kpi"><small>Ortalama</small><strong>{{ product.price_history.summary.average_text }}</strong></div></div>
+{% if product.price_history.summary.near_historical_low %}<div class="alert alert-success">Güncel fiyat, kayıtlı tarihi dip seviyenin en fazla %5 üzerinde.</div>{% endif %}
+<div class="chart-wrap"><canvas id="priceHistoryChart" aria-label="Fiyat geçmişi grafiği"></canvas></div>
+</section>
+
+{% if product.variants %}
+<section class="variants"><h3 style="font-weight:900">Varyantlar</h3><div class="variant-list">{% for v in product.variants %}<span class="variant">{{ v.color or 'Standart' }}{% if v.network %} · {{ v.network }}{% endif %}{% if v.model_code %} · {{ v.model_code }}{% endif %}</span>{% endfor %}</div></section>
+{% endif %}
+<section class="offer-section">
+<h2>Mağaza fiyatları</h2>
+<p style="color:#64748b">Fiyatlar en düşükten yükseğe sıralanır.</p>
+<div class="offer-list">
+{% for o in product.offers %}
+<article class="offer {% if o.is_best %}best{% endif %}">
+<div><div class="offer-store">{{ o.store_code }} {% if o.is_best %}<span class="best-label">EN UCUZ</span>{% endif %}</div><div class="offer-title">{{ o.title }}</div></div>
+<div><div class="offer-stock">{{ o.stock_label }}</div>{% if o.seller %}<div style="font-size:.75rem;color:#64748b">{{ o.seller }}</div>{% endif %}</div>
+<div class="offer-price">{{ o.price_text }}{% if o.old_price_text %}<div style="font-size:.72rem;color:#94a3b8;text-decoration:line-through">{{ o.old_price_text }}</div>{% endif %}</div>
+<a class="offer-go" href="{{ o.source_url }}" target="_blank" rel="nofollow sponsored noopener">Mağazaya git</a>
+</article>
+{% endfor %}
+</div>
+</section>
+</div>
+{% endblock %}

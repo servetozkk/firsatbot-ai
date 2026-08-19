@@ -1,0 +1,46 @@
+:root{--v9-primary:#6d3df5;--v9-primary-2:#3d2ac7;--v9-ink:#10162a;--v9-muted:#69758f;--v9-line:#e4e8f1;--v9-bg:#f5f7fc;--v9-card:#fff;--v9-radius:22px;--v9-shadow:0 14px 36px rgba(26,34,66,.09)}
+/* Ortak sayfa kabuğu */
+.comparison-page,.compare-page{color:var(--v9-ink)}
+.comparison-page .section-card,.compare-page .compare-card{border:1px solid var(--v9-line)!important;border-radius:var(--v9-radius)!important;box-shadow:var(--v9-shadow)!important}
+/* Ürün detay */
+.comparison-page .comparison-hero{background:linear-gradient(135deg,#101735 0%,#312e81 48%,#7c3aed 100%)!important;border-radius:28px!important;box-shadow:0 20px 50px rgba(71,45,180,.22)}
+.comparison-page .hero-product-image{width:220px!important;height:220px!important;border-radius:24px!important;box-shadow:0 15px 35px rgba(0,0,0,.15)}
+.comparison-page .offer-row{border-radius:18px!important}
+.comparison-page .offer-row.best-offer{box-shadow:0 12px 28px rgba(34,197,94,.12)}
+.comparison-page .stat-card{border:1px solid var(--v9-line)!important;box-shadow:0 10px 28px rgba(26,34,66,.07)!important}
+.comparison-page h1,.comparison-page h2,.comparison-page h3{letter-spacing:-.02em}
+/* Karşılaştırma */
+.compare-page .compare-hero{background:linear-gradient(135deg,#111936,#38278d 52%,#7c3aed)!important;border-radius:28px!important;box-shadow:0 20px 50px rgba(71,45,180,.20)}
+.compare-page .product-head{border-radius:20px!important;padding:1.45rem!important;box-shadow:0 8px 24px rgba(26,34,66,.06)}
+.compare-page .product-head.overall-winner{border-color:#22c55e!important;box-shadow:0 14px 34px rgba(34,197,94,.13)}
+.compare-page .product-image,.compare-page .product-placeholder{width:145px!important;height:145px!important;border-radius:18px!important}
+.compare-page .price-value{font-size:1.6rem!important}
+.compare-page .score-box{border-radius:18px!important;box-shadow:0 8px 24px rgba(26,34,66,.06)!important}
+.compare-page .compare-toolbar{background:#fbfbfe!important;border-radius:18px 18px 0 0}
+.compare-page .comparison-table{font-size:.92rem}
+.compare-page .comparison-table th{background:#f4f1ff!important;color:#4c36ad!important}
+.compare-page .section-title{background:linear-gradient(90deg,#eeeaff,#f8f7ff)!important;color:#4e37b7!important;border-radius:12px}
+.compare-page .winner-cell{background:#ecfdf5!important}.compare-page .loser-cell{background:#fff4f5!important}
+@media(max-width:768px){.comparison-page .comparison-hero{padding:1.25rem!important}.comparison-page .hero-product-image{width:160px!important;height:160px!important}.compare-page .product-image,.compare-page .product-placeholder{width:120px!important;height:120px!important}}
+
+/* v9.1 tum kullanici ekranlari mobil uyum */
+@media(max-width:980px){
+  .comparison-page .comparison-grid,.comparison-page .hero-grid,.compare-page .compare-products,.compare-page .comparison-grid{grid-template-columns:1fr!important}
+  .comparison-page .comparison-hero,.compare-page .compare-hero{padding:1.35rem!important}
+  .comparison-page .offer-row{grid-template-columns:1fr auto!important;gap:.7rem!important}
+  .compare-page .comparison-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .compare-page .comparison-table{min-width:760px}
+}
+@media(max-width:640px){
+  .comparison-page,.compare-page{overflow-x:hidden}
+  .comparison-page .comparison-hero,.compare-page .compare-hero{border-radius:18px!important;margin-inline:0!important}
+  .comparison-page .hero-product-image{width:132px!important;height:132px!important}
+  .comparison-page .offer-row{display:grid!important;grid-template-columns:1fr!important;padding:1rem!important}
+  .comparison-page .offer-row .btn,.comparison-page .offer-row button,.comparison-page .offer-row a{width:100%!important;justify-content:center!important}
+  .comparison-page .stat-grid,.comparison-page .summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .compare-page .product-head{padding:1rem!important}
+  .compare-page .product-image,.compare-page .product-placeholder{width:96px!important;height:96px!important}
+  .compare-page .price-value{font-size:1.25rem!important}
+  .compare-page .compare-toolbar{display:flex!important;flex-wrap:wrap!important;gap:.5rem!important;padding:.75rem!important}
+  .compare-page .compare-toolbar>*{flex:1 1 140px!important}
+}

@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 from collections import OrderedDict
+import json
+import re
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
 
 from fastapi import (
     APIRouter,
+    Cookie,
     HTTPException,
     Query,
     Request,
@@ -17,19 +21,47 @@ from sqlalchemy import or_
 from app.database.database import SessionLocal
 from app.database.models import (
     ProductFeature,
+    ProductDB,
     ProductFeatureValue,
     ProductGroup,
+    ProductOffer,
+    ProductImage,
+    RecentlyViewed,
+    GlobalProduct,
 )
+from app.services.seo_url_service import canonical_product_url, product_url
+from app.services.schema_org_service import (
+    breadcrumb_schema,
+    dumps as schema_dumps,
+    product_schema,
+    website_schema,
+)
+from app.services.product_image_service import parse_image_gallery, dedupe_image_urls
 from app.services.ai_comparison_service import (
     build_ai_comparison_analysis,
 )
 from app.services.comparison_service import (
     get_product_comparison,
 )
+from app.services.comparison_v2_service import (
+    ENGINE_VERSION as COMPARISON_V2_VERSION,
+    build_comparison_matrix,
+    build_product_metrics,
+    normalize_selected_keys,
+)
+from app.services.global_comparison_service import get_global_product_comparison
+from app.services.global_price_history_service import get_global_price_history
 from app.services.history_service import (
     get_product_price_history,
 )
 from app.services.price_analysis_service import build_price_analysis
+from app.services.price_comparison_core_v21_service import get_product_price_comparison
+from app.services.deal_intelligence_v13_service import build_deal_intelligence_v13
+from app.services.ai_purchase_assistant_service import build_ai_purchase_assistant
+from app.services.product_alternative_service import get_product_alternatives
+from app.services.smart_recommendation_service import get_smart_recommendations
+from app.services.community_service import get_product_community
+from app.web.account_routes import _current_user
 
 router = APIRouter(
     prefix="/karsilastir",
@@ -43,6 +75,149 @@ templates = Jinja2Templates(
     directory=str(BASE_DIR / "templates"),
 )
 
+
+def _extract_image_urls(value: Any) -> list[str]:
+    """Tek bir URL, JSON dizi veya ayraçlı metinden görsel URL'leri çıkarır."""
+    if value is None:
+        return []
+    if isinstance(value, (list, tuple, set)):
+        result: list[str] = []
+        for item in value:
+            result.extend(_extract_image_urls(item))
+        return result
+
+    text = str(value).strip()
+    if not text:
+        return []
+
+    if text.startswith("[") or text.startswith("{"):
+        try:
+            parsed = json.loads(text)
+            if isinstance(parsed, dict):
+                parsed = parsed.get("images") or parsed.get("urls") or parsed.get("gallery") or []
+            return _extract_image_urls(parsed)
+        except (json.JSONDecodeError, TypeError):
+            pass
+
+    # Bazı scraper çıktıları virgül, satır veya | ile birden fazla URL saklayabilir.
+    candidates = re.split(r"[\n\r|;]+|,(?=\s*https?://)", text)
+    return [item.strip().strip('"\'') for item in candidates if item.strip()]
+
+
+def build_product_gallery(db: Any, group: ProductGroup, limit: int = 60) -> list[str]:
+    """Ürün grubu ve bütün mağaza kayıtlarından mümkün olan tüm farklı görselleri oluşturur."""
+    candidates: list[str] = []
+    if group.image:
+        candidates.append(group.image)
+
+    product_ids = [row[0] for row in db.query(ProductOffer.product_id).filter(ProductOffer.group_id == group.id).all()]
+    if product_ids:
+        persistent = (db.query(ProductImage.image_url)
+                      .filter(ProductImage.product_id.in_(product_ids))
+                      .order_by(ProductImage.is_primary.desc(), ProductImage.sort_order.asc())
+                      .all())
+        candidates.extend(row[0] for row in persistent if row[0])
+
+    rows = (
+        db.query(ProductDB.image, ProductDB.image_gallery)
+        .join(ProductOffer, ProductOffer.product_id == ProductDB.id)
+        .filter(ProductOffer.group_id == group.id)
+        .order_by(ProductOffer.is_best_offer.desc(), ProductOffer.updated_at.desc())
+        .all()
+    )
+    for image, image_gallery in rows:
+        if image:
+            candidates.append(image)
+        candidates.extend(parse_image_gallery(image_gallery))
+
+    # Eski kayıtlarda image alanına JSON veya ayraçlı liste yazılmış olabilir.
+    expanded: list[str] = []
+    for value in candidates:
+        expanded.extend(_extract_image_urls(value))
+    return dedupe_image_urls(expanded, limit=limit)
+
+
+
+def format_offer_freshness(value: Any) -> str:
+    """Teklif kontrol zamanını kısa ve anlaşılır biçimde gösterir."""
+    if value is None:
+        return "Güncellik bilgisi yok"
+
+    try:
+        checked_at = value
+        if isinstance(value, str):
+            checked_at = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        now = datetime.now(checked_at.tzinfo) if getattr(checked_at, "tzinfo", None) else datetime.now()
+        seconds = max(0, int((now - checked_at).total_seconds()))
+    except (TypeError, ValueError, AttributeError):
+        return "Güncellik bilgisi yok"
+
+    if seconds < 60:
+        return "Az önce kontrol edildi"
+    minutes = seconds // 60
+    if minutes < 60:
+        return f"{minutes} dakika önce kontrol edildi"
+    hours = minutes // 60
+    if hours < 24:
+        return f"{hours} saat önce kontrol edildi"
+    days = hours // 24
+    return f"{days} gün önce kontrol edildi"
+
+
+def build_offer_status(offer: dict[str, Any]) -> dict[str, str]:
+    """Mevcut teklif verisinden stok ve güven metinleri üretir."""
+    availability = str(offer.get("availability") or "Bilinmiyor").strip()
+    normalized = availability.casefold()
+    if any(term in normalized for term in ("stokta", "mevcut", "available", "var")):
+        stock_code = "in-stock"
+        stock_label = "Stokta"
+    elif any(term in normalized for term in ("tükendi", "yok", "out of stock")):
+        stock_code = "out-of-stock"
+        stock_label = "Stokta yok"
+    else:
+        stock_code = "unknown"
+        stock_label = availability or "Stok bilgisi yok"
+
+    rating = offer.get("rating")
+    review_count = int(offer.get("review_count") or 0)
+    if rating is not None:
+        trust_label = f"{float(rating):.1f} mağaza puanı"
+        if review_count:
+            trust_label += f" · {review_count:,} değerlendirme".replace(",", ".")
+    else:
+        trust_label = "Mağaza puanı henüz yok"
+
+    return {
+        "stock_code": stock_code,
+        "stock_label": stock_label,
+        "trust_label": trust_label,
+        "freshness": format_offer_freshness(offer.get("last_checked_at") or offer.get("updated_at")),
+    }
+
+
+def resolve_store_logo(store_code: Any, store_name: Any) -> str | None:
+    """Bilinen mağazalar için yerel logo yolunu döndürür."""
+    normalized = " ".join(
+        str(store_code or store_name or "").strip().lower().split()
+    )
+    compact = normalized.replace(" ", "").replace("-", "").replace("_", "")
+
+    aliases = {
+        "trendyol": "trendyol.svg",
+        "hepsiburada": "hepsiburada.svg",
+        "hb": "hepsiburada.svg",
+        "amazon": "amazon.svg",
+        "amazontr": "amazon.svg",
+        "teknosa": "teknosa.svg",
+        "mediamarkt": "mediamarkt.svg",
+        "n11": "n11.svg",
+        "ciceksepeti": "ciceksepeti.svg",
+        "çiçeksepeti": "ciceksepeti.svg",
+        "pazarama": "pazarama.svg",
+    }
+
+    filename = aliases.get(compact)
+    return f"/static/img/stores/{filename}" if filename else None
 
 def format_chart_date(
     raw_date: Optional[str],
@@ -388,12 +563,171 @@ def get_grouped_product_features(
     ]
 
 
+
+FEATURE_SECTION_META: dict[str, dict[str, Any]] = {
+    "genel": {"label": "Genel", "icon": "📦", "order": 0},
+    "temel bilgiler": {"label": "Temel Bilgiler", "icon": "📋", "order": 5},
+    "ekran": {"label": "Ekran", "icon": "🖥️", "order": 10},
+    "görüntü": {"label": "Görüntü", "icon": "🖥️", "order": 10},
+    "işlemci": {"label": "İşlemci ve Performans", "icon": "⚙️", "order": 20},
+    "performans": {"label": "İşlemci ve Performans", "icon": "⚙️", "order": 20},
+    "bellek": {"label": "Bellek ve Depolama", "icon": "💾", "order": 30},
+    "depolama": {"label": "Bellek ve Depolama", "icon": "💾", "order": 30},
+    "kamera": {"label": "Kamera", "icon": "📷", "order": 40},
+    "batarya": {"label": "Batarya ve Şarj", "icon": "🔋", "order": 50},
+    "pil": {"label": "Batarya ve Şarj", "icon": "🔋", "order": 50},
+    "bağlantı": {"label": "Bağlantılar", "icon": "📡", "order": 60},
+    "kablosuz": {"label": "Bağlantılar", "icon": "📡", "order": 60},
+    "ses": {"label": "Ses", "icon": "🎧", "order": 70},
+    "tasarım": {"label": "Tasarım ve Fiziksel Özellikler", "icon": "📐", "order": 80},
+    "fiziksel": {"label": "Tasarım ve Fiziksel Özellikler", "icon": "📐", "order": 80},
+    "diğer": {"label": "Diğer Özellikler", "icon": "✨", "order": 90},
+}
+
+CATEGORY_HEADLINE_FEATURES: dict[str, tuple[str, ...]] = {
+    "telefon": ("ekran", "işlemci", "ram", "depolama", "kamera", "batarya"),
+    "smartphone": ("ekran", "işlemci", "ram", "depolama", "kamera", "batarya"),
+    "laptop": ("işlemci", "ekran kartı", "ram", "ssd", "ekran", "yenileme"),
+    "notebook": ("işlemci", "ekran kartı", "ram", "ssd", "ekran", "yenileme"),
+    "monitor": ("ekran boyutu", "çözünürlük", "panel", "yenileme", "tepki", "hdr"),
+    "televizyon": ("ekran boyutu", "çözünürlük", "panel", "yenileme", "hdr", "smart"),
+    "kulaklık": ("bağlantı", "anc", "mikrofon", "pil", "bluetooth", "ağırlık"),
+}
+
+def _section_meta(section_name: str) -> dict[str, Any]:
+    normalized = (section_name or "Genel").strip().casefold()
+    for key, meta in FEATURE_SECTION_META.items():
+        if key in normalized:
+            return meta
+    return {"label": section_name or "Genel", "icon": "🔹", "order": 85}
+
+def build_technical_feature_view(
+    *,
+    group: ProductGroup,
+    feature_sections: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Teknik özellikleri düzenli, özetlenebilir ve eksik veriye dayanıklı hale getirir."""
+    known_names = {
+        str(feature.get("name") or "").strip().casefold()
+        for section in feature_sections
+        for feature in section.get("features", [])
+    }
+
+    general_fallbacks = [
+        ("Marka", group.brand),
+        ("Model", group.model),
+        ("Kategori", group.category),
+    ]
+    fallback_features = [
+        {
+            "id": None,
+            "code": f"fallback_{name.casefold()}",
+            "name": name,
+            "value": str(value).strip(),
+            "value_type": "text",
+            "comparison_type": "neutral",
+            "is_fallback": True,
+        }
+        for name, value in general_fallbacks
+        if value and name.casefold() not in known_names
+    ]
+
+    sections = [
+        {
+            **section,
+            "features": [dict(feature, is_fallback=feature.get("is_fallback", False)) for feature in section.get("features", [])],
+        }
+        for section in feature_sections
+    ]
+    if fallback_features:
+        sections.insert(0, {"name": "Temel Bilgiler", "features": fallback_features})
+
+    enriched_sections: list[dict[str, Any]] = []
+    for section in sections:
+        meta = _section_meta(section.get("name") or "Genel")
+        enriched_sections.append({
+            "name": meta["label"],
+            "icon": meta["icon"],
+            "order": meta["order"],
+            "features": section.get("features", []),
+        })
+
+    enriched_sections.sort(key=lambda item: (item["order"], item["name"]))
+    all_features = [feature for section in enriched_sections for feature in section["features"]]
+    category = (group.category or "").strip().casefold()
+    preferred_terms: tuple[str, ...] = ()
+    for key, terms in CATEGORY_HEADLINE_FEATURES.items():
+        if key in category:
+            preferred_terms = terms
+            break
+
+    def feature_priority(feature: dict[str, Any]) -> tuple[int, str]:
+        haystack = f"{feature.get('code') or ''} {feature.get('name') or ''}".casefold()
+        for index, term in enumerate(preferred_terms):
+            if term in haystack:
+                return (index, str(feature.get("name") or ""))
+        return (100, str(feature.get("name") or ""))
+
+    headline_features = sorted(all_features, key=feature_priority)[:6]
+    real_feature_count = sum(1 for feature in all_features if not feature.get("is_fallback"))
+    section_count = len(enriched_sections)
+    if real_feature_count >= 18:
+        coverage_label, coverage_level = "Çok detaylı", "excellent"
+    elif real_feature_count >= 10:
+        coverage_label, coverage_level = "İyi", "good"
+    elif real_feature_count >= 4:
+        coverage_label, coverage_level = "Temel", "basic"
+    else:
+        coverage_label, coverage_level = "Geliştiriliyor", "limited"
+
+    return {
+        "sections": enriched_sections,
+        "headline_features": headline_features,
+        "feature_count": len(all_features),
+        "real_feature_count": real_feature_count,
+        "section_count": section_count,
+        "coverage_label": coverage_label,
+        "coverage_level": coverage_level,
+    }
+
+def _normalize_compare_display_value(
+    *,
+    feature_name: str,
+    display_value: str,
+    product_name: str = "",
+) -> str:
+    """Karşılaştırmada eski scraper birim hatalarını güvenli biçimde düzeltir.
+
+    Özellikle bazı eski kayıtlarda 512 GB değerinin birimi yanlışlıkla TB olarak
+    saklanmıştır. Ürün başlığında açıkça 512GB/512G geçiyorsa yalnızca gösterim
+    katmanında düzeltilir; veritabanı değiştirilmez.
+    """
+    import re
+
+    name = (feature_name or "").casefold()
+    value = (display_value or "").strip()
+    product = (product_name or "").casefold().replace(" ", "")
+
+    if any(token in name for token in ("depolama", "storage", "ssd", "kapasite")):
+        match = re.fullmatch(r"(\d+(?:[.,]\d+)?)\s*tb", value, flags=re.I)
+        if match:
+            number = float(match.group(1).replace(",", "."))
+            # 64/128/256/512 TB tüketici ürünlerinde gerçekçi değildir. Başlıkta
+            # aynı kapasitenin GB/G biçimi geçiyorsa yanlış birimi düzeltiriz.
+            integer = int(number) if number.is_integer() else None
+            if integer in {64, 128, 256, 512} and (f"{integer}gb" in product or f"{integer}g" in product):
+                return f"{integer} GB"
+    return value
+
+
 def _get_product_feature_map(
     *,
     db: Any,
     product_group_id: int,
 ) -> dict[str, dict[str, Any]]:
     """Karşılaştırma ekranı için özellikleri kod bazında hazırlar."""
+    product_group = db.query(ProductGroup).filter(ProductGroup.id == product_group_id).first()
+    product_name = product_group.canonical_name if product_group is not None else ""
     rows = (
         db.query(ProductFeature, ProductFeatureValue)
         .join(
@@ -421,6 +755,11 @@ def _get_product_feature_map(
         display_value = _format_feature_value(feature, value)
         if display_value is None:
             continue
+        display_value = _normalize_compare_display_value(
+            feature_name=feature.name or "",
+            display_value=display_value,
+            product_name=product_name,
+        )
 
         raw_comparable: Any = None
         value_type = (feature.value_type or "text").strip().lower()
@@ -829,177 +1168,50 @@ def product_groups_dashboard(
 )
 def compare_product_groups(
     request: Request,
+    products: list[str] = Query(default=[]),
     left: Optional[str] = Query(default=None),
     right: Optional[str] = Query(default=None),
 ):
     db = SessionLocal()
-
     try:
         candidate_groups = (
             db.query(ProductGroup)
-            .order_by(
-                ProductGroup.category.asc(),
-                ProductGroup.brand.asc(),
-                ProductGroup.canonical_name.asc(),
-            )
+            .order_by(ProductGroup.category.asc(), ProductGroup.brand.asc(), ProductGroup.canonical_name.asc())
             .all()
         )
-
-        left_group = None
-        right_group = None
-
-        if left:
-            left_group = (
-                db.query(ProductGroup)
-                .filter(ProductGroup.group_key == left)
-                .first()
-            )
-
-        if right:
-            right_group = (
-                db.query(ProductGroup)
-                .filter(ProductGroup.group_key == right)
-                .first()
-            )
-
-        comparison_sections: list[dict[str, Any]] = []
-        left_summary = None
-        right_summary = None
-
-        total_feature_count = 0
-        different_feature_count = 0
-        equal_feature_count = 0
-        comparable_feature_count = 0
-        left_win_count = 0
-        right_win_count = 0
-
-        left_advantage_percent = 0
-        right_advantage_percent = 0
-        general_winner = None
-        general_winner_name = None
-        price_winner = None
-
-        if left_group and right_group:
-            left_features = _get_product_feature_map(
-                db=db,
-                product_group_id=left_group.id,
-            )
-            right_features = _get_product_feature_map(
-                db=db,
-                product_group_id=right_group.id,
-            )
-
-            comparison_sections = build_feature_comparison_rows(
-                left_features=left_features,
-                right_features=right_features,
-            )
-
-            flat_rows = [
-                row
-                for section in comparison_sections
-                for row in section["rows"]
-            ]
-
-            total_feature_count = len(flat_rows)
-            different_feature_count = sum(
-                1
-                for row in flat_rows
-                if row["is_different"]
-            )
-            equal_feature_count = sum(
-                1
-                for row in flat_rows
-                if row["is_equal"]
-            )
-            comparable_feature_count = sum(
-                1
-                for row in flat_rows
-                if row["is_comparable"]
-            )
-            left_win_count = sum(
-                1
-                for row in flat_rows
-                if row["winner"] == "left"
-            )
-            right_win_count = sum(
-                1
-                for row in flat_rows
-                if row["winner"] == "right"
-            )
-
-            decided_feature_count = left_win_count + right_win_count
-            if decided_feature_count:
-                left_advantage_percent = round(
-                    left_win_count / decided_feature_count * 100,
-                    1,
-                )
-                right_advantage_percent = round(
-                    right_win_count / decided_feature_count * 100,
-                    1,
-                )
-
-            if left_win_count > right_win_count:
-                general_winner = "left"
-                general_winner_name = left_group.canonical_name
-            elif right_win_count > left_win_count:
-                general_winner = "right"
-                general_winner_name = right_group.canonical_name
-            elif comparable_feature_count > 0:
-                general_winner = "draw"
-                general_winner_name = "Berabere"
-
-            left_summary = get_product_comparison(
-                db=db,
-                identity_key=left_group.group_key,
-            )
-            right_summary = get_product_comparison(
-                db=db,
-                identity_key=right_group.group_key,
-            )
-
-            left_price = (
-                left_summary.get("best_price")
-                if left_summary
-                else None
-            )
-            right_price = (
-                right_summary.get("best_price")
-                if right_summary
-                else None
-            )
-
-            if left_price is not None and right_price is not None:
-                if left_price < right_price:
-                    price_winner = "left"
-                elif right_price < left_price:
-                    price_winner = "right"
-
+        selected_keys = normalize_selected_keys(products, left, right)
+        selected_groups = []
+        for key in selected_keys:
+            group = db.query(ProductGroup).filter(ProductGroup.group_key == key).first()
+            if group is not None:
+                selected_groups.append(group)
+        feature_maps = [
+            _get_product_feature_map(db=db, product_group_id=group.id)
+            for group in selected_groups
+        ]
+        summaries = [
+            get_product_comparison(db=db, identity_key=group.group_key)
+            for group in selected_groups
+        ]
+        comparison_sections = build_comparison_matrix(feature_maps) if len(selected_groups) >= 2 else []
+        product_metrics = build_product_metrics(selected_groups, summaries, comparison_sections) if len(selected_groups) >= 2 else []
+        flat_rows = [row for section in comparison_sections for row in section["rows"]]
         return templates.TemplateResponse(
             request=request,
-            name="product_group_compare.html",
+            name="product_group_compare_v2.html",
             context={
                 "candidate_groups": candidate_groups,
-                "left_key": left or "",
-                "right_key": right or "",
-                "left_group": left_group,
-                "right_group": right_group,
-                "left_summary": left_summary,
-                "right_summary": right_summary,
+                "selected_keys": [g.group_key for g in selected_groups],
+                "selected_groups": selected_groups,
+                "product_metrics": product_metrics,
                 "comparison_sections": comparison_sections,
-                "total_feature_count": total_feature_count,
-                "different_feature_count": different_feature_count,
-                "equal_feature_count": equal_feature_count,
-                "comparable_feature_count": comparable_feature_count,
-                "left_win_count": left_win_count,
-                "right_win_count": right_win_count,
-                "left_advantage_percent": left_advantage_percent,
-                "right_advantage_percent": right_advantage_percent,
-                "general_winner": general_winner,
-                "general_winner_name": general_winner_name,
-                "price_winner": price_winner,
+                "total_feature_count": len(flat_rows),
+                "different_feature_count": sum(1 for row in flat_rows if row["is_different"]),
+                "equal_feature_count": sum(1 for row in flat_rows if row["is_equal"]),
+                "comparison_v2_version": COMPARISON_V2_VERSION,
+                "max_products": 4,
             },
         )
-
     finally:
         db.close()
 
@@ -1012,6 +1224,8 @@ def compare_product_groups(
 def product_group_detail(
     request: Request,
     identity_key: str,
+    variant: int | None = None,
+    firsat_session: str | None = Cookie(default=None),
 ):
     db = SessionLocal()
 
@@ -1027,6 +1241,37 @@ def product_group_detail(
             .first()
         )
 
+        # Eski admin bağlantıları ürün kimliğini sayısal olarak gönderebiliyordu.
+        # Ürün kaydının bağlı olduğu grubu bularak bu bağlantıları geriye dönük destekle.
+        if group is None and identity_key.isdigit():
+            offer = (
+                db.query(ProductOffer)
+                .filter(ProductOffer.product_id == int(identity_key))
+                .first()
+            )
+            if offer is not None:
+                group = (
+                    db.query(ProductGroup)
+                    .filter(ProductGroup.id == offer.group_id)
+                    .first()
+                )
+
+        global_product = (
+            db.query(GlobalProduct)
+            .filter(GlobalProduct.identity_key == identity_key)
+            .first()
+        )
+
+        if group is None and global_product is not None:
+            group = (
+                db.query(ProductGroup)
+                .filter(
+                    ProductGroup.group_key
+                    == global_product.identity_key
+                )
+                .first()
+            )
+
         if group is None:
             raise HTTPException(
                 status_code=404,
@@ -1035,12 +1280,69 @@ def product_group_detail(
                 ),
             )
 
-        comparison = (
+        user = _current_user(db, firsat_session)
+        if user is not None:
+            recent = (
+                db.query(RecentlyViewed)
+                .filter(
+                    RecentlyViewed.user_id == user.id,
+                    RecentlyViewed.product_group_id == group.id,
+                )
+                .first()
+            )
+            if recent is None:
+                recent = RecentlyViewed(user_id=user.id, product_group_id=group.id)
+                db.add(recent)
+            else:
+                recent.viewed_at = datetime.utcnow()
+            db.commit()
+
+        legacy_comparison = (
             get_product_comparison(
                 db=db,
-                identity_key=identity_key,
+                identity_key=group.group_key,
             )
         )
+        global_comparison = get_global_product_comparison(
+            db=db,
+            identity_key=group.group_key,
+            selected_variant_id=variant,
+        )
+        comparison = global_comparison or legacy_comparison
+
+        # V21.2: Akakce/Cimri tipi katalog-first teklif katmani mevcut
+        # urun detay sayfasina dogrudan baglanir. Bu okuma canli scrape baslatmaz.
+        price_comparison_core = None
+        if global_product is not None:
+            selected_global_variant_id = (
+                global_comparison.get("selected_variant_id")
+                if global_comparison
+                else None
+            )
+            price_comparison_core = get_product_price_comparison(
+                db=db,
+                global_product_id=global_product.id,
+                stale_hours=6,
+                global_variant_id=selected_global_variant_id,
+            )
+            if price_comparison_core is not None and comparison is not None:
+                comparison = dict(comparison)
+                core_summary = price_comparison_core.get("summary", {})
+                comparison.update({
+                    "offers": price_comparison_core.get("offers", []),
+                    "offer_count": core_summary.get("offer_count", 0),
+                    "store_count": core_summary.get("store_count", 0),
+                    "best_price": core_summary.get("best_price"),
+                    "highest_price": core_summary.get("highest_price"),
+                    "saving_amount": core_summary.get("saving_amount", 0.0),
+                    "saving_percent": core_summary.get("saving_percent", 0.0),
+                    "best_store": core_summary.get("best_store"),
+                    "best_offer": price_comparison_core.get("best_offer"),
+                    "data_source": "price_comparison_core_v21_2",
+                    "global_product_id": global_product.id,
+                    "price_comparison_mode": price_comparison_core.get("data_mode"),
+                    "price_comparison_summary": core_summary,
+                })
 
         if comparison is None:
             raise HTTPException(
@@ -1051,11 +1353,28 @@ def product_group_detail(
                 ),
             )
 
-        history_data = (
+        legacy_history_data = (
             get_product_price_history(
                 db=db,
-                identity_key=identity_key,
+                identity_key=group.group_key,
             )
+        )
+        global_history_data = get_global_price_history(
+            db=db,
+            identity_key=group.group_key,
+            selected_variant_id=(
+                comparison.get("selected_variant_id")
+                if comparison.get("global_product_id")
+                else None
+            ),
+        )
+        history_data = (
+            global_history_data
+            if (
+                global_history_data
+                and global_history_data.get("price_record_count", 0) > 0
+            )
+            else legacy_history_data
         )
 
         if history_data is None:
@@ -1094,12 +1413,22 @@ def product_group_detail(
 
         price_analysis = build_price_analysis(
             db=db,
-            identity_key=identity_key,
+            identity_key=group.group_key,
         ) or {}
+
+        deal_intelligence_v13 = build_deal_intelligence_v13(
+            price_analysis=price_analysis,
+            ai_analysis=ai_analysis,
+            comparison=comparison,
+        )
 
         feature_sections = get_grouped_product_features(
             db=db,
             product_group_id=group.id,
+        )
+        technical_feature_view = build_technical_feature_view(
+            group=group,
+            feature_sections=feature_sections,
         )
 
         offers = comparison.get(
@@ -1107,13 +1436,26 @@ def product_group_detail(
             [],
         )
 
-        available_offers = [
-            offer
-            for offer in offers
-            if offer.get(
-                "is_available"
-            )
-        ]
+        core_has_fresh_offers = bool(
+            price_comparison_core
+            and price_comparison_core.get("summary", {}).get("fresh_offer_count")
+        )
+        available_offers = sorted(
+            [
+                offer
+                for offer in offers
+                if offer.get(
+                    "is_available"
+                )
+            ],
+            key=lambda offer: (
+                (0 if offer.get("freshness_code") == "FRESH" else 1)
+                if core_has_fresh_offers
+                else 0,
+                float(offer.get("total_price") or float("inf")),
+                str(offer.get("store") or ""),
+            ),
+        )
 
         unavailable_offers = [
             offer
@@ -1122,6 +1464,41 @@ def product_group_detail(
                 "is_available"
             )
         ]
+
+        for offer in available_offers + unavailable_offers:
+            offer["logo_url"] = resolve_store_logo(
+                offer.get("store_code"),
+                offer.get("store"),
+            )
+            offer.update(build_offer_status(offer))
+
+        best_offer = available_offers[0] if available_offers else None
+
+        purchase_assistant = build_ai_purchase_assistant(
+            comparison=comparison,
+            history_data=history_data,
+            ai_analysis=ai_analysis,
+            group=group,
+            feature_headlines=technical_feature_view["headline_features"],
+        )
+
+        alternatives = get_product_alternatives(
+            db=db,
+            current_group=group,
+            current_comparison=comparison,
+            limit=4,
+        )
+
+        community = get_product_community(db, group.id, user.id if user else None)
+
+        smart_recommendations = get_smart_recommendations(
+            db=db,
+            current_group=group,
+            current_comparison=comparison,
+            per_bucket=4,
+        )
+
+        product_gallery = build_product_gallery(db, group)
 
         return templates.TemplateResponse(
             request=request,
@@ -1134,6 +1511,7 @@ def product_group_detail(
     "available_offers": (
         available_offers
     ),
+    "best_offer": best_offer,
     "unavailable_offers": (
         unavailable_offers
     ),
@@ -1143,10 +1521,47 @@ def product_group_detail(
     ),
     "deal_badge": deal_badge,
     "price_analysis": price_analysis,
-    "feature_sections": feature_sections,
-    "feature_count": sum(
-        len(section["features"])
-        for section in feature_sections
+    "deal_intelligence_v13": deal_intelligence_v13,
+    "purchase_assistant": purchase_assistant,
+    "alternatives": alternatives,
+    "smart_recommendations": smart_recommendations,
+    "community": community,
+    "product_gallery": product_gallery,
+    "current_user": user,
+    "comparison_data_source": comparison.get("data_source", "legacy"),
+    "price_comparison_core": price_comparison_core,
+    "feature_sections": technical_feature_view["sections"],
+    "feature_headlines": technical_feature_view["headline_features"],
+    "feature_count": technical_feature_view["feature_count"],
+    "real_feature_count": technical_feature_view["real_feature_count"],
+    "feature_section_count": technical_feature_view["section_count"],
+    "feature_coverage_label": technical_feature_view["coverage_label"],
+    "feature_coverage_level": technical_feature_view["coverage_level"],
+    "canonical_url": canonical_product_url(request.base_url, group.canonical_name, group.group_key),
+    "seo_title": f"{group.canonical_name} Fiyatları ve Karşılaştırma | FırsatAI",
+    "seo_description": f"{group.canonical_name} güncel fiyatlarını, mağaza tekliflerini, fiyat geçmişini ve teknik özelliklerini karşılaştırın.",
+    "seo_product_path": product_url(group.canonical_name, group.group_key),
+    "website_schema_json": schema_dumps(website_schema(request.base_url)),
+    "breadcrumb_schema_json": schema_dumps(
+        breadcrumb_schema(
+            request.base_url,
+            [
+                ("Ana sayfa", "/"),
+                (str(getattr(group, "category", None) or "Ürünler"), f"/arama?q={getattr(group, 'category', None) or ''}"),
+                (group.canonical_name, product_url(group.canonical_name, group.group_key)),
+            ],
+        )
+    ),
+    "product_schema_json": schema_dumps(
+        product_schema(
+            base_url=request.base_url,
+            canonical_url=canonical_product_url(request.base_url, group.canonical_name, group.group_key),
+            group=group,
+            comparison=comparison,
+            available_offers=available_offers,
+            image_urls=product_gallery,
+            description=f"{group.canonical_name} güncel fiyatları, mağaza teklifleri ve teknik özellikleri.",
+        )
     ),
 },
         )

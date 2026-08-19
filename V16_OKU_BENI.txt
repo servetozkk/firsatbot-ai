@@ -1,0 +1,25 @@
+FırsatAI v16.0.1
+
+Başlatma:
+1. ZIP’i klasöre çıkartın.
+2. BASLAT_V16.bat dosyasını çalıştırın.
+3. Tarayıcıdan http://127.0.0.1:8000/admin/multi-store-repair adresini açın.
+
+Doğrulama:
+- http://127.0.0.1:8000/api/runtime-identity/v16
+- runtime_version değeri 16.0.1 olmalıdır.
+- Çok mağazalı POST route tek kayıt olmalıdır.
+
+16.0.1 veritabanı onarımı:
+- Global ürün 125 altında yanlışlıkla boş kalan kaynak ürün bağı onarıldı.
+- Kopya global ürün 133 altındaki Trendyol ve Pazarama kayıtları ürün 125’e taşındı.
+- Ürün 125 artık 2 ham ürün ve 2 aktif teklife bağlıdır.
+- Kopya global ürün 133 MERGED durumuna alındı.
+- Aynı sorun tekrar oluşursa servis model kodu, marka, RAM ve depolama bilgileriyle kopya kaydı otomatik bulup hedef ürüne bağlar.
+- specifications_raw alanı güvenli JSON olarak okunur.
+
+Önceki v16 düzeltmeleri korunur:
+- Windows konsol UnicodeEncodeError başlangıç çökmesi düzeltildi.
+- Startup/lifespan mesajları temiz UTF-8 metinlerle değiştirildi.
+- Çok mağazalı admin ve API route tekrarları kaldırıldı.
+- API 404/500 cevapları HTML yerine JSON döndürür.

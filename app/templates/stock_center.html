@@ -1,0 +1,34 @@
+{% from "components/breadcrumbs.html" import render_breadcrumbs %}
+{% extends "public_base.html" %}
+{% block title %}Stok Takibi | FırsatAI{% endblock %}
+{% block content %}
+{{ render_breadcrumbs(breadcrumbs_v13) }}
+<style>
+.stock-wrap{max-width:1240px;margin:0 auto;padding:24px 16px}.stock-hero{background:linear-gradient(135deg,#111827,#1f2937);color:#fff;border-radius:22px;padding:28px}.stock-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}.stock-stat,.stock-card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:16px}.stock-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.stock-card img{width:100%;height:170px;object-fit:contain}.stock-badge{display:inline-flex;padding:6px 10px;border-radius:999px;font-weight:700}.stock-badge.in_stock{background:#dcfce7;color:#166534}.stock-badge.low_stock{background:#fef3c7;color:#92400e}.stock-badge.out_of_stock{background:#fee2e2;color:#991b1b}.stock-badge.unknown{background:#e5e7eb;color:#374151}.stock-filters{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}.stock-filters a{padding:9px 13px;border:1px solid #d1d5db;border-radius:999px;text-decoration:none;color:#111827}.stock-price{font-size:1.2rem;font-weight:800;margin:8px 0}@media(max-width:900px){.stock-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.stock-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:600px){.stock-grid{grid-template-columns:1fr}}
+</style>
+<div class="stock-wrap">
+  <section class="stock-hero"><h1>Stok Takibi</h1><p>Mağaza tekliflerinden açıklanabilir stok sinyalleri. Satın almadan önce mağazada doğrulayın.</p></section>
+  <div class="stock-stats">
+    <div class="stock-stat"><strong>Stokta</strong><div>{{ stock_data.counts.in_stock }}</div></div>
+    <div class="stock-stat"><strong>Az kaldı</strong><div>{{ stock_data.counts.low_stock }}</div></div>
+    <div class="stock-stat"><strong>Tükendi</strong><div>{{ stock_data.counts.out_of_stock }}</div></div>
+    <div class="stock-stat"><strong>Bilinmiyor</strong><div>{{ stock_data.counts.unknown }}</div></div>
+  </div>
+  <nav class="stock-filters">
+    <a href="/stok">Tümü</a><a href="/stok?status=in_stock">Stokta</a><a href="/stok?status=low_stock">Az kaldı</a><a href="/stok?status=out_of_stock">Tükendi</a><a href="/stok?status=unknown">Bilinmiyor</a>
+  </nav>
+  <div class="stock-grid">
+  {% for item in stock_data['items'] %}
+    <article class="stock-card">
+      {% if item.image %}<img src="{{ item.image }}" alt="{{ item.name }}">{% endif %}
+      <span class="stock-badge {{ item.status }}">{{ item.label }}</span>
+      <h3>{{ item.name }}</h3><div>{{ item.store_name }}</div>
+      {% if item.price > 0 %}<div class="stock-price">{{ '%.2f'|format(item.price) }} TL</div>{% endif %}
+      <p>{{ item.reason }}</p>
+      {% if item.quantity_hint %}<p><strong>Adet ipucu:</strong> {{ item.quantity_hint }}</p>{% endif %}
+      <a href="{{ item.product_url }}">Fiyatları karşılaştır</a>{% if item.store_url %} · <a href="{{ item.store_url }}" target="_blank" rel="nofollow noopener">Mağazada doğrula</a>{% endif %}
+    </article>
+  {% else %}<p>Bu filtreye uygun stok kaydı bulunamadı.</p>{% endfor %}
+  </div>
+</div>
+{% endblock %}

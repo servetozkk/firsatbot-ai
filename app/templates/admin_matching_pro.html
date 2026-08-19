@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/admin_matching_v71.css?v=2">{% endblock %}
+{% block title %}Ürün Eşleştirme 2.0 - Fırsat AI{% endblock %}
+{% block page_title %}Ürün Eşleştirme Merkezi 2.0{% endblock %}
+{% block page_subtitle %}Mağaza kayıtlarını inceleyin, AI önerilerini doğrulayın ve grupları güvenle yönetin{% endblock %}
+{% block content %}
+<div class="m71-page">
+  <section class="m71-kpis">
+    {% for item in [
+      ('Ürün grubu',stats.total,'🧩','violet'),
+      ('Çok mağazalı',stats.multi,'✓','green'),
+      ('Tek teklifli',stats.single,'!','amber'),
+      ('İncelenecek',stats.conflict,'⚠','red'),
+      ('AI önerisi',stats.suggestions,'✦','blue')
+    ] %}
+    <article class="m71-kpi {{item[3]}}"><span class="m71-kpi-icon">{{item[2]}}</span><div><small>{{item[0]}}</small><strong>{{item[1]}}</strong></div></article>
+    {% endfor %}
+  </section>
+
+  <section class="m71-toolbar">
+    <form method="get" class="m71-search">
+      <label class="m71-search-box"><span>⌕</span><input name="q" value="{{q}}" placeholder="Marka, model, kategori veya ürün adı ara..."></label>
+      <select name="quality">
+        <option value="">Tüm gruplar</option>
+        <option value="multi" {% if quality=='multi' %}selected{% endif %}>Çok mağazalı</option>
+        <option value="single" {% if quality=='single' %}selected{% endif %}>Tek teklifli</option>
+        <option value="conflict" {% if quality=='conflict' %}selected{% endif %}>İncelenecek</option>
+      </select>
+      <button type="submit">Filtrele</button>
+    </form>
+    <nav class="m71-view-links"><a href="/admin/products">Ham ürünler</a><a href="/admin/offers">Teklifler</a></nav>
+  </section>
+
+  <div class="m71-workspace">
+    <section class="m71-groups-card">
+      <header class="m71-section-head"><div><span>KATALOG GRUPLARI</span><h2>Ürün grupları</h2><p>Detayları ve mağaza tekliflerini görmek için bir kayıt seçin.</p></div><b>{{rows|length}} kayıt</b></header>
+      <div class="m71-list-controls"><label><input type="checkbox" id="selectVisibleGroups"> Görünenleri seç</label><div id="groupSelectionInfo">0 grup seçildi</div></div>
+      <div class="m71-group-list">
+      {% for row in rows %}
+        {% set group=row.group %}
+        <article class="m71-group-row {% if selected_group==group.id %}active{% endif %}" data-group-id="{{group.id}}">
+          <input class="m71-group-check" type="checkbox" value="{{group.id}}" aria-label="{{group.canonical_name}} grubunu seç">
+          <a class="m71-group-link" href="/admin/matching?selected_group={{group.id}}&q={{q|urlencode}}&quality={{quality}}">
+            <img src="{{group.image or '/static/img/product-placeholder.svg'}}" onerror="this.src='/static/img/product-placeholder.svg'">
+            <div class="m71-group-copy">
+              <h3>{{group.canonical_name}}</h3>
+              <p>{{group.brand or 'Marka eksik'}} · {{group.model or 'Model eksik'}} · {{group.category or 'Kategori eksik'}}</p>
+              <div class="m71-badges">
+                <span class="{% if row.store_count > 1 %}ok{% elif row.store_count == 1 %}warn{% else %}muted{% endif %}">{{row.store_count}} mağaza</span>
+                <span>{{row.offer_count}} teklif</span>
+                {% if row.conflict %}<span class="danger">İncele</span>{% endif %}
+                {% if not group.brand or not group.model or not group.category %}<span class="missing">Eksik veri</span>{% endif %}
+              </div>
+            </div>
+            <span class="m71-row-arrow">›</span>
+          </a>
+        </article>
+      {% else %}<div class="m71-empty">Filtreye uygun ürün grubu bulunamadı.</div>{% endfor %}
+      </div>
+      <div class="m71-bulk-bar" id="bulkBar">
+        <strong><span id="bulkCount">0</span> grup seçildi</strong>
+        <button type="button" id="fillManualMerge">Manuel birleştirmeye aktar</button>
+        <button type="button" class="ghost" id="clearGroupSelection">Temizle</button>
+      </div>
+    </section>
+
+    <aside class="m71-detail-column">
+      {% if selected %}
+      <section class="m71-detail-card">
+        <header class="m71-detail-hero">
+          <div class="m71-detail-image"><img src="{{selected.group.image or '/static/img/product-placeholder.svg'}}" onerror="this.src='/static/img/product-placeholder.svg'"></div>
+          <div><span>SEÇİLİ GRUP</span><h2>{{selected.group.canonical_name}}</h2><p>#{{selected.group.id}} · {{selected.group.identity_source or 'Kimlik kaynağı yok'}}</p></div>
+        </header>
+        <div class="m71-detail-stats"><div><strong>{{selected.offer_count}}</strong><span>Teklif</span></div><div><strong>{{selected.store_count}}</strong><span>Mağaza</span></div><div><strong>{{selected.group.brand or '—'}}</strong><span>Marka</span></div></div>
+        <div class="m71-detail-actions"><a href="/karsilastir/{{selected.group.group_key}}" target="_blank">Ürün sayfası ↗</a><a href="/admin/products?q={{selected.group.canonical_name|urlencode}}">Ham kaydı aç</a></div>
+
+        <form method="post" action="/admin/matching/move-offers" id="offerActionForm">
+          <div class="m71-offer-head"><div><h3>Mağaza teklifleri</h3><p>Taşımak veya ayırmak istediğiniz teklifleri seçin.</p></div><label><input type="checkbox" id="selectAllOffers"> Tümü</label></div>
+          <div class="m71-offer-list">
+          {% for item in selected.offers %}
+            <label class="m71-offer-row">
+              <input type="checkbox" name="offer_ids" value="{{item.offer.id}}">
+              <img src="{{item.product.image or selected.group.image or '/static/img/product-placeholder.svg'}}" onerror="this.src='/static/img/product-placeholder.svg'">
+              <div class="m71-offer-copy"><strong>{{item.store.name}}</strong><span>{{item.product.name}}</span><small>{{fmt_money(item.offer.current_price)}} · {{item.offer.availability}}</small></div>
+            </label>
+          {% else %}<div class="m71-empty compact">Bu grupta teklif bulunmuyor.</div>{% endfor %}
+          </div>
+          {% if selected.offers %}
+          <div class="m71-move-box"><label>Seçilen teklifleri başka gruba taşı</label><select name="target_group_id" required><option value="">Hedef grup seç...</option>{% for group in target_groups %}{% if group.id != selected.group.id %}<option value="{{group.id}}">#{{group.id}} — {{group.canonical_name}}</option>{% endif %}{% endfor %}</select><button type="submit">Seçilenleri taşı</button></div>
+        </form>
+        <form method="post" action="/admin/matching/split" class="m71-split-form" onsubmit="return copyCheckedOffers(this)"><input name="new_name" placeholder="Yeni grup adı (isteğe bağlı)"><button type="submit">Seçilenlerden yeni grup oluştur</button></form>
+          {% endif %}
+      </section>
+      {% else %}
+      <section class="m71-welcome"><i>⛓</i><h2>Bir ürün grubu seçin</h2><p>Teklifleri görüntülemek, ayırmak veya başka bir gruba taşımak için soldaki listeden bir kayıt seçin.</p></section>
+      {% endif %}
+    </aside>
+  </div>
+
+  <section class="m71-suggestions">
+    <header class="m71-section-head"><div><span>AI EŞLEŞTİRME ÖNERİLERİ</span><h2>Birleştirilebilecek gruplar</h2><p>Benzerlik skoru marka, model, kategori ve ürün adına göre hesaplanır.</p></div><b>{{suggestions|length}} öneri</b></header>
+    <div class="m71-suggestion-grid">
+    {% for item in suggestions %}
+      <article class="m71-suggestion">
+        <div class="m71-suggestion-top"><div class="m71-score-ring" style="--score:{{item.score}}"><strong>%{{item.score}}</strong><span>güven</span></div><div class="m71-reasons">{% for reason in item.reasons %}<span>{{reason}}</span>{% endfor %}</div></div>
+        <div class="m71-pair"><div><small>KAYNAK</small><strong>{{item.source.canonical_name}}</strong></div><i>→</i><div><small>HEDEF</small><strong>{{item.candidate.canonical_name}}</strong></div></div>
+        <form method="post" action="/admin/matching/merge" onsubmit="return confirm('Kaynak grup hedef grupla birleştirilsin mi? Bu işlem teklifleri taşır ve boş kaynak grubunu siler.')"><input type="hidden" name="source_group_ids" value="{{item.source.id}}"><input type="hidden" name="target_group_id" value="{{item.candidate.id}}"><button type="submit">Birleştir</button><a href="/admin/matching?selected_group={{item.source.id}}">İncele</a></form>
+      </article>
+    {% else %}<div class="m71-empty">Şu anda yeterli güvene sahip eşleştirme önerisi yok.</div>{% endfor %}
+    </div>
+  </section>
+
+  <section class="m71-manual" id="manualMergeSection">
+    <div><span>MANUEL BİRLEŞTİRME</span><h2>Birden fazla grubu tek hedefte birleştir</h2><p>Listeden seçtiğiniz grupları buraya aktarabilir veya doğrudan seçim yapabilirsiniz.</p></div>
+    <form method="post" action="/admin/matching/merge" onsubmit="return confirm('Seçilen gruplar kalıcı olarak hedef gruba birleştirilecek. Devam edilsin mi?')">
+      <label>Kaynak gruplar<select id="manualSourceGroups" name="source_group_ids" multiple required>{% for group in target_groups %}<option value="{{group.id}}">#{{group.id}} — {{group.canonical_name}}</option>{% endfor %}</select></label>
+      <label>Hedef grup<select name="target_group_id" required><option value="">Hedef grup seç...</option>{% for group in target_groups %}<option value="{{group.id}}">#{{group.id}} — {{group.canonical_name}}</option>{% endfor %}</select></label>
+      <button type="submit">Grupları birleştir</button>
+    </form>
+  </section>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+function copyCheckedOffers(form){
+  const checked=[...document.querySelectorAll('#offerActionForm input[name="offer_ids"]:checked')];
+  if(!checked.length){alert('Önce en az bir teklif seç.');return false;}
+  checked.forEach(item=>{const input=document.createElement('input');input.type='hidden';input.name='offer_ids';input.value=item.value;form.appendChild(input);});
+  return confirm('Seçilen teklifler yeni bir ürün grubuna ayrılsın mı?');
+}
+(function(){
+  const groupChecks=[...document.querySelectorAll('.m71-group-check')];
+  const all=document.getElementById('selectVisibleGroups');
+  const bar=document.getElementById('bulkBar');
+  const count=document.getElementById('bulkCount');
+  const info=document.getElementById('groupSelectionInfo');
+  const update=()=>{const n=groupChecks.filter(x=>x.checked).length;count.textContent=n;info.textContent=n+' grup seçildi';bar.classList.toggle('show',n>0);if(all)all.checked=n===groupChecks.length&&n>0;};
+  groupChecks.forEach(x=>x.addEventListener('change',update));
+  if(all)all.addEventListener('change',()=>{groupChecks.forEach(x=>x.checked=all.checked);update();});
+  document.getElementById('clearGroupSelection')?.addEventListener('click',()=>{groupChecks.forEach(x=>x.checked=false);if(all)all.checked=false;update();});
+  document.getElementById('fillManualMerge')?.addEventListener('click',()=>{const ids=groupChecks.filter(x=>x.checked).map(x=>x.value);const select=document.getElementById('manualSourceGroups');[...select.options].forEach(o=>o.selected=ids.includes(o.value));document.getElementById('manualMergeSection').scrollIntoView({behavior:'smooth',block:'center'});});
+  const offerAll=document.getElementById('selectAllOffers');offerAll?.addEventListener('change',()=>document.querySelectorAll('#offerActionForm input[name="offer_ids"]').forEach(x=>x.checked=offerAll.checked));
+  update();
+})();
+</script>
+{% endblock %}

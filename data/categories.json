@@ -5,5 +5,12 @@
         "url": "https://www.trendyol.com/sr?q=laptop",
         "limit": 10,
         "active": true
+    },
+    {
+        "id": "959a4c68-0d31-4de1-8c2d-fcc0dd7ca41f",
+        "name": "masalar deneme",
+        "url": "https://www.trendyol.com/sr?q=masalar&qt=masalar&st=masalar&os=1",
+        "limit": 3,
+        "active": true
     }
 ]

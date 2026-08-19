@@ -27,6 +27,17 @@ TITLE_NOISE_WORDS = {
 
 
 STORE_ALIASES = {
+    "turkcell pasaj": "turkcellpasaj",
+    "turkcell": "turkcellpasaj",
+    "turkcell com tr": "turkcellpasaj",
+    "www turkcell com tr": "turkcellpasaj",
+    "pttavm": "pttavm",
+    "ptt avm": "pttavm",
+    "pttavm com": "pttavm",
+    "www pttavm com": "pttavm",
+    "beymen": "beymen",
+    "beymen com": "beymen",
+    "www beymen com": "beymen",
     "trendyol": "trendyol",
     "trendyol com": "trendyol",
     "www trendyol com": "trendyol",

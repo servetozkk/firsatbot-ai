@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}Tarama Merkezi - Fırsat AI{% endblock %}
+{% block page_title %}Tarama Merkezi{% endblock %}
+{% block page_subtitle %}Mağaza taramalarını, kuyruğu ve hataları tek merkezden yönetin{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/admin_scraper_v52.css?v=1">{% endblock %}
+
+{% block content %}
+<div class="scraper-page">
+    {% if message %}<div class="alert alert-success">{{ message }}</div>{% endif %}
+    {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+
+    <section class="scraper-hero">
+        <div>
+            <span class="scraper-eyebrow">OPERASYON MERKEZİ</span>
+            <h2>Scraper sisteminin tamamı tek ekranda</h2>
+            <p>Aktif mağazaları izleyin, taramaları başlatın ve hataları hızlıca tespit edin.</p>
+        </div>
+        <div class="scraper-actions">
+            <button type="button" class="btn btn-primary" id="scanAllButton">▶ Tümünü Tara</button>
+            <a class="btn btn-outline-secondary" href="/admin/categories">Kategorileri Yönet</a>
+        </div>
+    </section>
+
+    <section class="scraper-kpi-grid">
+        <article class="scraper-kpi"><span>Bugün Bulunan</span><strong id="todayFound">{{ today_found }}</strong><small>ürün bağlantısı</small></article>
+        <article class="scraper-kpi"><span>Bugün Kaydedilen</span><strong id="todaySaved">{{ today_saved }}</strong><small>ürün kaydı</small></article>
+        <article class="scraper-kpi"><span>Aktif Görev</span><strong id="runningCount">{{ running_tasks|length }}</strong><small>{{ queued_tasks|length }} sırada</small></article>
+        <article class="scraper-kpi"><span>Başarılı Tarama</span><strong>{{ completed_count }}</strong><small>geçmiş toplamı</small></article>
+        <article class="scraper-kpi"><span>Hatalı Tarama</span><strong>{{ failed_count }}</strong><small>inceleme gerekiyor</small></article>
+    </section>
+
+    <section class="scraper-store-grid">
+        {% for store in stores %}
+        <article class="scraper-store-card status-{{ store.status }}">
+            <div class="scraper-store-head">
+                <div class="scraper-store-icon">{{ store.name[:1] }}</div>
+                <div><h3>{{ store.name }}</h3><p>{{ store.active_category_count }} aktif kategori</p></div>
+                <span class="scraper-status-pill">{% if store.status == 'running' %}Taranıyor{% elif store.status == 'error' %}Hata{% elif store.status == 'active' %}Hazır{% else %}Bekliyor{% endif %}</span>
+            </div>
+            <div class="scraper-store-metrics">
+                <div><span>Başarı</span><strong>{% if store.success_rate is not none %}%{{ store.success_rate }}{% else %}—{% endif %}</strong></div>
+                <div><span>Kategori</span><strong>{{ store.category_count }}</strong></div>
+                <div><span>Son durum</span><strong>{% if store.latest %}{{ store.latest.status|capitalize }}{% else %}Yok{% endif %}</strong></div>
+            </div>
+            {% if store.running %}
+            <div class="scraper-progress"><div style="width:{{ store.running.progress or 0 }}%"></div></div>
+            <small class="scraper-running-copy">{{ store.running.message }}</small>
+            {% elif store.latest %}
+            <small class="scraper-running-copy">{{ store.latest.message or 'Son tarama tamamlandı.' }}</small>
+            {% else %}
+            <small class="scraper-running-copy">Henüz tarama geçmişi yok.</small>
+            {% endif %}
+        </article>
+        {% endfor %}
+    </section>
+
+    <section class="scraper-main-grid">
+        <article class="scraper-panel">
+            <div class="scraper-panel-heading"><div><h3>Canlı Kuyruk</h3><p>Çalışan ve sırada bekleyen görevler</p></div><span class="live-badge">● CANLI</span></div>
+            <div id="liveQueue" class="scraper-task-list">
+                {% for task in running_tasks + queued_tasks %}
+                <div class="scraper-task-row">
+                    <div class="scraper-task-main"><strong>{{ task.category_name or 'Tarama görevi' }}</strong><span>{{ task.message }}</span></div>
+                    <div class="scraper-task-progress"><div><i style="width:{{ task.progress or 0 }}%"></i></div><b>%{{ task.progress or 0 }}</b></div>
+                </div>
+                {% else %}<div class="scraper-empty">Şu anda çalışan veya bekleyen görev yok.</div>{% endfor %}
+            </div>
+        </article>
+
+        <article class="scraper-panel">
+            <div class="scraper-panel-heading"><div><h3>Hata Merkezi</h3><p>En sık karşılaşılan hata türleri</p></div><span class="error-count">{{ failed_count }}</span></div>
+            <div class="scraper-error-list">
+                {% for error_name, count in error_types %}
+                <div><span>{{ error_name }}</span><strong>{{ count }}</strong></div>
+                {% else %}<div class="scraper-empty">Kayıtlı scraper hatası bulunmuyor.</div>{% endfor %}
+            </div>
+        </article>
+    </section>
+
+    <section class="scraper-panel">
+        <div class="scraper-panel-heading">
+            <div><h3>Kategori Taramaları</h3><p>İstediğiniz kategoriyi tek tıkla tarayın</p></div>
+            <a href="/admin/categories" class="scraper-text-link">Kategori ekle →</a>
+        </div>
+        <div class="scraper-category-grid">
+            {% for category in active_categories %}
+            <article class="scraper-category-card">
+                <div><strong>{{ category.name }}</strong><span>Limit: {{ category.limit }} ürün</span></div>
+                <button type="button" class="category-scan-button" data-category-id="{{ category.id }}">Tara</button>
+            </article>
+            {% else %}<div class="scraper-empty">Aktif kategori bulunmuyor.</div>{% endfor %}
+        </div>
+    </section>
+
+    <section class="scraper-panel">
+        <div class="scraper-panel-heading">
+            <div><h3>Son Taramalar</h3><p>En son tamamlanan ve başarısız görevler</p></div>
+            <form action="/admin/scrapers/history/clear" method="post" onsubmit="return confirm('Tarama geçmişi temizlensin mi?')"><button class="btn btn-sm btn-outline-danger">Geçmişi Temizle</button></form>
+        </div>
+        <div class="table-responsive scraper-history-table">
+            <table class="table align-middle">
+                <thead><tr><th>Görev</th><th>Durum</th><th>İlerleme</th><th>Bulunan</th><th>Kaydedilen</th><th>Tamamlanma</th></tr></thead>
+                <tbody id="recentTasksBody">
+                {% for task in recent_tasks %}
+                    <tr>
+                        <td><strong>{{ task.category_name or 'Tarama görevi' }}</strong><small>{{ task.message or '' }}</small></td>
+                        <td><span class="task-state state-{{ task.status }}">{{ task.status }}</span></td>
+                        <td>%{{ task.progress or 0 }}</td>
+                        <td>{{ (task.result or {}).get('found_count', 0) }}</td>
+                        <td>{{ (task.result or {}).get('saved_count', 0) }}</td>
+                        <td>{{ task.finished_at or task.started_at or '—' }}</td>
+                    </tr>
+                {% else %}<tr><td colspan="6" class="text-center text-muted py-4">Tarama geçmişi bulunmuyor.</td></tr>{% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+(() => {
+    const scanAllButton = document.getElementById('scanAllButton');
+    async function startScan(url, button) {
+        const original = button.textContent;
+        button.disabled = true;
+        button.textContent = 'Başlatılıyor…';
+        try {
+            const response = await fetch(url, {method:'POST'});
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.detail || 'Tarama başlatılamadı.');
+            button.textContent = 'Başlatıldı ✓';
+            setTimeout(() => location.reload(), 1100);
+        } catch (error) {
+            alert(error.message || 'İşlem başarısız.');
+            button.disabled = false;
+            button.textContent = original;
+        }
+    }
+    scanAllButton?.addEventListener('click', () => startScan('/admin/scrapers/scan-all', scanAllButton));
+    document.querySelectorAll('.category-scan-button').forEach(button => {
+        button.addEventListener('click', () => startScan(`/admin/scrapers/categories/${button.dataset.categoryId}/scan`, button));
+    });
+    if (document.querySelector('.live-badge')) {
+        setInterval(async () => {
+            try {
+                const response = await fetch('/admin/scrapers/status');
+                const data = await response.json();
+                if (!data.success) return;
+                document.getElementById('todayFound').textContent = data.today_found;
+                document.getElementById('todaySaved').textContent = data.today_saved;
+                document.getElementById('runningCount').textContent = data.running_tasks.length;
+                if (data.running_tasks.length || data.queued_tasks.length) location.reload();
+            } catch (_) {}
+        }, 7000);
+    }
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,19 @@
+{% extends "public_base.html" %}
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div><h1 class="h3 mb-1">Production Release</h1><div class="text-muted">FırsatAI v{{ engine_version }}</div></div>
+    <span class="badge {% if report.release_status == 'PRODUCTION_RELEASE_READY' %}text-bg-success{% else %}text-bg-danger{% endif %}">{{ report.release_status }}</span>
+  </div>
+  <div class="row g-3 mb-4">
+    <div class="col-md-3"><div class="card h-100"><div class="card-body"><div class="text-muted">Deployment</div><strong>{{ report.deployment_status }}</strong></div></div></div>
+    <div class="col-md-3"><div class="card h-100"><div class="card-body"><div class="text-muted">Beta</div><strong>{{ report.beta_readiness }}</strong></div></div></div>
+    <div class="col-md-3"><div class="card h-100"><div class="card-body"><div class="text-muted">SQLite</div><strong>{{ report.database.integrity }}</strong></div></div></div>
+    <div class="col-md-3"><div class="card h-100"><div class="card-body"><div class="text-muted">Modül</div><strong>{{ report.module_summary.healthy_modules }}/{{ report.module_summary.total_modules }}</strong></div></div></div>
+  </div>
+  <div class="card mb-3"><div class="card-body"><h2 class="h5">Canlıya Alma Gereksinimleri</h2>
+    {% if report.deployment_requirements %}<ul>{% for item in report.deployment_requirements %}<li>{{ item }}</li>{% endfor %}</ul>{% else %}<div class="alert alert-success mb-0">Production ortam ayarları hazır.</div>{% endif %}
+  </div></div>
+  <div class="card"><div class="card-body"><h2 class="h5">Operasyon Adresleri</h2><pre class="mb-0">{{ report.operations | tojson(indent=2) }}</pre></div></div>
+</div>
+{% endblock %}

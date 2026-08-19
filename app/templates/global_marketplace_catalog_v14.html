@@ -1,0 +1,80 @@
+{% extends "public_base.html" %}
+{% block title %}{{ seo_title }}{% endblock %}
+{% block extra_head %}
+<style>
+.market-wrap{max-width:1320px;margin:auto}.market-hero{background:linear-gradient(135deg,#111827,#312e81 60%,#6d28d9);color:#fff;border-radius:28px;padding:34px;margin-bottom:22px}.market-hero h1{font-size:clamp(1.8rem,4vw,3.3rem);font-weight:950;letter-spacing:-.05em}.market-search{display:grid;grid-template-columns:1fr 220px 190px auto;gap:10px;margin-top:22px}.market-search input,.market-search select{min-height:50px;border:0;border-radius:13px;padding:0 15px}.market-search button{border:0;border-radius:13px;background:#fff;color:#312e81;font-weight:900;padding:0 22px}.market-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}.market-card{background:#fff;border:1px solid #e5e7eb;border-radius:20px;padding:18px;box-shadow:0 12px 34px rgba(15,23,42,.06);display:flex;flex-direction:column;min-height:330px}.market-image{height:145px;display:flex;align-items:center;justify-content:center;margin-bottom:14px}.market-image img{max-height:135px;max-width:100%;object-fit:contain}.market-brand{font-size:.75rem;color:#6366f1;font-weight:850;text-transform:uppercase}.market-title{font-size:1rem;font-weight:900;line-height:1.35;color:#111827;margin:5px 0 12px}.market-price{font-size:1.5rem;font-weight:950;color:#111827}.market-meta{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}.market-badge{font-size:.72rem;border-radius:999px;padding:6px 9px;background:#eef2ff;color:#4338ca;font-weight:800}.market-save{background:#dcfce7;color:#166534}.market-open{margin-top:auto;background:#4f46e5;color:#fff;text-decoration:none;text-align:center;border-radius:12px;padding:11px;font-weight:900}.market-pagination{display:flex;justify-content:center;gap:7px;margin:28px}.market-pagination a,.market-pagination span{padding:9px 13px;border-radius:10px;background:#fff;border:1px solid #e5e7eb;text-decoration:none;color:#111827}.market-pagination .active{background:#4f46e5;color:#fff}@media(max-width:1100px){.market-grid{grid-template-columns:repeat(3,1fr)}}@media(max-width:780px){.market-grid{grid-template-columns:repeat(2,1fr)}.market-search{grid-template-columns:1fr}}@media(max-width:520px){.market-grid{grid-template-columns:1fr}}
+</style>
+{% endblock %}
+{% block content %}
+<div class="market-wrap">
+<section class="market-hero">
+<div style="font-weight:850;color:#c4b5fd">AKAKÇE TİPİ GLOBAL KATALOG</div>
+<h1>Tek ürün, tüm mağaza fiyatları</h1>
+<p>Mağazaları tek tek dolaşmadan en düşük fiyatı, teklif sayısını ve varyantları karşılaştır.</p>
+<form class="market-search" method="get">
+<input name="q" value="{{ filters.q }}" placeholder="Telefon, laptop, model veya marka ara">
+<select name="brand">
+<option value="">Tüm markalar</option>
+{% for b in brands %}
+<option value="{{ b.brand }}" {% if filters.brand==b.brand %}selected{% endif %}>{{ b.brand|title }} ({{ b.product_count }})</option>
+{% endfor %}
+</select>
+<select name="sort">
+<option value="popular" {% if filters.sort=='popular' %}selected{% endif %}>Önerilen</option>
+<option value="price_asc" {% if filters.sort=='price_asc' %}selected{% endif %}>En düşük fiyat</option>
+<option value="price_desc" {% if filters.sort=='price_desc' %}selected{% endif %}>En yüksek fiyat</option>
+<option value="offers" {% if filters.sort=='offers' %}selected{% endif %}>Mağaza sayısı</option>
+<option value="newest" {% if filters.sort=='newest' %}selected{% endif %}>En yeni</option>
+</select>
+<button type="submit">Karşılaştır</button>
+</form>
+</section>
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin:12px 2px 18px">
+<h2 style="font-weight:950">Global ürünler</h2>
+<span>{{ pagination.total }} ürün</span>
+</div>
+
+<div class="market-grid">
+{% for p in items %}
+<article class="market-card">
+<div class="market-image">
+{% if p.primary_image %}
+<img src="{{ p.primary_image }}" loading="lazy" decoding="async" alt="{{ p.canonical_name }}">
+{% else %}
+<div style="font-size:3rem">📦</div>
+{% endif %}
+</div>
+<div class="market-brand">{{ p.normalized_brand or 'Marka belirtilmemiş' }}</div>
+<div class="market-title">{{ p.canonical_name }}</div>
+<div class="market-price">{{ p.best_price_text }}</div>
+<div class="market-meta">
+<span class="market-badge">{{ p.offer_count }} mağaza</span>
+<span class="market-badge">{{ p.variant_count }} varyant</span>
+{% if p.saving_percent %}
+<span class="market-badge market-save">%{{ p.saving_percent }} avantaj</span>
+{% endif %}
+</div>
+<a
+  class="market-open"
+  href="/fiyat-karsilastirma/global/{{ p.id }}-{{ p.slug }}"
+>Fiyatları karşılaştır</a>
+</article>
+{% else %}
+<div class="alert alert-light border" style="grid-column:1/-1">
+Aramana uygun global ürün bulunamadı.
+</div>
+{% endfor %}
+</div>
+
+<div class="market-pagination">
+{% for n in range(1,pagination.pages+1) %}
+{% if n==pagination.page %}
+<span class="active">{{ n }}</span>
+{% elif n<=3 or n>pagination.pages-2 or (n>=pagination.page-1 and n<=pagination.page+1) %}
+<a href="?q={{ filters.q }}&brand={{ filters.brand }}&sort={{ filters.sort }}&page={{ n }}">{{ n }}</a>
+{% endif %}
+{% endfor %}
+</div>
+</div>
+{% endblock %}

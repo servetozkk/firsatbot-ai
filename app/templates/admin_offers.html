@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block extra_head %}
+<link rel="stylesheet" href="/static/css/admin_platform_v60.css?v=3">
+<link rel="stylesheet" href="/static/css/admin_offers_v63.css?v=1">
+
+<style>
+.offer-maintenance-message{display:flex;gap:10px;align-items:center;margin-bottom:14px;padding:12px 15px;border:1px solid #bbf7d0;border-radius:14px;background:#f0fdf4;color:#166534;font-size:.76rem}
+.offer-maintenance-panel{margin-bottom:18px;padding:18px;border:1px solid #dfe7f2;border-radius:18px;background:linear-gradient(135deg,#f8fbff,#fff);box-shadow:0 10px 25px rgba(15,23,42,.05)}
+.offer-maintenance-panel>div:first-child span{color:#2563eb;font-size:.65rem;font-weight:950;letter-spacing:.08em}
+.offer-maintenance-panel h3{margin:5px 0;color:#172033;font-size:1.05rem}.offer-maintenance-panel p{margin:0;color:#64748b;font-size:.73rem}
+.offer-maintenance-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.offer-maintenance-actions button{min-height:38px;padding:0 13px;border:1px solid #d8e1ee;border-radius:10px;background:#fff;color:#334155;font-size:.67rem;font-weight:900;cursor:pointer}
+.offer-maintenance-actions button.primary{border-color:#2563eb;background:#2563eb;color:#fff}
+.offer-health-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px;margin-top:15px}
+.offer-health-grid article{padding:11px;border:1px solid #e5eaf2;border-radius:12px;background:#fff}.offer-health-grid span{display:block;color:#64748b;font-size:.59rem;font-weight:800}.offer-health-grid strong{display:block;margin-top:4px;color:#172033;font-size:1rem}.offer-health-grid article.warning{background:#fffaf0;border-color:#fed7aa}
+.lifecycle-pill{display:inline-flex;min-height:25px;align-items:center;padding:0 8px;border-radius:999px;background:#eaf1ff;color:#1d4ed8;font-size:.56rem;font-weight:950}
+.lifecycle-pill.status-updated{background:#ecfdf3;color:#047857}.lifecycle-pill.status-out_of_stock{background:#fff7ed;color:#c2410c}.lifecycle-pill.status-missing{background:#fffbeb;color:#a16207}.lifecycle-pill.status-archived{background:#f1f5f9;color:#64748b}
+.miss-count{display:block;margin-top:4px;color:#a16207;font-size:.52rem}
+@media(max-width:900px){.offer-health-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:560px){.offer-health-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.offer-maintenance-actions button{flex:1 1 45%}}
+</style>
+
+{% endblock %}
+{% block title %}Teklif ve Mağaza Yönetimi - Fırsat AI{% endblock %}
+{% block page_title %}Teklif ve Mağaza Yönetimi{% endblock %}
+{% block page_subtitle %}Mağaza fiyatlarını, stokları, görünürlüğü ve şüpheli teklifleri yönetin{% endblock %}
+{% block content %}
+<div class="offer-admin-page">
+  <section class="offer-hero">
+    <div>
+      <span>FİYAT KARŞILAŞTIRMA OPERASYONU</span>
+      <h2>Tekliflerin tamamı tek kontrol merkezinde</h2>
+      <p>En iyi fiyatı doğrula, hatalı teklifleri gizle, stok bilgisini güncelle ve tekrar kayıtları temizle.</p>
+    </div>
+    <div class="offer-hero-actions">
+      <a href="/admin/stores" class="oa-secondary">Mağazaları yönet</a>
+      <a href="/admin/matching" class="oa-primary">Ürün eşleştirmeye git</a>
+    </div>
+  </section>
+
+  {% if request.query_params.get('maintenance_message') %}
+  <section class="offer-maintenance-message">
+    <strong>Teklif bakımı tamamlandı.</strong>
+    <span>{{ request.query_params.get('maintenance_message') }}</span>
+  </section>
+  {% endif %}
+
+  <section class="offer-maintenance-panel">
+    <div>
+      <span>TEKLİF SAĞLIĞI</span>
+      <h3>Teklif yaşam döngüsü ve tekrar kontrolü</h3>
+      <p>İşlemler teklifleri silmez; tekrarları ve uzun süredir görülmeyen kayıtları güvenli biçimde arşivler.</p>
+    </div>
+    <form method="post" action="/admin/offers/maintenance" class="offer-maintenance-actions">
+      <button name="action" value="full" class="primary">Tam bakım yap</button>
+      <button name="action" value="duplicates">Tekrarları düzenle</button>
+      <button name="action" value="lifecycle">Durumları yenile</button>
+      <button name="action" value="best">En iyi fiyatları hesapla</button>
+    </form>
+    <div class="offer-health-grid">
+      <article><span>Aktif</span><strong>{{ health.lifecycle.get('ACTIVE', 0) + health.lifecycle.get('UPDATED', 0) }}</strong></article>
+      <article><span>Stokta yok</span><strong>{{ health.lifecycle.get('OUT_OF_STOCK', 0) }}</strong></article>
+      <article><span>Kayıp</span><strong>{{ health.lifecycle.get('MISSING', 0) }}</strong></article>
+      <article><span>Arşiv</span><strong>{{ health.lifecycle.get('ARCHIVED', 0) }}</strong></article>
+      <article class="warning"><span>Tekrar kümeleri</span><strong>{{ health.duplicate_groups }}</strong></article>
+      <article class="warning"><span>36+ saat eski</span><strong>{{ health.stale_36 }}</strong></article>
+    </div>
+  </section>
+
+  <section class="offer-kpis">
+    <article><i>🏷️</i><span>Toplam teklif</span><strong>{{ stats.total }}</strong></article>
+    <article><i>🥇</i><span>En iyi teklif</span><strong>{{ stats.best }}</strong></article>
+    <article><i>✅</i><span>Stokta</span><strong>{{ stats.available }}</strong></article>
+    <article><i>👁️</i><span>Gizli teklif</span><strong>{{ stats.hidden }}</strong></article>
+    <article class="danger"><i>⚠️</i><span>Şüpheli fiyat</span><strong>{{ stats.suspicious }}</strong></article>
+  </section>
+
+  <section class="offer-filter-card">
+    <form method="get" class="offer-filter-grid">
+      <label class="offer-search"><span>⌕</span><input name="q" value="{{ q }}" placeholder="Ürün, satıcı, mağaza ürün kodu ara..."></label>
+      <select name="store"><option value="">Tüm mağazalar</option>{% for s in stores %}<option value="{{ s.id }}" {% if selected_store == s.id %}selected{% endif %}>{{ s.name }}</option>{% endfor %}</select>
+      <select name="status"><option value="">Tüm stok durumları</option><option value="in_stock" {% if status=='in_stock' %}selected{% endif %}>Stokta</option><option value="out_of_stock" {% if status=='out_of_stock' %}selected{% endif %}>Stokta yok</option></select>
+      <select name="visibility"><option value="all" {% if visibility=='all' %}selected{% endif %}>Tüm teklifler</option><option value="active" {% if visibility=='active' %}selected{% endif %}>Yayında</option><option value="hidden" {% if visibility=='hidden' %}selected{% endif %}>Gizli</option></select>
+      <select name="price_flag"><option value="">Tüm fiyatlar</option><option value="best" {% if price_flag=='best' %}selected{% endif %}>En iyi teklifler</option><option value="suspicious" {% if price_flag=='suspicious' %}selected{% endif %}>Şüpheli fiyatlar</option></select>
+      <select name="lifecycle">
+        <option value="">Tüm yaşam durumları</option>
+        {% for value, label in [('ACTIVE','Aktif'),('UPDATED','Güncellendi'),('OUT_OF_STOCK','Stokta yok'),('MISSING','Kayıp'),('ARCHIVED','Arşiv')] %}
+        <option value="{{ value }}" {% if lifecycle==value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit">Filtrele</button>
+      <a href="/admin/offers" class="clear-filter">Temizle</a>
+    </form>
+  </section>
+
+  <form method="post" action="/admin/offers/bulk-action" id="bulkOfferForm">
+    <section class="bulk-offer-bar" id="bulkOfferBar">
+      <div><strong id="selectedOfferCount">0</strong> teklif seçildi</div>
+      <div class="bulk-offer-actions">
+        <button name="action" value="show" type="submit">Yayına al</button>
+        <button name="action" value="hide" type="submit">Gizle</button>
+        <button name="action" value="in_stock" type="submit">Stokta yap</button>
+        <button name="action" value="out_of_stock" type="submit">Stok dışı yap</button>
+        <button name="action" value="delete" type="submit" class="danger" data-confirm="Seçili teklifler kalıcı olarak silinsin mi?">Sil</button>
+      </div>
+    </section>
+
+    <section class="offer-table-card">
+      <div class="offer-table-scroll">
+        <table class="offer-pro-table">
+          <thead><tr><th class="check-col"><input type="checkbox" id="selectAllOffers"></th><th>Ürün</th><th>Mağaza / Satıcı</th><th>Güncel fiyat</th><th>Piyasa farkı</th><th>Stok</th><th>Yayın</th><th>Yaşam durumu</th><th>Son kontrol</th><th>İşlemler</th></tr></thead>
+          <tbody>
+          {% for row in rows %}
+            {% set offer=row.offer %}{% set product=row.product %}{% set store_obj=row.store %}{% set group=row.group %}
+            <tr class="{% if offer.is_hidden %}is-hidden{% endif %} {% if row.suspicious %}is-suspicious{% endif %}">
+              <td class="check-col"><input type="checkbox" name="selected_ids" value="{{ offer.id }}" class="offer-check"></td>
+              <td><div class="offer-product-cell"><img src="{{ product.image or group.image or '' }}" onerror="this.style.visibility='hidden'"><div><strong>{{ group.canonical_name }}</strong><span>{{ product.product_code or offer.store_product_id or 'Ürün kodu yok' }}</span>{% if row.suspicious %}<em>⚠ Şüpheli fiyat</em>{% endif %}</div></div></td>
+              <td><div class="offer-store-cell"><b>{{ store_obj.name }}</b><span>{{ offer.seller or 'Satıcı bilgisi yok' }}</span><small>{{ offer.store_product_id or '' }}</small></div></td>
+              <td><div class="offer-price-cell"><strong>{{ fmt_money(offer.current_price) }}</strong>{% if offer.old_price %}<del>{{ fmt_money(offer.old_price) }}</del>{% endif %}{% if offer.is_best_offer %}<span class="best-offer-badge">EN UCUZ</span>{% endif %}</div></td>
+              <td><div class="market-diff {% if row.difference_percent < -20 %}low{% elif row.difference_percent > 50 %}high{% else %}normal{% endif %}"><b>{{ '%+.1f'|format(row.difference_percent) }}%</b><span>Medyan: {{ fmt_money(row.median_price) }}</span></div></td>
+              <td><span class="stock-pill {% if 'yok' in (offer.availability or '').lower() or 'tükendi' in (offer.availability or '').lower() %}out{% else %}in{% endif %}">{{ offer.availability or 'Bilinmiyor' }}</span></td>
+              <td>{% if offer.is_hidden %}<span class="visibility-pill hidden">Gizli</span>{% else %}<span class="visibility-pill live">Yayında</span>{% endif %}</td>
+              <td><span class="lifecycle-pill status-{{ (offer.lifecycle_status or 'ACTIVE')|lower }}">{{ offer.lifecycle_status or 'ACTIVE' }}</span>{% if offer.consecutive_misses %}<small class="miss-count">{{ offer.consecutive_misses }} tarama kayıp</small>{% endif %}</td>
+              <td><div class="date-cell"><b>{{ offer.last_checked_at.strftime('%d.%m.%Y') if offer.last_checked_at else '—' }}</b><span>{{ offer.last_checked_at.strftime('%H:%M') if offer.last_checked_at else '' }}</span></div></td>
+              <td><div class="offer-row-actions">
+                <a href="{{ offer.url }}" target="_blank" title="Mağazada aç">↗</a>
+                <button type="submit" formaction="/admin/offers/{{ offer.id }}/toggle-stock" formmethod="post" title="Stok durumunu değiştir">📦</button>
+                <button type="submit" formaction="/admin/offers/{{ offer.id }}/toggle-visibility" formmethod="post" title="Görünürlüğü değiştir">{% if offer.is_hidden %}👁{% else %}◉{% endif %}</button>
+                <button type="submit" formaction="/admin/offers/{{ offer.id }}/delete" formmethod="post" class="delete" title="Teklifi sil" data-confirm="Bu teklif kalıcı olarak silinsin mi?">🗑</button>
+              </div></td>
+            </tr>
+          {% else %}<tr><td colspan="10" class="offer-empty">Filtrelere uygun teklif bulunamadı.</td></tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </form>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+(function(){
+ const all=document.getElementById('selectAllOffers');
+ const checks=[...document.querySelectorAll('.offer-check')];
+ const bar=document.getElementById('bulkOfferBar');
+ const count=document.getElementById('selectedOfferCount');
+ function refresh(){const n=checks.filter(x=>x.checked).length;count.textContent=n;bar.classList.toggle('show',n>0);if(all){all.checked=n===checks.length&&n>0;all.indeterminate=n>0&&n<checks.length;}}
+ all?.addEventListener('change',()=>{checks.forEach(x=>x.checked=all.checked);refresh();});
+ checks.forEach(x=>x.addEventListener('change',refresh));
+ document.querySelectorAll('[data-confirm]').forEach(btn=>btn.addEventListener('click',e=>{if(!confirm(btn.dataset.confirm)){e.preventDefault();}}));
+ refresh();
+})();
+</script>
+{% endblock %}

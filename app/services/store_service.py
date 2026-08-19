@@ -7,6 +7,9 @@ from app.services.normalization_service import normalize_store_code
 
 
 STORE_DEFINITIONS = {
+    "turkcellpasaj": {"name": "Turkcell Pasaj", "base_url": "https://www.turkcell.com.tr/pasaj"},
+    "pttavm": {"name": "PttAVM", "base_url": "https://www.pttavm.com"},
+    "beymen": {"name": "Beymen", "base_url": "https://www.beymen.com"},
     "teknosa": {
         "name": "Teknosa",
         "base_url": "https://www.teknosa.com",
@@ -34,6 +37,30 @@ STORE_DEFINITIONS = {
     "ciceksepeti": {
         "name": "ÇiçekSepeti",
         "base_url": "https://www.ciceksepeti.com",
+    },
+    "mediamarkt": {
+        "name": "MediaMarkt",
+        "base_url": "https://www.mediamarkt.com.tr",
+    },
+    "vatan": {
+        "name": "Vatan Bilgisayar",
+        "base_url": "https://www.vatanbilgisayar.com",
+    },
+    "idefix": {
+        "name": "İdefix",
+        "base_url": "https://www.idefix.com",
+    },
+    "itopya": {
+        "name": "İtopya",
+        "base_url": "https://www.itopya.com",
+    },
+    "incehesap": {
+        "name": "İncehesap",
+        "base_url": "https://www.incehesap.com",
+    },
+    "gaminggen": {
+        "name": "Gaming.Gen.TR",
+        "base_url": "https://www.gaming.gen.tr",
     },
 }
 

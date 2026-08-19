@@ -2,111 +2,131 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1"
-    >
-
-    <title>
-        {% block title %}Fırsat AI{% endblock %}
-    </title>
-
-    <link
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-        rel="stylesheet"
-    >
-
-    <link
-        rel="stylesheet"
-        href="/static/css/style.css?v=4"
-    >
-
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Fırsat AI Yönetim Paneli{% endblock %}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/admin_v42.css?v=52">
     {% block extra_head %}{% endblock %}
+<style id="v13-6-3-breadcrumb-style">.firsatai-breadcrumb{max-width:1240px;margin:14px auto 8px;padding:0 18px;font-size:.82rem;color:#64748b}.firsatai-breadcrumb ol{display:flex;align-items:center;gap:7px;list-style:none;margin:0;padding:0;flex-wrap:wrap}.firsatai-breadcrumb li{display:flex;align-items:center;gap:7px}.firsatai-breadcrumb li:not(:last-child)::after{content:"›";color:#94a3b8}.firsatai-breadcrumb a{color:#2563eb;text-decoration:none}.firsatai-breadcrumb a:hover{text-decoration:underline}.firsatai-breadcrumb [aria-current="page"] span{color:#475569;font-weight:700}@media(max-width:640px){.firsatai-breadcrumb{padding:0 12px;font-size:.76rem}}</style>
 </head>
-
-<body class="bg-light">
-
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
-    <div class="container-fluid px-3 px-lg-4">
-
-        <a
-            class="navbar-brand fw-bold"
-            href="/admin"
-        >
-            Fırsat AI
+<body class="admin-body {% if request.url.path == '/admin' %}admin-dashboard-page{% else %}admin-light-page{% endif %}">
+<div class="admin-shell">
+    <aside class="admin-sidebar" id="adminSidebar">
+        <a href="/admin" class="admin-brand">
+            <span class="admin-brand-mark">⚡</span>
+            <span><strong>Fırsat <em>AI</em></strong><small>Yönetim Paneli</small></span>
         </a>
 
-        <button
-            class="navbar-toggler"
-            type="button"
-            data-bs-toggle="collapse"
-            data-bs-target="#adminNavbar"
-            aria-controls="adminNavbar"
-            aria-expanded="false"
-            aria-label="Menüyü aç"
-        >
-            <span class="navbar-toggler-icon"></span>
-        </button>
+        <nav class="admin-nav">
+            <a class="admin-nav-item {% if request.url.path == '/admin' %}active{% endif %}" href="/admin"><span>⌂</span> Dashboard</a>
+            <div class="admin-nav-label">KATALOG</div>
+            <a class="admin-nav-item {% if request.url.path == '/admin/catalog' %}active{% endif %}" href="/admin/catalog"><span>▦</span> Katalog Merkezi</a>
+            <a class="admin-nav-item {% if request.url.path.startswith('/admin/products') and request.url.path != '/admin/products/add' %}active{% endif %}" href="/admin/products"><span>◈</span> Ürünler</a>
+            <a class="admin-nav-item {% if request.url.path == '/admin/products/add' %}active{% endif %}" href="/admin/products/add"><span>＋</span> Ürün Ekle</a>
+            <a class="admin-nav-item {% if request.url.path == '/admin/offers' %}active{% endif %}" href="/admin/offers"><span>🏷</span> Teklifler</a>
+            <a class="admin-nav-item {% if request.url.path == '/admin/offer-validation' %}active{% endif %}" href="/admin/offer-validation"><span>✓</span> Teklif Doğrulama</a>
+            <a class="admin-nav-item {% if request.url.path == '/admin/offer-health' %}active{% endif %}" href="/admin/offer-health"><span>♥</span> Teklif Sağlığı</a>
+            <a class="admin-nav-item {% if request.url.path == '/admin/matching' %}active{% endif %}" href="/admin/matching"><span>⛓</span> Ürün Eşleştirme</a>
+            <a class="admin-nav-item {% if request.url.path.startswith('/admin/categories') %}active{% endif %}" href="/admin/catalog-scans" title="Otomatik Katalog">◎ Otomatik Katalog</a>
+            <a class="admin-nav-item {% if request.url.path == '/admin/v9-catalog' %}active{% endif %}" href="/admin/v9-catalog"><span>V9</span> Global Katalog</a>
+            <a class="admin-nav-item {% if request.url.path == '/admin/v9-ingestion' %}active{% endif %}" href="/admin/v9-ingestion"><span>V9</span> Katalog Besleme</a>
+            <a class="admin-nav-item {% if request.url.path == '/admin/v9-match-reviews' %}active{% endif %}" href="/admin/v9-match-reviews"><span>?</span> Eşleşme İnceleme</a>
+            <a class="admin-nav-item" href="/admin/categories"><span>▣</span> Kategoriler</a>
+            <a class="admin-nav-item {% if request.url.path == '/admin/brands' %}active{% endif %}" href="/admin/brands"><span>◆</span> Markalar</a>
+            <a class="admin-nav-item {% if request.url.path.startswith('/admin/product-features') %}active{% endif %}" href="/admin/product-features"><span>⚙</span> Özellikler</a>
+            <div class="admin-nav-label">MAĞAZA & OPERASYON</div>
+            <a class="admin-nav-item {% if request.url.path == '/admin/stores' %}active{% endif %}" href="/admin/stores"><span>🏪</span> Mağazalar</a>
+            <a class="admin-nav-item {% if request.url.path.startswith('/admin/scrapers') %}active{% endif %}" href="/admin/scrapers"><span>◌</span> Tarama Merkezi</a>
+            <a class="admin-nav-item {% if request.url.path == '/admin/catalog-scans' %}active{% endif %}" href="/admin/catalog-scans"><span>↻</span> Katalog Taramaları</a>
+            <a class="admin-nav-item {% if request.url.path == '/admin/bulk-catalog' %}active{% endif %}" href="/admin/bulk-catalog"><span>▤</span> Toplu Katalog</a>
+            <a class="admin-nav-item {% if request.url.path == '/admin/scraper-operations' %}active{% endif %}" href="/admin/scraper-operations"><span>◉</span> Scraper Operasyonları</a>
+            <a class="admin-nav-item {% if request.url.path == '/admin/live-prices' %}active{% endif %}" href="/admin/live-prices"><span>₺</span> Canlı Fiyat Motoru</a>
+            <a class="admin-nav-item {% if request.url.path.startswith('/admin/data-quality') %}active{% endif %}" href="/admin/data-quality"><span>◇</span> Veri Kalitesi</a>
 
-        <div
-            class="collapse navbar-collapse"
-            id="adminNavbar"
-        >
-            <div class="navbar-nav ms-auto align-items-lg-center">
+            <div class="admin-nav-label">GLOBAL KATALOG & AI</div>
+            <a class="admin-nav-item {% if request.url.path == '/admin/bulk-identity' %}active{% endif %}" href="/admin/bulk-identity"><span>⛓</span> Toplu Kimlik Motoru</a>
+            <a class="admin-nav-item {% if request.url.path == '/admin/ai-comparison' %}active{% endif %}" href="/admin/ai-comparison"><span>✦</span> AI Karşılaştırma</a>
+            <a class="admin-nav-item {% if request.url.path == '/admin/identity' %}active{% endif %}" href="/admin/identity"><span>⌘</span> Kimlik Merkezi</a>
+            <a class="admin-nav-item {% if request.url.path == '/admin/alerts' %}active{% endif %}" href="/admin/alerts"><span>🔔</span> Alarm Merkezi</a>
+            <a class="admin-nav-item {% if request.url.path == '/admin/analytics' %}active{% endif %}" href="/admin/analytics"><span>▥</span> Kullanıcı Analitiği</a>
+            <a class="admin-nav-item {% if request.url.path == '/admin/module-center' %}active{% endif %}" href="/admin/module-center"><span>▦</span> Tüm Modüller</a>
+            <div class="admin-nav-label">TOPLULUK & İLETİŞİM</div>
+            <a class="admin-nav-item {% if request.url.path == '/admin/users' %}active{% endif %}" href="/admin/users"><span>👤</span> Kullanıcılar</a>
+            <a class="admin-nav-item {% if request.url.path == '/admin/reviews' %}active{% endif %}" href="/admin/reviews"><span>💬</span> Yorumlar</a>
+            <a class="admin-nav-item {% if request.url.path == '/admin/notifications-admin' %}active{% endif %}" href="/admin/notifications-admin"><span>♢</span> Bildirimler</a>
+            <a class="admin-nav-item {% if request.url.path.startswith('/admin/whatsapp') %}active{% endif %}" href="/admin/whatsapp"><span>◉</span> WhatsApp</a>
+            <div class="admin-nav-label">ANALİZ & SİSTEM</div>
+            <a class="admin-nav-item {% if request.url.path == '/admin/reports' %}active{% endif %}" href="/admin/reports"><span>▥</span> Raporlar</a>
+            <a class="admin-nav-item {% if request.url.path == '/admin/v9-performance' %}active{% endif %}" href="/admin/v9-performance"><span>↯</span> Performans</a>
+            <a class="admin-nav-item {% if request.url.path == '/admin/production-release' %}active{% endif %}" href="/admin/production-release"><span>✓</span> Production Durumu</a>
+            <a class="admin-nav-item {% if request.url.path == '/admin/public-beta' %}active{% endif %}" href="/admin/public-beta"><span>β</span> Public Beta</a>
+            <a class="admin-nav-item {% if request.url.path == '/admin/beta' %}active{% endif %}" href="/admin/beta"><span>◐</span> Beta Sağlığı</a>
+            <a class="admin-nav-item {% if request.url.path == '/admin/v10-security' %}active{% endif %}" href="/admin/v10-security"><span>🔒</span> Güvenlik</a>
+            <a class="admin-nav-item {% if request.url.path == '/admin/settings' %}active{% endif %}" href="/admin/settings"><span>⚙</span> Ayarlar</a>
+            <a class="admin-nav-item" href="/api/docs" target="_blank"><span>&lt;/&gt;</span> API Belgeleri</a>
+        </nav>
 
-                <a class="nav-link" href="/admin">
-                    Dashboard
-                </a>
+        <a href="/" class="admin-view-site"><span>↗</span> Siteyi Görüntüle</a>
+    </aside>
 
-                <a class="nav-link" href="/admin/products">
-                    Ürünler
-                </a>
-
-                <a class="nav-link" href="/admin/products/add">
-                    ➕ Ürün Ekle
-                </a>
-
-                <a class="nav-link" href="/admin/categories">
-                    Kategoriler
-                </a>
-
-                <a class="nav-link" href="/karsilastir">
-                    Ürün Grupları
-                </a>
-
-                <a class="nav-link" href="/admin/product-features">
-                    Özellikler
-                </a>
-
-                <a class="nav-link" href="/admin/whatsapp">
-                    WhatsApp Fırsatları
-                </a>
-
-                <a
-                    class="nav-link"
-                    href="/docs"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    API
-                </a>
-
+    <div class="admin-main">
+        <header class="admin-topbar">
+            <div class="admin-topbar-left">
+                <button type="button" class="admin-menu-toggle" id="adminMenuToggle" aria-label="Menüyü aç">☰</button>
+                <div>
+                    <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+                    <p>{% block page_subtitle %}Sistem genel durumu ve istatistikler{% endblock %}</p>
+                </div>
             </div>
-        </div>
 
+            <div class="admin-topbar-actions">
+                <form class="admin-global-search" action="/admin/products" method="get">
+                    <span>⌕</span>
+                    <input name="search" type="search" placeholder="Ürün ara..." aria-label="Ürün ara">
+                    <kbd>Ctrl + K</kbd>
+                </form>
+                <a class="admin-icon-button" href="/bildirimler" aria-label="Bildirimler">♧</a>
+                <div class="admin-profile">
+                    <div class="admin-profile-text"><strong>Yönetici</strong><small>Administrator</small></div>
+                    <span class="admin-avatar">Y</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="admin-content">
+            {% block content %}{% endblock %}
+        </main>
     </div>
-</nav>
+</div>
+<div class="admin-sidebar-overlay" id="adminSidebarOverlay"></div>
 
-<main class="container-fluid px-3 px-lg-4 py-4">
-    {% block content %}{% endblock %}
-</main>
-
-<script
-    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-></script>
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function () {
+    const sidebar = document.getElementById('adminSidebar');
+    const toggle = document.getElementById('adminMenuToggle');
+    const overlay = document.getElementById('adminSidebarOverlay');
+    const search = document.querySelector('.admin-global-search input');
+    function closeMenu(){ sidebar?.classList.remove('open'); overlay?.classList.remove('show'); }
+    toggle?.addEventListener('click', () => { sidebar?.classList.toggle('open'); overlay?.classList.toggle('show'); });
+    overlay?.addEventListener('click', closeMenu);
+    document.addEventListener('keydown', (event) => {
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+            event.preventDefault(); search?.focus();
+        }
+        if (event.key === 'Escape') closeMenu();
+    });
+})();
+</script>
 {% block extra_scripts %}{% endblock %}
-
 </body>
 </html>
+
+
+<!-- V9 Performans: /admin/v9-performance -->
+
+<!-- V10 Release: /admin/v10-release -->
+
+<a style="display:none" href="/admin/v10-operations">V10 Operasyon</a>
+
+<a style="display:none" href="/admin/v11-stable">FırsatAI 11.0 Stable</a>

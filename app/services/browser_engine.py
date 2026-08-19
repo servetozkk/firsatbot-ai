@@ -66,6 +66,7 @@ class BrowserEngine:
         scroll_page: bool = True,
         verification_title: str = "GÜVENLİK DOĞRULAMASI",
         verification_message: str | None = None,
+        verification_wait_seconds: float | None = None,
     ) -> BrowserDownloadResult:
         self.profile_directory.mkdir(
             parents=True,
@@ -138,6 +139,7 @@ class BrowserEngine:
                     self._wait_for_manual_verification(
                         title=verification_title,
                         message=verification_message,
+                        wait_seconds_override=verification_wait_seconds,
                     )
 
                     page = self._recover_after_verification(
@@ -593,6 +595,7 @@ class BrowserEngine:
     def _wait_for_manual_verification(
         title: str,
         message: str | None,
+        wait_seconds_override: float | None = None,
     ) -> None:
         print()
         print("=" * 70)
@@ -612,6 +615,34 @@ class BrowserEngine:
             "PowerShell penceresine dönün."
         )
         print()
+
+        # V14_9_5_NONINTERACTIVE_VERIFICATION
+        import os
+        import sys
+        import time
+
+        noninteractive = (
+            os.getenv("FIRSATAI_NONINTERACTIVE", "1") == "1"
+            or not sys.stdin
+            or not sys.stdin.isatty()
+        )
+
+        if noninteractive:
+            if wait_seconds_override is not None:
+                wait_seconds = float(wait_seconds_override)
+            else:
+                wait_seconds = float(
+                    os.getenv(
+                        "FIRSATAI_VERIFICATION_WAIT_SECONDS",
+                        "12",
+                    )
+                )
+            print(
+                "Sunucu modu: terminal girdisi beklenmeyecek. "
+                f"Doğrulama için {wait_seconds:g} saniye bekleniyor."
+            )
+            time.sleep(max(0.5, min(wait_seconds, 60)))
+            return
 
         input(
             "Doğrulama tamamlanınca Enter'a bas: "

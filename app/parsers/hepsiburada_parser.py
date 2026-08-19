@@ -7,6 +7,7 @@ from urllib.parse import urlsplit
 
 from selectolax.parser import HTMLParser
 
+from app.services.product_image_service import collect_image_urls, serialize_image_gallery
 from app.models.product import Product
 
 
@@ -134,6 +135,9 @@ class HepsiburadaParser:
             seller=seller or "Hepsiburada",
             url=url,
             image=image,
+            image_gallery=serialize_image_gallery(
+                collect_image_urls(html, primary=image, base_url=url)
+            ),
             brand=brand,
             model=model,
             category=category,

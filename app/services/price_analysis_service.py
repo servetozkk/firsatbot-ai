@@ -14,7 +14,13 @@ def build_price_analysis(db, identity_key: str) -> dict[str, Any] | None:
     if group is None:
         return None
 
-    offers = db.query(ProductOffer).filter(ProductOffer.group_id == group.id).all()
+    offers = db.query(ProductOffer).filter(
+        ProductOffer.group_id == group.id,
+        ProductOffer.is_active.is_(True),
+        ProductOffer.is_hidden.is_(False),
+        ProductOffer.lifecycle_status == "ACTIVE",
+        ProductOffer.current_price > 0,
+    ).all()
     if not offers:
         return {
             "score": 0,

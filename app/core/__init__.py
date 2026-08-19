@@ -1,0 +1,1 @@
+"""FırsatAI çekirdek uygulama ayarları."""

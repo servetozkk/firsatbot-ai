@@ -1,0 +1,17 @@
+FırsatAI v16.0.1 - Global Ürün 125 Kaynak Bağı Onarımı
+
+Tespit edilen durum:
+- global_products.id=125 mevcuttu.
+- Ancak raw_products ve global_offers kayıtları kopya global ürün 133 altındaydı.
+- Bu nedenle POST /api/multi-store-repair/v14/products/125 çağrısı kaynak ürün bulamıyordu.
+
+Uygulanan onarım:
+- raw_products: 152 ve 159 -> global_product_id 125
+- global_offers: 152 ve 159 -> global_product_id 125
+- global ürün 125 sayaçları: raw_product_count=2, active_offer_count=2
+- global ürün 133: status=MERGED, sayaçlar=0
+- SQLite integrity_check=ok
+- foreign_key_check=0 ihlal
+
+Servis koruması:
+product_from_global_product() doğrudan kaynak bulamazsa aynı model kodu, marka, RAM ve depolamaya sahip kopya global kayıtları arar ve hedef global ID altında birleştirir.

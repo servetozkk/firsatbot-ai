@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Toplu Kimlik Motoru{% endblock %}
+{% block content %}
+<div style="max-width:1200px;margin:32px auto;padding:0 20px">
+  <h1>Toplu Kimlik ve Global Ürün Motoru</h1>
+  <p>Staging ürünlerini mağazalarda tekrar aramadan toplu biçimde global ürünlere bağlar.</p>
+  <div id="cards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin:20px 0"></div>
+  <button id="run" style="padding:12px 18px;border:0;border-radius:10px;cursor:pointer">250 kaydı işle</button>
+  <pre id="out" style="white-space:pre-wrap;background:#111827;color:#e5e7eb;padding:16px;border-radius:12px;margin-top:16px"></pre>
+</div>
+<script>
+const initial={{ status|tojson }};
+function draw(s){
+ const c=s.counts||{}; document.getElementById('cards').innerHTML=Object.entries(c).map(([k,v])=>`<div style="padding:16px;border:1px solid #ddd;border-radius:12px"><small>${k}</small><div style="font-size:28px;font-weight:700">${v}</div></div>`).join('');
+ document.getElementById('out').textContent=JSON.stringify(s,null,2);
+}
+draw(initial);
+document.getElementById('run').onclick=async()=>{const b=document.getElementById('run');b.disabled=true;b.textContent='İşleniyor...';try{const r=await fetch('/api/bulk-identity/v14/process?limit=250',{method:'POST'});const j=await r.json();draw(j.status);document.getElementById('out').textContent=JSON.stringify(j,null,2);}finally{b.disabled=false;b.textContent='250 kaydı işle';}};
+</script>
+{% endblock %}

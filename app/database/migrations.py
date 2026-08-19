@@ -4,6 +4,7 @@ from app.database.database import engine
 
 
 PRODUCT_COLUMNS = {
+    "image_gallery": "TEXT",
     "brand": "VARCHAR",
     "model": "VARCHAR",
     "category": "VARCHAR",
@@ -19,6 +20,11 @@ PRODUCT_COLUMNS = {
 
 PRODUCT_GROUP_COLUMNS = {
     "identity_source": "VARCHAR",
+}
+
+PRODUCT_OFFER_COLUMNS = {
+    "is_hidden": "BOOLEAN DEFAULT 0 NOT NULL",
+    "admin_note": "VARCHAR",
 }
 
 
@@ -116,6 +122,17 @@ def migrate_database() -> None:
                 "Product groups tablosu henüz yok. "
                 "Product group migration atlandı."
             )
+
+        if "product_offers" in table_names:
+            _add_missing_columns(
+                connection=connection,
+                inspector=inspector,
+                table_name="product_offers",
+                required_columns=PRODUCT_OFFER_COLUMNS,
+            )
+            connection.execute(text("UPDATE product_offers SET is_hidden = 0 WHERE is_hidden IS NULL"))
+        else:
+            print("Product offers tablosu henüz yok. Product offer migration atlandı.")
 
     print("Veritabanı geçişi tamamlandı.")
 

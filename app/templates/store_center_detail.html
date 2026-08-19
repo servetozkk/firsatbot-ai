@@ -1,0 +1,10 @@
+{% from "components/breadcrumbs.html" import render_breadcrumbs %}
+{% extends "base.html" %}{% block title %}{{ seo_title }}{% endblock %}
+{% block content %}
+{{ render_breadcrumbs(breadcrumbs_v13) }}
+<div class="container py-4"><nav class="small mb-3">{% for label,url in breadcrumbs %}{% if url %}<a href="{{url}}">{{label}}</a> / {% else %}{{label}}{% endif %}{% endfor %}</nav>
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-3"><div><h1>{{store.name}}</h1><p class="text-muted">{{store.product_count}} ürün · {{store.active_offer_count}} aktif teklif · {{store.category_count}} kategori</p></div><div class="card p-3"><strong>Kalite sinyali {{store.quality.score}}/100</strong><span class="small text-muted">{{store.quality.label}}</span></div></div>
+<div class="row g-2 my-3">{% for key,val in store.quality.components.items() %}<div class="col-6 col-md"><div class="border rounded p-2 small"><strong>{{val}}%</strong><br>{{key.replace('_',' ')}}</div></div>{% endfor %}</div>
+<div class="mb-3">{% for c,n in store.categories %}<a class="btn btn-sm btn-outline-secondary me-1 mb-1" href="/arama?store={{store.code}}&category={{c}}">{{c}} ({{n}})</a>{% endfor %}</div>
+<div class="row g-3">{% for p in store.products %}<div class="col-12 col-md-6 col-xl-4"><div class="card h-100"><div class="card-body"><h2 class="h6"><a href="{{p.product_url}}">{{p.name}}</a></h2><p class="small text-muted">{{p.brand}} · {{p.category}}</p><strong>{{"{:,.2f}".format(p.total_price)}} TL</strong>{% if p.shipping_price == 0 %}<span class="badge bg-success">Kargo ücretsiz/belirsiz</span>{% endif %}<div class="small mt-2">{% if p.delivery_text %}{{p.delivery_text}}{% else %}Teslimat bilgisi yok{% endif %}</div>{% if p.is_official_seller %}<span class="badge bg-info mt-2">Resmi satıcı</span>{% endif %}</div><div class="card-footer"><a class="btn btn-primary btn-sm" target="_blank" rel="nofollow sponsored" href="{{p.store_url}}">Mağazaya git</a></div></div></div>{% endfor %}</div></div>
+{% endblock %}

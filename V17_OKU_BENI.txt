@@ -1,0 +1,26 @@
+FırsatAI v17.0.0 - Katı Ürün Kimliği ve Varyant Güvenliği
+
+Başlatma:
+1. ZIP'i klasöre çıkartın.
+2. BASLAT_V17.bat dosyasını çalıştırın.
+3. http://127.0.0.1:8000/admin/multi-store-repair adresini açın.
+
+Doğrulama:
+- http://127.0.0.1:8000/api/runtime-identity/v17
+- runtime_version değeri 17.0.0 olmalıdır.
+
+V17 eşleştirme kuralları:
+- Tam model varyantı farklıysa kesin red.
+- Model ailesi farklıysa kesin red.
+- Marka veya ürün serisi farklıysa kesin red.
+- RAM, depolama, işlemci veya ekran açıkça farklıysa kesin red.
+- Sadece aday varyant son eki eksik, aile aynı ve RAM+SSD+CPU aynıysa kontrollü kabul.
+- Cloudflare/CAPTCHA/güvenlik sayfaları ürün olarak kabul edilmez.
+- Eski güvenli olmayan model-family fallback kaldırıldı.
+
+Test edilen örnekler:
+- X1504VA-BQ5391: kabul
+- X1504VA (aynı RAM/SSD/CPU): kontrollü kabul
+- BQ5383W, BQ5387, NJ3663W: kesin red
+- ASUS TUF/ROG, Samsung: kesin red
+- 1 TB farklı depolama: kesin red

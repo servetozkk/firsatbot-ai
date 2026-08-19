@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block extra_head %}
+<style>
+.m-page{display:grid;gap:16px}.m-hero{padding:21px;border:1px solid #dce5f1;border-radius:19px;background:linear-gradient(135deg,#fff,#f4f6ff)}.m-hero h2{margin:5px 0;color:#172033}.m-hero p{margin:0;color:#64748b;font-size:.7rem}.m-kicker{color:#6d28d9;font-size:.6rem;font-weight:950;letter-spacing:.1em}.m-message{padding:12px;border-radius:11px;background:#f0fdf4;color:#166534}.m-error{padding:12px;border-radius:11px;background:#fff1f2;color:#b91c1c}.m-list{display:grid;gap:11px}.m-card{padding:16px;border:1px solid #dfe7f2;border-radius:16px;background:#fff}.m-head{display:flex;justify-content:space-between;gap:12px}.m-head h3{margin:0;color:#172033;font-size:.86rem}.m-head p{margin:4px 0 0;color:#64748b;font-size:.6rem}.m-score{display:grid;place-items:center;width:54px;height:54px;border-radius:50%;background:#fef3c7;color:#a16207;font-weight:950}.m-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.m-box{padding:12px;border-radius:12px;background:#f8fafc}.m-box span{display:block;color:#64748b;font-size:.52rem}.m-box strong{display:block;margin-top:4px;color:#172033;font-size:.68rem}.m-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}.m-tags i{padding:5px 7px;border-radius:999px;background:#eef2ff;color:#3730a3;font-size:.5rem;font-style:normal}.m-tags i.bad{background:#fee2e2;color:#b91c1c}.m-actions{display:flex;gap:8px;margin-top:12px}.m-actions form{margin:0}.m-actions button{min-height:37px;padding:0 12px;border:1px solid #d8e1ed;border-radius:9px;background:#fff;font-size:.58rem;font-weight:900}.m-actions .approve{background:#16a34a;border-color:#16a34a;color:#fff}.m-actions .reject{background:#dc2626;border-color:#dc2626;color:#fff}@media(max-width:700px){.m-grid{grid-template-columns:1fr}.m-head{align-items:flex-start}}
+</style>
+{% endblock %}
+{% block title %}V9 Eşleşme İnceleme - Fırsat AI{% endblock %}
+{% block page_title %}V9 Eşleşme İnceleme Kuyruğu{% endblock %}
+{% block page_subtitle %}Şüpheli ürün birleşmelerini onayla veya ayrı global ürün olarak oluştur{% endblock %}
+{% block content %}
+<div class="platform-page m-page">
+{% if message %}<div class="m-message">{{ message }}</div>{% endif %}
+{% if error %}<div class="m-error">{{ error }}</div>{% endif %}
+<section class="m-hero"><span class="m-kicker">V9.4 · GÜVENLİ EŞLEŞTİRME</span><h2>Otomatik birleştirilmeyen ürünler</h2><p>Varyant, RAM, depolama, model kodu veya ürün ailesi çakışan kayıtlar burada bekler. Yanlış ürünler kullanıcıya tek ürün gibi gösterilmez.</p></section>
+<section class="m-list">
+{% for row in reviews %}
+<article class="m-card">
+<div class="m-head"><div><h3>{{ row.raw.title_raw }}</h3><p>{{ row.raw.store_code }} · {{ row.raw.store_product_id or 'ürün kodu yok' }}</p></div><span class="m-score">{{ row.review.confidence|round|int }}</span></div>
+<div class="m-grid">
+<div class="m-box"><span>HAM ÜRÜN</span><strong>{{ row.raw.brand_raw or '—' }} · {{ row.raw.model_raw or '—' }} · {{ row.raw.price_raw }} TL</strong><div class="m-tags">{% for key,value in row.identifiers.items() if value %}<i>{{ key }}={{ value }}</i>{% endfor %}</div></div>
+<div class="m-box"><span>ADAY GLOBAL ÜRÜN</span><strong>{% if row.candidate %}{{ row.candidate.canonical_name }}{% else %}Aday bulunamadı{% endif %}</strong>{% if row.candidate %}<div class="m-tags"><i>{{ row.candidate.normalized_brand }}</i><i>{{ row.candidate.family }}</i><i>{{ row.candidate.variant or 'standart' }}</i><i>{{ row.candidate.ram_gb or 'RAM?' }} GB</i><i>{{ row.candidate.storage_gb or 'Depolama?' }} GB</i></div>{% endif %}</div>
+</div>
+<div class="m-tags">{% for item in row.reasons %}<i>✓ {{ item }}</i>{% endfor %}{% for item in row.conflicts %}<i class="bad">✕ {{ item }}</i>{% endfor %}</div>
+<div class="m-actions">{% if row.candidate %}<form method="post" action="/admin/v9-match-reviews/{{ row.review.id }}/approve"><button class="approve">Adayla birleştir</button></form>{% endif %}<form method="post" action="/admin/v9-match-reviews/{{ row.review.id }}/reject"><button class="reject">Ayrı ürün oluştur</button></form></div>
+</article>
+{% else %}<article class="m-card">Bekleyen şüpheli eşleşme bulunmuyor.</article>{% endfor %}
+</section></div>
+{% endblock %}

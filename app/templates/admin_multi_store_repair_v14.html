@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Çok Mağazalı Teklif Birleştirme{% endblock %}
+{% block page_title %}Çok Mağazalı Teklif Birleştirme{% endblock %}
+{% block page_subtitle %}Tek mağazada kalan global ürünü diğer mağazalarda bulup aynı ürün altında birleştirir{% endblock %}
+{% block content %}
+<div class="card p-4">
+<h2>Global ürün onarımı</h2>
+<p>Global ürün kimliğini gir. Sistem tüm tanımlı mağazalarda aynı ürünü arar, yanlış varyantları eler ve doğrulanan teklifleri aynı global ürün altında toplar.</p>
+<div style="display:grid;grid-template-columns:1fr 160px 160px auto;gap:10px;align-items:end">
+<label>Global ürün ID<input id="productId" class="form-control" type="number" min="1"></label>
+<label>Aday limiti<input id="candidateLimit" class="form-control" type="number" value="5" min="1" max="10"></label>
+<label>Worker<input id="workers" class="form-control" type="number" value="3" min="1" max="6"></label>
+<button id="runBtn" class="btn btn-primary">Tüm mağazalarda bul ve birleştir</button>
+</div>
+<pre id="result" style="margin-top:16px;white-space:pre-wrap"></pre>
+</div>
+<script>
+document.getElementById("runBtn").addEventListener("click", async () => {
+  const id = document.getElementById("productId").value;
+  const limit = document.getElementById("candidateLimit").value;
+  const workers = document.getElementById("workers").value;
+  const output = document.getElementById("result");
+  output.textContent = "Mağazalar taranıyor...";
+  const response = await fetch(`/api/multi-store-repair/v14/products/${id}?candidate_limit=${limit}&parallel_workers=${workers}`, {method:"POST"});
+  const data = await response.json();
+  output.textContent = JSON.stringify(data, null, 2);
+});
+</script>
+{% endblock %}

@@ -3,6 +3,9 @@ from __future__ import annotations
 import html as html_module
 import re
 import threading
+import json
+from datetime import datetime, timezone
+from time import perf_counter
 from dataclasses import fields, is_dataclass
 from pathlib import Path
 from urllib.parse import (
@@ -24,7 +27,14 @@ from app.services.browser_engine import BrowserEngine
 from app.services.scraper_runtime_config import SCRAPER_HEADLESS
 
 
+class HepsiburadaSecurityChallenge(RuntimeError):
+    """Hepsiburada normal ürün HTML'i yerine güvenlik doğrulaması gösterdi."""
+
+    code = "SECURITY_CHALLENGE"
+
+
 class HepsiburadaScraper(BaseScraper):
+    _session_lock = threading.RLock()
     BASE_URL = "https://www.hepsiburada.com"
 
     SECURITY_TEXTS = (
@@ -58,14 +68,17 @@ class HepsiburadaScraper(BaseScraper):
 
         project_root = Path(__file__).resolve().parents[2]
 
-        worker_suffix = str(threading.get_ident())
+        # V19: Tüm Hepsiburada okumaları aynı kalıcı Chrome profilini kullanır.
         self.profile_directory = (
-            project_root
-            / ".playwright-hepsiburada-profiles"
-            / worker_suffix
+            project_root / ".playwright-hepsiburada-profile"
         )
+        # V20.9: Profil proje kökünde sabittir. Her taramada geçici
+        # user-data-dir üretilmez; doğrulama sonrası Chrome cookie/local
+        # storage verileri bu dizinde sonraki taramalara taşınır.
+        self.profile_directory.mkdir(parents=True, exist_ok=True)
 
-        self.debug_file = project_root / f"hb_debug_{worker_suffix}.html"
+        self.debug_file = project_root / "hb_debug.html"
+        self.session_metadata_file = project_root / "hb_session_metadata.json"
 
         self.search_debug_file = (
             project_root
@@ -159,6 +172,8 @@ class HepsiburadaScraper(BaseScraper):
 
         try:
             return self._scrape_with_browser_navigation(clean_url)
+        except HepsiburadaSecurityChallenge:
+            raise
         except Exception as error:
             raise RuntimeError(
                 "Hepsiburada ürünü tarayıcı üzerinden okunamadı. "
@@ -172,7 +187,12 @@ class HepsiburadaScraper(BaseScraper):
         product_code = self._extract_product_code(original_url)
         product_name = self._extract_product_name_from_url(original_url)
 
-        with sync_playwright() as playwright:
+        # V20.2: Aynı profilin eşzamanlı iki Chrome süreci tarafından
+        # açılmasını engeller. Güvenlik doğrulaması tamamlanırsa cookie ve
+        # local storage aynı kalıcı profilde sonraki taramalarda korunur.
+        hb_total_started_v236213 = perf_counter()
+        with self._session_lock, sync_playwright() as playwright:
+            hb_launch_started_v236213 = perf_counter()
             context = playwright.chromium.launch_persistent_context(
                 user_data_dir=str(self.profile_directory),
                 channel="chrome",
@@ -186,6 +206,10 @@ class HepsiburadaScraper(BaseScraper):
             )
 
             try:
+                print(
+                    f"V23.62.13 HB PHASE browser_launch="
+                    f"{perf_counter() - hb_launch_started_v236213:.3f}s"
+                )
                 page = context.pages[0] if context.pages else context.new_page()
                 page.set_default_timeout(30_000)
 
@@ -200,6 +224,10 @@ class HepsiburadaScraper(BaseScraper):
                 except Exception as error:
                     direct_error = error
                     print("Doğrudan ürün sayfası okunamadı:", error)
+                    if isinstance(error, HepsiburadaSecurityChallenge):
+                        # V20.9: Aynı challenge oturumunda HB arama sayfasını
+                        # veya başka aday URL'leri tekrar tekrar açma.
+                        raise
 
                 search_terms = [
                     term
@@ -282,7 +310,24 @@ class HepsiburadaScraper(BaseScraper):
                 )
 
             finally:
+                hb_pre_cleanup_total_v236244 = perf_counter() - hb_total_started_v236213
+                hb_cleanup_started_v236244 = perf_counter()
                 context.close()
+                hb_cleanup_elapsed_v236244 = perf_counter() - hb_cleanup_started_v236244
+                hb_total_elapsed_v236244 = perf_counter() - hb_total_started_v236213
+                print(
+                    f"V23.62.44 HB CHALLENGE PATH PHASE cleanup: "
+                    f"elapsed={hb_cleanup_elapsed_v236244:.3f}s "
+                    f"pre_cleanup_total={hb_pre_cleanup_total_v236244:.3f}s"
+                )
+                print(
+                    f"V23.62.13 HB TOTAL="
+                    f"{hb_total_elapsed_v236244:.3f}s"
+                )
+                print(
+                    f"V23.62.44 HB CHALLENGE PATH PHASE total: "
+                    f"elapsed={hb_total_elapsed_v236244:.3f}s"
+                )
 
     def _open_and_parse_product_page(
         self,
@@ -292,17 +337,30 @@ class HepsiburadaScraper(BaseScraper):
     ):
         requested_url = self.clean_product_url(candidate_url)
 
+        hb_goto_started_v236213 = perf_counter()
         page.goto(
             requested_url,
             wait_until="domcontentloaded",
-            timeout=60_000,
+            timeout=30_000,
         )
-        page.wait_for_timeout(6_000)
+        hb_detail_goto_elapsed_v236244 = perf_counter() - hb_goto_started_v236213
+        print(
+            f"V23.62.13 HB PHASE goto="
+            f"{hb_detail_goto_elapsed_v236244:.3f}s"
+        )
+        print(
+            f"V23.62.44 HB CHALLENGE PATH PHASE detail_goto: "
+            f"elapsed={hb_detail_goto_elapsed_v236244:.3f}s"
+        )
 
-        try:
-            page.wait_for_load_state("networkidle", timeout=15_000)
-        except PlaywrightTimeoutError:
-            pass
+        # V23.62.13: challenge ayrımı için 1 saniye settle yeterli;
+        # ürün parse güvenliği sonraki HTML/URL kontrollerinde korunur.
+        hb_settle_started_v236213 = perf_counter()
+        page.wait_for_timeout(1_000)
+        print(
+            f"V23.62.13 HB PHASE settle="
+            f"{perf_counter() - hb_settle_started_v236213:.3f}s"
+        )
 
         current_url = page.url
         html = page.content()
@@ -315,9 +373,25 @@ class HepsiburadaScraper(BaseScraper):
         print("Chrome açılan URL:", current_url)
         print("Chrome HTML uzunluğu:", len(html))
 
+        hb_challenge_detection_started_v236244 = perf_counter()
+        hb_challenge_detected_v236244 = self._is_security_page(html)
+        hb_challenge_detection_elapsed_v236244 = perf_counter() - hb_challenge_detection_started_v236244
+        print(
+            f"V23.62.44 HB CHALLENGE PATH PHASE challenge_detection: "
+            f"elapsed={hb_challenge_detection_elapsed_v236244:.3f}s "
+            f"detected={hb_challenge_detected_v236244}"
+        )
+
+        if hb_challenge_detected_v236244:
+            html = self._recover_from_security_page(
+                page=page,
+                requested_url=requested_url,
+            )
+
         if self._is_security_page(html):
-            raise PermissionError(
-                "Hepsiburada güvenlik doğrulaması gösteriyor."
+            raise HepsiburadaSecurityChallenge(
+                "SECURITY_CHALLENGE: Hepsiburada güvenlik doğrulaması "
+                "devam ediyor; ürün HTML'i scraper pipeline'ına gönderilmedi."
             )
 
         if not self._looks_like_product_url(current_url):
@@ -349,6 +423,119 @@ class HepsiburadaScraper(BaseScraper):
 
         print("Ürün tarayıcıyla başarıyla okundu.")
         return product
+
+    def _recover_from_security_page(
+        self,
+        page,
+        requested_url: str,
+    ) -> str:
+        """V20.9 kalıcı oturum yöneticisi.
+
+        Güvenlik mekanizmasını atlatmaz. Kullanıcı normal Chrome penceresinde
+        doğrulamayı tamamladıysa aynı kalıcı profil/cookie oturumunda bunu
+        kısa aralıklarla algılar. Challenge devam ediyorsa uzun reload
+        zincirine girmeden çağırana SECURITY_CHALLENGE döndürülmesini sağlar.
+        """
+
+        last_html = page.content()
+        print(
+            "Hepsiburada SECURITY_CHALLENGE tespit edildi; "
+            "kalıcı profil oturumu kısa süre kontrol ediliyor."
+        )
+
+        # V23.62.13: Güvenliği aşmadan challenge'ın kalkıp kalkmadığını
+        # kısa bir pencereyle kontrol et. V23.63.20: mevcut 1s kontrolüne
+        # yalnız bir 2s bounded recheck daha eklenir; challenge bypass edilmez.
+        hb_challenge_started_v236213 = perf_counter()
+        for attempt, wait_ms in enumerate((1_000, 2_000), start=1):
+            page.wait_for_timeout(wait_ms)
+            try:
+                last_html = page.content()
+            except Exception:
+                last_html = ""
+
+            if not self._is_security_page(last_html):
+                # Challenge kalktıktan sonra asıl ürün URL'sine aynı oturumla
+                # yalnızca bir kez dön.
+                try:
+                    if self.clean_product_url(page.url) != self.clean_product_url(requested_url):
+                        page.goto(
+                            requested_url,
+                            wait_until="domcontentloaded",
+                            timeout=30_000,
+                        )
+                        page.wait_for_timeout(2_000)
+                        last_html = page.content()
+                except Exception:
+                    pass
+
+                if (
+                    not self._is_security_page(last_html)
+                    and len(last_html) >= 3_000
+                ):
+                    print(
+                        "Hepsiburada kalıcı oturumu doğrulandı; "
+                        "ürün pipeline'ına devam ediliyor."
+                    )
+                    self._write_session_metadata(page, verified=True)
+                    hb_challenge_recheck_elapsed_v236244 = perf_counter() - hb_challenge_started_v236213
+                    print(
+                        f"V23.62.13 HB PHASE challenge_recheck="
+                        f"{hb_challenge_recheck_elapsed_v236244:.3f}s "
+                        f"resolved=True"
+                    )
+                    print(
+                        f"V23.62.44 HB CHALLENGE PATH PHASE challenge_recheck: "
+                        f"elapsed={hb_challenge_recheck_elapsed_v236244:.3f}s resolved=True"
+                    )
+                    print(
+                        f"V23.63.20 HB BOUNDED CHALLENGE RECHECK: "
+                        f"attempt={attempt}/2 wait_ms={wait_ms} resolved=True bypass=False"
+                    )
+                    return last_html
+
+            print(
+                f"Hepsiburada challenge kontrolü {attempt}/2: "
+                "doğrulama hâlâ aktif."
+            )
+            print(
+                f"V23.63.20 HB BOUNDED CHALLENGE RECHECK: "
+                f"attempt={attempt}/2 wait_ms={wait_ms} resolved=False bypass=False"
+            )
+
+        self._write_session_metadata(page, verified=False)
+        hb_challenge_recheck_elapsed_v236244 = perf_counter() - hb_challenge_started_v236213
+        print(
+            f"V23.62.13 HB PHASE challenge_recheck="
+            f"{hb_challenge_recheck_elapsed_v236244:.3f}s "
+            f"resolved=False"
+        )
+        print(
+            f"V23.62.44 HB CHALLENGE PATH PHASE challenge_recheck: "
+            f"elapsed={hb_challenge_recheck_elapsed_v236244:.3f}s resolved=False"
+        )
+        print(
+            "V23.63.20 HB BOUNDED CHALLENGE RECHECK EXHAUSTED: "
+            "attempts=2 resolved=False bypass=False fail_closed=True"
+        )
+        return last_html
+
+    def _write_session_metadata(self, page, *, verified: bool) -> None:
+        """Oturum durumunu teşhis amacıyla kaydeder; güvenliği aşmaz."""
+        try:
+            cookies = page.context.cookies()
+            payload = {
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+                "verified": bool(verified),
+                "url": page.url,
+                "cookie_names": sorted({str(item.get("name", "")) for item in cookies if item.get("name")}),
+            }
+            self.session_metadata_file.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+        except Exception:
+            return
 
     def _collect_product_links_from_page(
         self,

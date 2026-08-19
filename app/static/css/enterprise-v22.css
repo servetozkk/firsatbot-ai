@@ -1,0 +1,270 @@
+:root{
+  --v22-bg:#f5f7fb;--v22-surface:#ffffff;--v22-surface-2:#f8fafc;--v22-text:#111827;--v22-muted:#64748b;
+  --v22-line:#e5e7eb;--v22-primary:#4f46e5;--v22-primary-2:#7c3aed;--v22-shadow:0 18px 50px rgba(15,23,42,.10);
+}
+html[data-theme="dark"]{
+  color-scheme:dark;--v22-bg:#0b1020;--v22-surface:#121a2d;--v22-surface-2:#172036;--v22-text:#eef2ff;
+  --v22-muted:#a7b0c5;--v22-line:#28344d;--v22-primary:#818cf8;--v22-primary-2:#a78bfa;--v22-shadow:0 20px 55px rgba(0,0,0,.34);
+}
+html[data-theme="dark"] body{background:var(--v22-bg)!important;color:var(--v22-text)!important}
+html[data-theme="dark"] .site-header,
+html[data-theme="dark"] .public-navbar,
+html[data-theme="dark"] .category-strip,
+html[data-theme="dark"] .product-card,
+html[data-theme="dark"] .section-card,
+html[data-theme="dark"] .market-summary,
+html[data-theme="dark"] .popular-store-card,
+html[data-theme="dark"] .brand-card,
+html[data-theme="dark"] .public-footer,
+html[data-theme="dark"] .mobile-menu-panel,
+html[data-theme="dark"] .search-suggestions,
+html[data-theme="dark"] .mega-menu-panel{background:var(--v22-surface)!important;color:var(--v22-text)!important;border-color:var(--v22-line)!important}
+html[data-theme="dark"] .header-link,
+html[data-theme="dark"] .public-navbar .nav-link,
+html[data-theme="dark"] .category-pill,
+html[data-theme="dark"] .product-name,
+html[data-theme="dark"] .section-title,
+html[data-theme="dark"] .navbar-brand{color:var(--v22-text)!important}
+html[data-theme="dark"] .product-category,
+html[data-theme="dark"] .product-meta,
+html[data-theme="dark"] .old-price,
+html[data-theme="dark"] .section-subtitle,
+html[data-theme="dark"] .public-footer{color:var(--v22-muted)!important}
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea{background:var(--v22-surface-2)!important;color:var(--v22-text)!important;border-color:var(--v22-line)!important}
+html[data-theme="dark"] .homepage-v2,
+html[data-theme="dark"] main{color:var(--v22-text)}
+html[data-theme="dark"] .featured-category-compact{background:var(--v22-surface)!important;border-color:var(--v22-line)!important}
+html[data-theme="dark"] .enterprise-topline{background:linear-gradient(90deg,#18213a,#211c40)!important;color:#dbeafe!important;border-color:#303b58!important}
+html[data-theme="dark"] .site-footer{background:#080d18!important}
+
+.theme-toggle{
+  width:40px;height:40px;display:inline-grid;place-items:center;border:1px solid var(--v22-line);border-radius:12px;
+  background:var(--v22-surface);color:var(--v22-text);cursor:pointer;font-size:1rem;transition:.2s ease;box-shadow:0 6px 18px rgba(15,23,42,.06)
+}
+.theme-toggle:hover{transform:translateY(-1px);border-color:var(--v22-primary);color:var(--v22-primary)}
+.theme-toggle .theme-sun{display:none}html[data-theme="dark"] .theme-toggle .theme-moon{display:none}html[data-theme="dark"] .theme-toggle .theme-sun{display:inline}
+
+.mega-menu{position:relative}.mega-menu>summary{list-style:none;cursor:pointer}.mega-menu>summary::-webkit-details-marker{display:none}
+.mega-menu-panel{
+  position:absolute;top:calc(100% + 14px);left:50%;transform:translateX(-50%);width:min(920px,92vw);padding:20px;
+  background:#fff;border:1px solid var(--v22-line);border-radius:20px;box-shadow:var(--v22-shadow);z-index:120;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px
+}
+.mega-menu:not([open]) .mega-menu-panel{display:none}.mega-menu-group{padding:12px;border-radius:14px;background:var(--v22-surface-2)}
+.mega-menu-group strong{display:block;margin-bottom:8px;font-size:.82rem;color:var(--v22-text)}.mega-menu-group a{display:flex;align-items:center;gap:8px;padding:7px 4px;color:var(--v22-muted);font-size:.75rem;font-weight:750;text-decoration:none;border-radius:8px}
+.mega-menu-group a:hover{color:var(--v22-primary);background:rgba(79,70,229,.08)}.mega-menu-feature{grid-column:span 2;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff!important}
+.mega-menu-feature strong,.mega-menu-feature a{color:#fff!important}.mega-menu-feature p{font-size:.73rem;opacity:.85;margin:0 0 8px}
+
+.mobile-theme-row{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important}.mobile-theme-row .theme-toggle{width:36px;height:36px}
+
+@media(max-width:1100px){.mega-menu-panel{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.mega-menu{display:none}.theme-toggle.desktop-theme{display:none}.mega-menu-panel{grid-template-columns:1fr}.mega-menu-feature{grid-column:auto}}
+
+/* v2.2.1 — Ana sayfa ve koyu tema düzeltmeleri */
+html[data-theme="dark"] {
+  --v22-bg:#080d19;
+  --v22-surface:#111827;
+  --v22-surface-2:#182238;
+  --v22-text:#f8fafc;
+  --v22-muted:#aab6cc;
+  --v22-line:#2b3852;
+}
+
+html[data-theme="dark"] body,
+html[data-theme="dark"] .homepage-v2 {
+  background:
+    radial-gradient(circle at 15% 0%, rgba(79,70,229,.14), transparent 34%),
+    radial-gradient(circle at 88% 18%, rgba(37,99,235,.10), transparent 30%),
+    #080d19 !important;
+}
+
+html[data-theme="dark"] .site-header {
+  background:rgba(8,13,25,.92)!important;
+  border-bottom-color:#25314a!important;
+  box-shadow:0 12px 34px rgba(0,0,0,.24);
+}
+
+html[data-theme="dark"] .brand-copy strong,
+html[data-theme="dark"] .header-link,
+html[data-theme="dark"] .mega-menu > summary,
+html[data-theme="dark"] .account-entry-copy strong {
+  color:#f8fafc!important;
+}
+
+html[data-theme="dark"] .brand-copy small,
+html[data-theme="dark"] .account-entry-copy small {
+  color:#9aa8c2!important;
+}
+
+html[data-theme="dark"] .header-search input {
+  background:#10192c!important;
+  color:#f8fafc!important;
+  border-color:#33415f!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.015);
+}
+html[data-theme="dark"] .header-search input::placeholder { color:#8290aa!important; }
+html[data-theme="dark"] .header-search input:focus {
+  background:#141f35!important;
+  border-color:#7184ff!important;
+  box-shadow:0 0 0 4px rgba(99,102,241,.18)!important;
+}
+
+html[data-theme="dark"] .header-link,
+html[data-theme="dark"] .mega-menu > summary,
+html[data-theme="dark"] .account-entry,
+html[data-theme="dark"] .mobile-menu summary,
+html[data-theme="dark"] .theme-toggle {
+  background:#131d31!important;
+  border-color:#33415f!important;
+  color:#edf2ff!important;
+}
+html[data-theme="dark"] .header-link:hover,
+html[data-theme="dark"] .mega-menu > summary:hover,
+html[data-theme="dark"] .account-entry:hover {
+  background:#1a2740!important;
+  border-color:#6272e8!important;
+}
+
+html[data-theme="dark"] .category-strip {
+  background:#0c1425!important;
+  border-color:#25314a!important;
+}
+html[data-theme="dark"] .category-pill {
+  background:#131d31!important;
+  border-color:#2c3953!important;
+  color:#dce5f7!important;
+  box-shadow:none!important;
+}
+html[data-theme="dark"] .category-pill:hover {
+  background:#1b2943!important;
+  color:#fff!important;
+  border-color:#5969d8!important;
+}
+
+html[data-theme="dark"] .enterprise-topline {
+  background:linear-gradient(90deg,rgba(24,33,58,.96),rgba(37,29,69,.96))!important;
+  border:1px solid #34415f!important;
+  color:#dbe7ff!important;
+  box-shadow:0 10px 30px rgba(0,0,0,.16);
+}
+html[data-theme="dark"] .enterprise-topline strong,
+html[data-theme="dark"] .enterprise-topline a { color:#e7ecff!important; }
+
+html[data-theme="dark"] .hero-marketplace {
+  border-color:#5365db!important;
+  box-shadow:0 24px 70px rgba(0,0,0,.34)!important;
+}
+html[data-theme="dark"] .marketplace-search-card {
+  background:rgba(12,19,35,.95)!important;
+  border:1px solid rgba(129,140,248,.34)!important;
+  box-shadow:0 18px 45px rgba(0,0,0,.25)!important;
+}
+html[data-theme="dark"] .marketplace-search-card input,
+html[data-theme="dark"] .hero-search input {
+  background:#0e1729!important;
+  color:#f8fafc!important;
+  border-color:#35435f!important;
+}
+html[data-theme="dark"] .marketplace-search-card input::placeholder,
+html[data-theme="dark"] .hero-search input::placeholder { color:#8f9db7!important; }
+html[data-theme="dark"] .hero-search-links,
+html[data-theme="dark"] .hero-search-links span { color:#b6c1d6!important; }
+html[data-theme="dark"] .hero-search-links a {
+  background:#182238!important;
+  border-color:#34415d!important;
+  color:#e8edff!important;
+}
+html[data-theme="dark"] .hero-search-links a:hover {
+  background:#243252!important;
+  border-color:#7184ff!important;
+}
+
+html[data-theme="dark"] .marketplace-hero-stats {
+  background:rgba(7,12,24,.28)!important;
+  border-top-color:rgba(255,255,255,.10)!important;
+}
+html[data-theme="dark"] .marketplace-hero-stats > div {
+  border-color:rgba(255,255,255,.14)!important;
+}
+
+html[data-theme="dark"] .trust-card,
+html[data-theme="dark"] .market-summary-card,
+html[data-theme="dark"] .featured-category-compact,
+html[data-theme="dark"] .section-jump-link,
+html[data-theme="dark"] .market-product-card,
+html[data-theme="dark"] .sidebar-card,
+html[data-theme="dark"] .sidebar-store-row,
+html[data-theme="dark"] .sidebar-deal-card,
+html[data-theme="dark"] .home-details,
+html[data-theme="dark"] .empty-card {
+  background:linear-gradient(180deg,#121b2e,#101827)!important;
+  border-color:#2b3852!important;
+  color:#f5f7ff!important;
+  box-shadow:0 14px 35px rgba(0,0,0,.18)!important;
+}
+
+html[data-theme="dark"] .trust-card strong,
+html[data-theme="dark"] .market-summary-card strong,
+html[data-theme="dark"] .featured-category-compact strong,
+html[data-theme="dark"] .market-product-name,
+html[data-theme="dark"] .market-section-heading h2,
+html[data-theme="dark"] .sidebar-card-heading,
+html[data-theme="dark"] .home-details summary {
+  color:#f8fafc!important;
+}
+html[data-theme="dark"] .trust-card small,
+html[data-theme="dark"] .market-summary-card small,
+html[data-theme="dark"] .featured-category-compact small,
+html[data-theme="dark"] .market-card-meta,
+html[data-theme="dark"] .sidebar-card p,
+html[data-theme="dark"] .sidebar-store-row small {
+  color:#9eabc1!important;
+}
+html[data-theme="dark"] .market-product-card:hover,
+html[data-theme="dark"] .featured-category-compact:hover,
+html[data-theme="dark"] .section-jump-link:hover {
+  border-color:#6272e8!important;
+  background:linear-gradient(180deg,#17233a,#131d31)!important;
+  transform:translateY(-2px);
+}
+
+html[data-theme="dark"] .market-product-image {
+  background:linear-gradient(180deg,#172238,#111a2d)!important;
+  border-color:#2d3b57!important;
+}
+html[data-theme="dark"] .market-old-price { color:#7f8ca5!important; }
+html[data-theme="dark"] .market-current-price { color:#4ade80!important; }
+html[data-theme="dark"] .best-deal-label,
+html[data-theme="dark"] .discount-copy {
+  background:rgba(249,115,22,.14)!important;
+  color:#fdba74!important;
+  border-color:rgba(249,115,22,.24)!important;
+}
+
+html[data-theme="dark"] .section-jump-nav,
+html[data-theme="dark"] .marketplace-jump-nav {
+  background:transparent!important;
+}
+html[data-theme="dark"] .section-jump-link {
+  color:#dbe4f5!important;
+}
+
+html[data-theme="dark"] .site-footer {
+  background:linear-gradient(180deg,#080d18,#050912)!important;
+  border-top:1px solid #202b40!important;
+}
+
+/* Açık temada daha ferah kart ve hero dengesi */
+html[data-theme="light"] .homepage-v2 {
+  background:
+    radial-gradient(circle at 12% 4%, rgba(79,70,229,.07), transparent 29%),
+    radial-gradient(circle at 88% 13%, rgba(59,130,246,.06), transparent 26%),
+    #f6f8fc!important;
+}
+html[data-theme="light"] .hero-marketplace { box-shadow:0 28px 70px rgba(40,55,120,.16)!important; }
+html[data-theme="light"] .trust-card,
+html[data-theme="light"] .featured-category-compact,
+html[data-theme="light"] .market-product-card {
+  box-shadow:0 10px 28px rgba(15,23,42,.055)!important;
+}
