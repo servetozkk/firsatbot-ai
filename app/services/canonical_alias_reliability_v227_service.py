@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from app.services.production_integrity_guard_v236363_service import (
+    ProductionIntegrityGuardV236363,
+)
+
 from collections import defaultdict
 from datetime import datetime
 import hashlib
@@ -246,6 +250,10 @@ def converge_exact_identity_aliases_by_source(identity_source: str) -> dict[str,
             db,
             identity_source=str(identity_source or "").strip(),
         )
+        ProductionIntegrityGuardV236363.assert_clean(
+            db,
+            context="v236366_canonical_alias_reliability",
+        )
         db.commit()
         return result
     except Exception:
@@ -259,6 +267,10 @@ def audit_all_aliases() -> dict[str, Any]:
     db = SessionLocal()
     try:
         result = converge_exact_identity_aliases(db)
+        ProductionIntegrityGuardV236363.assert_clean(
+            db,
+            context="v236366_canonical_alias_reliability",
+        )
         db.commit()
         return result
     except Exception:

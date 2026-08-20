@@ -24,7 +24,7 @@ class ProductionIntegrityGuardV236363:
     rollback path can fail closed.
     """
 
-    RUNTIME_VERSION = "23.63.65"
+    RUNTIME_VERSION = "23.63.66"
 
     CLEAN_CONTRACT = {
         "history_wrong_gp": 0,

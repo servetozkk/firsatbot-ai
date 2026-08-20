@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from app.services.production_integrity_guard_v236363_service import (
+    ProductionIntegrityGuardV236363,
+)
+
 import json
 from datetime import datetime
 
@@ -186,6 +190,10 @@ def run_accessory_identity_convergence_v236342() -> dict:
             repaired += 1
             affected.add(int(gp.id))
 
+        ProductionIntegrityGuardV236363.assert_clean(
+            db,
+            context="v236366_accessory_identity_convergence",
+        )
         db.commit()
         return {
             "runtime_version": "23.63.42",

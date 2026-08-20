@@ -1,4 +1,8 @@
 from __future__ import annotations
+
+from app.services.production_integrity_guard_v236363_service import (
+    ProductionIntegrityGuardV236363,
+)
 from app.services.workload_priority_v23612 import user_deep_priority_active_v23612, user_priority_generation_v23617
 
 import json
@@ -144,6 +148,10 @@ def _restore_failed_store_offers(product_id: int, snapshot: dict[str, list[int]]
                 GlobalOffer.current_price > 0,
             ).count()
             gp.updated_at = _utcnow()
+        ProductionIntegrityGuardV236363.assert_clean(
+            db,
+            context="v236366_smart_catalog_refresh",
+        )
         db.commit()
         return restored
     finally:
@@ -185,6 +193,10 @@ def _recover_global_offers_from_legacy(product_id: int) -> int:
             if offer is not None:
                 recovered += 1
         if recovered:
+            ProductionIntegrityGuardV236363.assert_clean(
+                db,
+                context="v236366_smart_catalog_refresh",
+            )
             db.commit()
         return recovered
     finally:

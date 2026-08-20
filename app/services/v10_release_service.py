@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from app.services.production_integrity_guard_v236363_service import (
+    ProductionIntegrityGuardV236363,
+)
+
 from datetime import datetime, timedelta
 from typing import Any
 from urllib.parse import urlparse
@@ -416,6 +420,10 @@ def repair_release_integrity(db) -> dict[str, int]:
             product.updated_at = datetime.utcnow()
             repaired['product_counters'] += 1
 
+    ProductionIntegrityGuardV236363.assert_clean(
+        db,
+        context="v236366_v10_release_integrity_repair",
+    )
     db.commit()
     invalidate_global_catalog_cache()
     return repaired
