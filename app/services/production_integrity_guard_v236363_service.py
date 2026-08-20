@@ -24,7 +24,7 @@ class ProductionIntegrityGuardV236363:
     rollback path can fail closed.
     """
 
-    RUNTIME_VERSION = "23.63.64"
+    RUNTIME_VERSION = "23.63.65"
 
     CLEAN_CONTRACT = {
         "history_wrong_gp": 0,
@@ -161,12 +161,201 @@ class ProductionIntegrityGuardV236363:
         }
 
     @classmethod
+    def diagnostics(
+        cls,
+        db: Any,
+        violations: dict[str, int],
+        *,
+        limit: int = 20,
+    ) -> dict[str, list[dict[str, Any]]]:
+        """
+        Return bounded row-level evidence only for violated invariants.
+
+        Clean transactions never call this method from assert_clean(),
+        so there is no diagnostic query overhead on the success path.
+        """
+
+        connection = db.connection()
+
+        bounded_limit = max(
+            1,
+            min(
+                int(limit),
+                50,
+            ),
+        )
+
+        queries = {
+            "history_wrong_gp": """
+                SELECT
+                    h.id AS history_id,
+                    h.global_offer_id,
+                    h.global_product_id AS history_gp,
+                    h.global_variant_id AS history_variant,
+                    gv.global_product_id AS variant_gp
+                FROM global_offer_price_history h
+                JOIN global_product_variants gv
+                  ON gv.id=h.global_variant_id
+                WHERE h.global_variant_id IS NOT NULL
+                  AND h.global_product_id != gv.global_product_id
+                ORDER BY h.id
+                LIMIT :limit
+            """,
+
+            "active_variant_drift": """
+                SELECT
+                    go.id AS offer_id,
+                    go.raw_product_id,
+                    go.global_product_id AS offer_gp,
+                    go.global_variant_id AS offer_variant,
+                    rp.global_product_id AS raw_gp,
+                    rp.global_variant_id AS raw_variant
+                FROM global_offers go
+                JOIN raw_products rp
+                  ON rp.id=go.raw_product_id
+                WHERE go.is_active=1
+                  AND go.is_hidden=0
+                  AND go.lifecycle_status='ACTIVE'
+                  AND go.current_price>0
+                  AND go.global_variant_id IS NOT NULL
+                  AND rp.global_variant_id IS NOT NULL
+                  AND go.global_variant_id != rp.global_variant_id
+                ORDER BY go.id
+                LIMIT :limit
+            """,
+
+            "offer_variant_wrong_gp": """
+                SELECT
+                    go.id AS offer_id,
+                    go.raw_product_id,
+                    go.global_product_id AS offer_gp,
+                    go.global_variant_id AS offer_variant,
+                    gv.global_product_id AS variant_gp
+                FROM global_offers go
+                JOIN global_product_variants gv
+                  ON gv.id=go.global_variant_id
+                WHERE go.global_variant_id IS NOT NULL
+                  AND go.global_product_id != gv.global_product_id
+                ORDER BY go.id
+                LIMIT :limit
+            """,
+
+            "raw_variant_wrong_gp": """
+                SELECT
+                    rp.id AS raw_id,
+                    rp.store_code,
+                    rp.global_product_id AS raw_gp,
+                    rp.global_variant_id AS raw_variant,
+                    gv.global_product_id AS variant_gp
+                FROM raw_products rp
+                JOIN global_product_variants gv
+                  ON gv.id=rp.global_variant_id
+                WHERE rp.global_variant_id IS NOT NULL
+                  AND rp.global_product_id != gv.global_product_id
+                ORDER BY rp.id
+                LIMIT :limit
+            """,
+
+            "raw_counter": """
+                SELECT
+                    gp.id AS global_product_id,
+                    gp.canonical_name,
+                    gp.raw_product_count AS stored,
+                    (
+                        SELECT COUNT(*)
+                        FROM raw_products rp
+                        WHERE rp.global_product_id=gp.id
+                    ) AS actual
+                FROM global_products gp
+                WHERE gp.raw_product_count != (
+                    SELECT COUNT(*)
+                    FROM raw_products rp
+                    WHERE rp.global_product_id=gp.id
+                )
+                ORDER BY gp.id
+                LIMIT :limit
+            """,
+
+            "offer_counter": """
+                SELECT
+                    gp.id AS global_product_id,
+                    gp.canonical_name,
+                    gp.active_offer_count AS stored,
+                    (
+                        SELECT COUNT(*)
+                        FROM global_offers go
+                        WHERE go.global_product_id=gp.id
+                          AND go.is_active=1
+                          AND go.is_hidden=0
+                          AND go.lifecycle_status='ACTIVE'
+                          AND go.current_price>0
+                    ) AS actual
+                FROM global_products gp
+                WHERE gp.active_offer_count != (
+                    SELECT COUNT(*)
+                    FROM global_offers go
+                    WHERE go.global_product_id=gp.id
+                      AND go.is_active=1
+                      AND go.is_hidden=0
+                      AND go.lifecycle_status='ACTIVE'
+                      AND go.current_price>0
+                )
+                ORDER BY gp.id
+                LIMIT :limit
+            """,
+
+            "duplicate_active_identity_keys": """
+                SELECT
+                    identity_key,
+                    COUNT(*) AS product_count,
+                    GROUP_CONCAT(id) AS global_product_ids
+                FROM global_products
+                WHERE status='ACTIVE'
+                  AND identity_key IS NOT NULL
+                  AND identity_key != ''
+                GROUP BY identity_key
+                HAVING COUNT(*) > 1
+                ORDER BY identity_key
+                LIMIT :limit
+            """,
+        }
+
+        result: dict[
+            str,
+            list[dict[str, Any]],
+        ] = {}
+
+        for key in violations:
+
+            sql = queries.get(
+                key
+            )
+
+            if not sql:
+                continue
+
+            rows = connection.exec_driver_sql(
+                sql,
+                {
+                    "limit": bounded_limit,
+                },
+            ).mappings().all()
+
+            result[key] = [
+                dict(row)
+                for row in rows
+            ]
+
+        return result
+
+    @classmethod
     def _record_violation_best_effort(
         cls,
         *,
         context: str,
         snapshot: dict[str, int],
         violations: dict[str, int],
+        diagnostics: dict[str, list[dict[str, Any]]],
     ) -> None:
         """
         Observability must never interfere with fail-closed integrity.
@@ -189,6 +378,7 @@ class ProductionIntegrityGuardV236363:
                     "context": context or "unspecified",
                     "violations": dict(violations),
                     "snapshot": dict(snapshot),
+                    "diagnostics": diagnostics,
                 },
             )
 
@@ -218,10 +408,28 @@ class ProductionIntegrityGuardV236363:
 
         if violations:
 
+            diagnostics: dict[
+                str,
+                list[dict[str, Any]],
+            ] = {}
+
+            try:
+                diagnostics = cls.diagnostics(
+                    db,
+                    violations,
+                    limit=20,
+                )
+
+            except Exception:
+                # Diagnostic enrichment must never weaken
+                # the fail-closed integrity contract.
+                diagnostics = {}
+
             cls._record_violation_best_effort(
                 context=context,
                 snapshot=snapshot,
                 violations=violations,
+                diagnostics=diagnostics,
             )
 
             label = (
