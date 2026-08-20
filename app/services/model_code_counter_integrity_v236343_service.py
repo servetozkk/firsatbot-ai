@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from app.services.production_integrity_guard_v236363_service import ProductionIntegrityGuardV236363
 from datetime import datetime
 
 from sqlalchemy import func
@@ -69,6 +70,11 @@ def run_model_code_counter_integrity_v236343() -> dict:
             if changed:
                 gp.updated_at = datetime.utcnow()
                 affected.add(int(gp.id))
+
+        ProductionIntegrityGuardV236363.assert_clean(
+            db,
+            context="model_code_counter_integrity_v236343",
+        )
 
         db.commit()
         invalidate_global_catalog_cache()

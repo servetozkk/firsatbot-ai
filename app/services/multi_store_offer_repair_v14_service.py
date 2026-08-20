@@ -50,6 +50,10 @@ from app.services.price_integrity_v219_service import audit_product_prices, get_
 from app.scrapers.hepsiburada import HepsiburadaSecurityChallenge
 from app.services.workload_priority_v23612 import user_deep_priority_active_v23612
 
+from app.services.production_integrity_guard_v236363_service import (
+    ProductionIntegrityGuardV236363,
+)
+
 
 
 
@@ -1204,6 +1208,10 @@ def force_attach_candidate_offer(
             f"quarantine={peer_serving.get('quarantined_offer_count')}",
         )
 
+        ProductionIntegrityGuardV236363.assert_clean(
+            db,
+            context="multi_store_offer_repair.attach_offer",
+        )
         db.commit()
         return {
             "success": True,
@@ -3247,6 +3255,10 @@ def _repair_duplicate_global_binding(
     )
     if offer_raw is not None:
         offer_raw.global_product_id = target.id
+        ProductionIntegrityGuardV236363.assert_clean(
+            db,
+            context="multi_store_offer_repair.relink_offer_raw",
+        )
         db.commit()
         return offer_raw
 
@@ -3286,6 +3298,10 @@ def _repair_duplicate_global_binding(
         duplicate.active_offer_count = 0
         duplicate.status = "MERGED"
         duplicate.updated_at = datetime.utcnow()
+        ProductionIntegrityGuardV236363.assert_clean(
+            db,
+            context="multi_store_offer_repair.merge_duplicate_global",
+        )
         db.commit()
 
         return (

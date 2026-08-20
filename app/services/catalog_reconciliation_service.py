@@ -23,6 +23,10 @@ from app.database.v9_models import ProductMatchReview
 from app.services.v9_identity_matching_service import decide_global_match
 from app.services.source_identity_integrity_v236344_service import apply_source_identity_guard_v236344
 
+from app.services.production_integrity_guard_v236363_service import (
+    ProductionIntegrityGuardV236363,
+)
+
 
 def _json_value(value: str | None) -> Any:
     if not value:
@@ -542,6 +546,10 @@ def process_reconciliation_queue(
             failed += 1
         messages.append(f"raw={raw.id}: {message}")
 
+    ProductionIntegrityGuardV236363.assert_clean(
+        db,
+        context="catalog_reconciliation.process_reconciliation_queue",
+    )
     db.commit()
     return {
         "processed": processed,

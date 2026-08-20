@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from app.services.production_integrity_guard_v236363_service import ProductionIntegrityGuardV236363
 from datetime import datetime
 
 from app.database.database import SessionLocal
@@ -77,6 +78,11 @@ def run_variant_referential_convergence_v236341() -> dict:
                 if history.global_variant_id != target_id:
                     history.global_variant_id = target_id
                     history_relinked += 1
+
+        ProductionIntegrityGuardV236363.assert_clean(
+            db,
+            context="variant_referential_convergence_v236341",
+        )
 
         db.commit()
         return {

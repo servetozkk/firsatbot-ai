@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from app.services.production_integrity_guard_v236363_service import ProductionIntegrityGuardV236363
 import json
 import re
 import unicodedata
@@ -580,6 +581,11 @@ def run_canonical_atomic_merge_v236348() -> dict:
         health = _health_audit(db, [retire for _survivor, retire in merged_pairs])
         if any(int(value or 0) != 0 for value in health.values()):
             raise RuntimeError(f"V23.63.48 atomic merge health gate failed: {health}")
+
+        ProductionIntegrityGuardV236363.assert_clean(
+            db,
+            context="canonical_atomic_merge_v236348",
+        )
 
         db.commit()
         if merged_pairs or collapse_count or rewrite_count:
