@@ -2,6 +2,10 @@ from __future__ import annotations
 
 from typing import Any
 
+from app.services.operational_log_service import (
+    record_operation_event,
+)
+
 
 class ProductionIntegrityGuardV236363:
     """
@@ -20,7 +24,7 @@ class ProductionIntegrityGuardV236363:
     rollback path can fail closed.
     """
 
-    RUNTIME_VERSION = "23.63.63"
+    RUNTIME_VERSION = "23.63.64"
 
     CLEAN_CONTRACT = {
         "history_wrong_gp": 0,
@@ -157,6 +161,43 @@ class ProductionIntegrityGuardV236363:
         }
 
     @classmethod
+    def _record_violation_best_effort(
+        cls,
+        *,
+        context: str,
+        snapshot: dict[str, int],
+        violations: dict[str, int],
+    ) -> None:
+        """
+        Observability must never interfere with fail-closed integrity.
+
+        If operational logging itself fails, the original integrity
+        violation must still be raised by assert_clean().
+        """
+
+        try:
+            record_operation_event(
+                level="ERROR",
+                source="production_integrity_guard",
+                event_type="integrity_commit_blocked",
+                message=(
+                    "Production transaction blocked by "
+                    "persistent integrity guard"
+                ),
+                details={
+                    "runtime_version": cls.RUNTIME_VERSION,
+                    "context": context or "unspecified",
+                    "violations": dict(violations),
+                    "snapshot": dict(snapshot),
+                },
+            )
+
+        except Exception:
+            # Logging is deliberately best-effort.
+            # Never mask or replace the integrity violation.
+            pass
+
+    @classmethod
     def assert_clean(
         cls,
         db: Any,
@@ -177,6 +218,12 @@ class ProductionIntegrityGuardV236363:
 
         if violations:
 
+            cls._record_violation_best_effort(
+                context=context,
+                snapshot=snapshot,
+                violations=violations,
+            )
+
             label = (
                 " context={}".format(context)
                 if context
@@ -184,7 +231,8 @@ class ProductionIntegrityGuardV236363:
             )
 
             raise RuntimeError(
-                "V23.63.63 production integrity guard failed{}: {}".format(
+                "V{} production integrity guard failed{}: {}".format(
+                    cls.RUNTIME_VERSION,
                     label,
                     violations,
                 )
